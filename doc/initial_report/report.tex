@@ -1,0 +1,135 @@
+%----------------------------------------------------------------------------------------
+%       PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+\documentclass[paper=letter, fontsize=12pt]{article}
+\usepackage[english]{babel} % English language/hyphenation
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+\usepackage[utf8]{inputenc}
+\usepackage{float}
+\usepackage{lipsum} % Package to generate dummy text throughout this template
+\usepackage{blindtext}
+\usepackage{graphicx} 
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[sc]{mathpazo} % Use the Palatino font
+\linespread{1.05} % Line spacing - Palatino needs more space between lines
+\usepackage{microtype} % Slightly tweak font spacing for aesthetics
+\usepackage[hmarginratio=1:1,top=32mm,columnsep=20pt]{geometry} % Document margins
+\usepackage{multicol} % Used for the two-column layout of the document
+%\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
+\usepackage{booktabs} % Horizontal rules in tables
+\usepackage{float} % Required for tables and figures in the multi-column environment - they need to be placed in specific locations with the [H] (e.g. \begin{table}[H])
+\usepackage{hyperref} % For hyperlinks in the PDF
+\usepackage{lettrine} % The lettrine is the first enlarged letter at the beginning of the text
+\usepackage{paralist} % Used for the compactitem environment which makes bullet points with less space between them
+\usepackage{abstract} % Allows abstract customization
+\renewcommand{\abstractnamefont}{\normalfont\bfseries} % Set the "Abstract" text to bold
+\renewcommand{\abstracttextfont}{\normalfont\small\itshape} % Set the abstract itself to small italic text
+\usepackage{titlesec} % Allows customization of titles
+\usepackage{marvosym}
+\usepackage{array}
+\usepackage{csquotes}
+
+%\renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
+%\renewcommand\thesubsection{\Roman{subsection}} % Roman numerals for subsections
+
+\titleformat{\section}[block]{\large}{\thesection.}{1em}{} % Change the look of the section titles
+\titleformat{\subsection}[block]{\large}{\thesubsection.}{1em}{} % Change the look of the subsection titles
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} % Create horizontal rule command with 1 argument of height
+\usepackage{fancyhdr} % Headers and footers
+\pagestyle{fancy} % All pages have headers and footers
+\fancyhead{} % Blank out the default header
+\fancyfoot{} % Blank out the default footer
+
+\fancyhead[C]{Technische Universität München $\bullet$ 23 May 2017 $\bullet$ Group 17 }
+
+\fancyfoot[RO,LE]{\thepage} % Custom footer text
+%----------------------------------------------------------------------------------------
+%       TITLE SECTION
+%----------------------------------------------------------------------------------------
+\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{Initial approach Report: \\Onion Module}} % Article title
+\author{
+\large
+{\textsc{Marko Dorfhuber (03658730) $\quad$ \Letter marko.dorfhuber@tum.de}}\\[2mm]
+{\textsc{Christoph Rudolf (03662116) $\quad$ \Letter christoph.rudolf@tum.de}}\\[2mm]
+%\thanks{A thank you or further information}\\ % Your name
+%\normalsize \href{mailto:marco.torres.810@gmail.com}{marco.torres.810@gmail.com}\\[2mm] % Your email address
+}
+\date{}
+
+%----------------------------------------------------------------------------------------
+\begin{document}
+\maketitle % Insert title
+\thispagestyle{fancy} % All pages have headers and footers
+
+
+\section{Introduction}
+
+Our team, team 17, consists of the two students \emph{Marko Dorfhuber} and \emph{Christoph Rudolf}. As part of the anonymous and unobservable VoIP application for the P2PSEC lecture in 2017, we are going to develop the module concerned with the establishment of \emph{onion tunnels}.
+
+
+\section{Choice of programming language}
+Based on the previous experience of all team members, we chose Java as our programming language. Due to the platform independent nature of Java, any operating system is supported. However, as the development will happen on Linux-based machines, this is the operating system we officially support.
+
+Taking the experience of both team members into account, Python would have been a possible alternative. Java is preferred as it provides more sophisticated build systems for larger software applications, as well as a wide variety of available frameworks for testing, mocking and techniques like dependency injection. In regard to their capabilities with network programming, we see both high-level languages as equal, with Java having the edge in terms of speed. 
+
+\section{Build system}
+As build system we chose \emph{Maven}. The advantages of Maven are the existing default integration into the popular IDEs \emph{Eclipse}, \emph{NetBeans} and \emph{IntelliJ IDEA}. In contrast to alternatives like \emph{Ant} and \emph{Gradle}, both team members have some experience in using Maven. It is also worth noting that after the first brainstorming on the concept laid out in the specification, we do not except a large amount of external libraries to be needed for the Onion module. \emph{Maven}'s contribution will largely be the integration of dependencies relevant for testing like \emph{JUnit}, \emph{EasyMock} and possibly a dependency injection framework like \emph{Guice}.
+
+\section{Quality Assurance}
+In order to insure the functionality and quality of our code to meet the desired standards, we intend to use unit tests with \emph{JUnit}. As the Onion module relies on two adjacent modules that have to be mocked, we are either using \emph{EasyMock} to mock these modules for testing or, is provided, rely on a reference implementation from a previous year.
+
+Additionally, by using \emph{IntelliJ IDEA}, we can ensure quality in terms of code by enforcing \emph{Javadoc} comments for all public class members and further static code analysis.
+
+\section{Available libraries}
+Java supports a wide variety of network communication mechanisms out-of-the-box. In order to be scalable to a possibly large number of users, we aim to include the \emph{Netty} framework to handle networking. 
+
+Additionally libraries for testing purposes like \emph{JUnit} for unit tests, \emph{EasyMock} for mock objects and \emph{Google Guice} for dependency injection have already been mentioned. In order to provide logging which also helps to find bugs and maintain the maintainability of the system, we include a logging mechanism with \emph{Log4J}.
+
+We currently assume that the handling of RSA keys is completely encapsulated in the module regarding Onion Authentication. If it turns out that the Onion Forwarding module has to read or convert different key formats, we will rely on the \emph{Bouncy Castle} API.
+
+\section{License}
+In order to decide for the license to use we first have to confirm whether or not we are limited by the libraries we intend to use. An overview over the libraries we've chosen so far is listed Table~\ref{tab:licenses}
+
+%\setlength\extrarowheight{5pt}
+\renewcommand{\arraystretch}{1.5}
+\begin{table}[ht]
+\centering
+\caption{Overview over all libraries' licenses}
+\label{tab:licenses}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Library} & \textbf{License}           \\ \hline
+Maven            & Apache License 2.0         \\ \hline
+JUnit            & Eclipse Public License 1.0 \\ \hline
+EasyMock         & Apache License 2.0         \\ \hline
+Google Guice     & Apache License 2.0         \\ \hline
+Netty            & Apache License 2.0         \\ \hline
+Log4J            & Apache License 2.0         \\ \hline
+Bouncy Castle    & MIT X11 License            \\ \hline
+\end{tabular}
+\end{table}
+
+As both, the \emph{Apache License 2.0} and the \emph{MIT X11 License} are compatible with the \emph{GNU General Public License}\footnote{https://www.gnu.org/licenses/license-list.en.html\#GPLCompatibleLicenses}, we are free to chose any of these three licenses. \emph{JUnit} being licensed under the \emph{Eclipse Public License 1.0} is not an issue as the library is not required for running the final application and we do not ship the source code of it.
+Taking all these licenses into consideration, we decide for our code to be released under the \textbf{\emph{Apache License 2.0}}, as it is very permissive and allows open and commercial use.
+
+\section{Previous experience of the team members}
+
+\section{Workload distribution}
+Due to the large amount of API calls from either the CM/UI or the Onion Authentication module and additional packets from the P2P protocol, a large amount of code for the Onion Forwarding module will be the parsing of traffic and ensuring its validity. This can be done separately from a second layer/submodule that relies on valid packets and processes them accordingly to the functionality provided by the Onion Forwarding module. These two submodules could serve as a separation of work. If we notice that the effort is not evenly distributed, rebalancing work between the team partners can be done accordingly.
+
+\section{Issues and complains}
+\begin{itemize}
+\item The specification introduces the notion of a \emph{round}. We currently struggle to understand which module ensures the synchronization of rounds over modules and even peers, or if this isn't needed at all.
+
+\item Are we correct in understanding that for each round one new tunnel is created over at least two hops. This tunnel is either for cover traffic or a legitimate call. As the caller choses all intermediate hops, he will know about the complete chain of hops to the destination. 
+
+\item The specification says that \enquote{\emph{Tunnels created in one period should be torn down and rebuilt for the next period.}}. Are these teardowns issued by the CM/UI module? If not, how is the Onion module notified of a new round (alluding back to the first question)?
+\end{itemize}
+
+%\begin{thebibliography}{99}
+%\bibitem [1]{stock} 
+%James H. Stock, Mark  W. Watson, \textit{Forecasting inflation}, Journal of Monetary Economics 44 (1999) 293-335
+%\end{thebibliography}
+
+\end{document}
