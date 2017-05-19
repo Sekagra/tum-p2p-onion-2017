@@ -3,4 +3,4 @@ all: report.tex
 	pdflatex report.tex
 
 clean:
-	rm *.aux *.log *.out *.pdf
+	rm *.aux *.log *.out
