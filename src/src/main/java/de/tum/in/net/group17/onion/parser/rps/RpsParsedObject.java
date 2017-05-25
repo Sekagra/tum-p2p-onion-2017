@@ -8,7 +8,6 @@ package de.tum.in.net.group17.onion.parser.rps;
  * The user is not allow to create a RpsParsedObject itself.
  */
 public class RpsParsedObject {
-
     /**
      * The actual packet.
      */
@@ -56,7 +55,7 @@ public class RpsParsedObject {
             this.val = val;
         }
 
-        public int getVal() {
+        public int getValue() {
             return val;
         }
     }

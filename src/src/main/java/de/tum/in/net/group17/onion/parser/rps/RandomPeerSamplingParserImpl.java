@@ -1,7 +1,6 @@
 package de.tum.in.net.group17.onion.parser.rps;
 
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Primitive;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -12,6 +11,9 @@ import java.nio.ByteOrder;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 24.05.17.
+ *
+ * Parser for incoming and outgoing RPS messges.
+ * The class covers the first version of the Voidphone RPS API.
  */
 public class RandomPeerSamplingParserImpl implements RandomPeerSamplingParser {
 
@@ -26,7 +28,7 @@ public class RandomPeerSamplingParserImpl implements RandomPeerSamplingParser {
         buffer.order(ByteOrder.BIG_ENDIAN);
 
         buffer.putShort((short)4);
-        buffer.putShort((short)RpsParsedObject.RPS_MSG_TYPE.RPS_QUERY.getVal());
+        buffer.putShort((short)RpsParsedObject.RPS_MSG_TYPE.RPS_QUERY.getValue());
 
         return new RpsParsedObject(buffer.array(), RpsParsedObject.RPS_MSG_TYPE.RPS_QUERY);
     }
@@ -57,7 +59,12 @@ public class RandomPeerSamplingParserImpl implements RandomPeerSamplingParser {
             throw new IllegalArgumentException("Unknown message type: " + buffer.getShort(0) + "!");
         }
 
-        return parseRpsPeer(data);
+        switch(msgType) {
+            case RPS_PEER:
+                return parseRpsPeerMsg(data);
+            default:
+                throw new IllegalArgumentException("Not able to parse message. Type: " + msgType.getValue() + "!");
+        }
     }
 
     /**
@@ -67,7 +74,7 @@ public class RandomPeerSamplingParserImpl implements RandomPeerSamplingParser {
      * @param data Array containing the packet to parse.
      * @return RpsParsedObject of type RPS_MSG_TYPE.RPS_PEER if the packet is a valid RPS PEER message.
      */
-    private RpsParsedObject parseRpsPeer(byte[] data) {
+    private RpsParsedObject parseRpsPeerMsg(byte[] data) {
         if (data.length < 4 + 4 + 1) // Contains header, IP address (IPv4 here!) and key (No length known)
             throw new IllegalArgumentException("Packet is too short to contain a header, an IP and a hostkey!");
 
@@ -87,7 +94,7 @@ public class RandomPeerSamplingParserImpl implements RandomPeerSamplingParser {
         buffer.get(key, 8, data.length - 8);
 
         try {
-            ASN1Primitive inputStream = new ASN1InputStream(new ByteArrayInputStream(key)).readObject();
+            new ASN1InputStream(new ByteArrayInputStream(key)).readObject();
         } catch (IOException e) {
            throw new IllegalArgumentException("Invalid hostkey!");
         }
