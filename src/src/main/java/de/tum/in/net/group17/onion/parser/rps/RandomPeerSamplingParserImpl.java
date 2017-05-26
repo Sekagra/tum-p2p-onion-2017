@@ -53,6 +53,7 @@ public class RandomPeerSamplingParserImpl implements RandomPeerSamplingParser {
 
         RpsParsedObject.RPS_MSG_TYPE msgType;
         try {
+            short t = buffer.getShort(2);
             msgType = RpsParsedObject.RPS_MSG_TYPE.values()[buffer.getShort(2)];
         }
         catch(ArrayIndexOutOfBoundsException e) {
@@ -75,14 +76,15 @@ public class RandomPeerSamplingParserImpl implements RandomPeerSamplingParser {
      * @return RpsParsedObject of type RPS_MSG_TYPE.RPS_PEER if the packet is a valid RPS PEER message.
      */
     private RpsParsedObject parseRpsPeerMsg(byte[] data) {
-        if (data.length < 4 + 4 + 1) // Contains header, IP address (IPv4 here!) and key (No length known)
+        if (data.length < 13) // Contains header, port, res, IP address (IPv4 here!) and key (No length known)
             throw new IllegalArgumentException("Packet is too short to contain a header, an IP and a hostkey!");
 
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
-        //TODO: We assume to have IPv4 addresses -> Change to handle both v4 and v6 if we know how to do this
+        // TODO: We assume to have IPv4 addresses -> Change to handle both v4 and v6 if we know how to do this
+        // TODO: Remove check if valid IP -> What else with 4 byte..?
         byte[] address = new byte[4];
-        buffer.get(address, 4, 4);
+        buffer.get(address, 8, 4);
 
         try {
             InetAddress.getByAddress(address);
@@ -90,8 +92,8 @@ public class RandomPeerSamplingParserImpl implements RandomPeerSamplingParser {
             throw new IllegalArgumentException("Cannot parse the IP address!");
         }
 
-        byte[] key = new byte[data.length - 8];
-        buffer.get(key, 8, data.length - 8);
+        byte[] key = new byte[data.length - 12];
+        buffer.get(key, 12, data.length - 12);
 
         try {
             new ASN1InputStream(new ByteArrayInputStream(key)).readObject();
