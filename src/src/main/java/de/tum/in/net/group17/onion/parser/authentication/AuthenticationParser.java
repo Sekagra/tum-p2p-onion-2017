@@ -60,31 +60,9 @@ public interface AuthenticationParser {
     ParsedMessage buildSessionClose(short sessionId);
 
     /**
-     * Confirm the size and type matching the specification of the AUTH_SESSION_HS1 message.
-     * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity, null if the format is violated.
+     * Parse messages incoming to the authentication interface.
+     * @param data The raw message data.
+     * @return Return the parsed message with type and data.
      */
-    ParsedMessage parseSessionHandshake1(byte[] message);
-
-    /**
-     * Confirm the size and type matching the specification of the AUTH_SESSION_HS2 message.
-     * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity, null if the format is violated.
-     */
-    ParsedMessage parseSessionHandshake2(byte[] message);
-
-    /**
-     * Confirm the size and type matching the specification of the AUTH_LAYER_ENCRYPT_RESP message.
-     * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity, null if the format is violated.
-     */
-    ParsedMessage parseLayerEncryptResponse(byte[] message);
-
-    /**
-     * Confirm the size and type matching the specification of the AUTH_LAYER_DECRYPT_RESP message.
-     * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity, null if the format is violated.
-     */
-    ParsedMessage parseLayerDecryptResponse(byte[] message);
-
+    ParsedMessage parse(byte[] data);
 }

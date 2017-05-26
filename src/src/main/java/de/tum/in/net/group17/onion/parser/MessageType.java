@@ -8,7 +8,7 @@ package de.tum.in.net.group17.onion.parser;
  *
  * Created by Christoph Rudolf on 25.05.17.
  */
-public enum VoidphoneType {
+public enum MessageType {
     GOSSIP_ANNOUNCE((short)500),
     GOSSIP_NOTIFY((short)501),
     GOSSIP_NOTIFICATION((short)502),
@@ -40,7 +40,7 @@ public enum VoidphoneType {
     AUTH_SESSION_CLOSE((short)609);
 
     private final short value;
-    VoidphoneType(short value) {
+    MessageType(short value) {
         this.value = value;
     }
 
