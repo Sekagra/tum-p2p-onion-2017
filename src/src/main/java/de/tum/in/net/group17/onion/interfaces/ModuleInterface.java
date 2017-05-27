@@ -1,10 +1,14 @@
 package de.tum.in.net.group17.onion.interfaces;
 
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelOption;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+
+import java.net.InetAddress;
 
 /**
  * Base class for all interfaces to other modules. Provides uniform and basic setup of a server using Netty.
@@ -25,5 +29,21 @@ public abstract class ModuleInterface {
 
         //listen to the given response port
         b.localAddress(port).bind().sync();
+    }
+
+    protected Channel connect(ChannelHandler handler, InetAddress host, int port) throws InterruptedException {
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        try {
+            Bootstrap b = new Bootstrap();
+            b.group(workerGroup);
+            b.channel(NioSocketChannel.class);
+            b.option(ChannelOption.SO_KEEPALIVE, true);
+            b.handler(handler);
+
+            // Start client, wait for the connection and return the channel
+            return b.connect(host, port).sync().channel();
+        } finally {
+            //workerGroup.shutdownGracefully();
+        }
     }
 }

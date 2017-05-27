@@ -13,6 +13,11 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 public interface AuthenticationInterface {
 
     /**
+     * Triggers the interface to build a connection to the module it is targeted to interface with.
+     */
+    void listen();
+
+    /**
      * Issue the start of a new session on the Onion Authentication module.
      * @param peer The peer to start a new session with.
      * @param callback A callback function to be called once an answers has been retrieved.

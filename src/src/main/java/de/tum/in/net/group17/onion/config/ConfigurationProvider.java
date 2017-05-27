@@ -1,5 +1,8 @@
 package de.tum.in.net.group17.onion.config;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 /**
  * A ConfigurationProvider is in charge of parsing and reading configurations files to supply the relevant values to
  * certain modules (e.g. ports for API connections)
@@ -8,10 +11,19 @@ package de.tum.in.net.group17.onion.config;
 public class ConfigurationProvider {
 
     public int getAuthModuleRequestPort() {
-        return 9000;
+        return 9001;
+    }
+
+    public InetAddress getAuthModuleHost() {
+        try {
+            return InetAddress.getByName("127.0.0.1");
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public int getAuthModuleReponsePort() {
-        return 9000;
+        return 9002;
     }
 }

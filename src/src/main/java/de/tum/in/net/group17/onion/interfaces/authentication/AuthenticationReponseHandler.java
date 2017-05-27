@@ -5,6 +5,10 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 /**
  * Created by Christoph Rudolf on 27.05.17.
  */
-public class AuthenticationHandler extends ChannelInboundHandlerAdapter {
+public class AuthenticationReponseHandler extends ChannelInboundHandlerAdapter {
 
 }
+
+
+
+
