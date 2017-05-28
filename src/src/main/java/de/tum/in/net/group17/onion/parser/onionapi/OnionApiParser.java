@@ -26,7 +26,7 @@ public interface OnionApiParser {
      * @param sourceKey Key of the source host.
      * @return A ParsedMessage of creation was successful.
      */
-    ParsedMessage buildOnionTunnelIncoming(int id, byte[] sourceKey);
+    ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey);
 
     /**
      * Create a OnionParseObject containing a ONION TUNNEL READY message with the given parameters.

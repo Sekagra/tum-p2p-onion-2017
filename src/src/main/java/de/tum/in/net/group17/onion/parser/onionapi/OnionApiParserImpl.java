@@ -26,9 +26,13 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * This implementation throws an ParsingException on every error.
      */
     public ParsedMessage buildOnionErrorMsg(short requestType, int tunnelID) {
-        // TODO: May check the request type
-        ByteBuffer buffer = ByteBuffer.allocate(12);
+        if (requestType != MessageType.ONION_TUNNEL_BUILD.getValue()
+                && requestType != MessageType.ONION_TUNNEL_DESTROY.getValue()
+                && requestType != MessageType.ONION_TUNNEL_DATA.getValue()
+                && requestType != MessageType.ONION_COVER.getValue())
+            throw new ParsingException("Unknown request: " + requestType + "!");
 
+        ByteBuffer buffer = ByteBuffer.allocate(12);
         buffer.putShort((short)12);
         buffer.putShort((short) MessageType.ONION_ERROR.getValue());
         buffer.putShort(requestType);
@@ -44,7 +48,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * We check the source key for validity.
      * This implementation throws an ParsingException on every error.
      */
-    public ParsedMessage buildOnionTunnelIncoming(int id, byte[] sourceKey) {
+    public ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey) {
         int size = 8 + sourceKey.length; // Header, TunnelID and hostkey
         if (size > 65535)
             throw new ParsingException("Message too large!");
@@ -57,7 +61,9 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
         ByteBuffer buffer = ByteBuffer.allocate(size);
         buffer.putShort((short)size);
-        buffer.putShort((short)MessageType.ONION_TUNNEL_INCOMING.getValue());
+        buffer.putShort(2, (short)MessageType.ONION_TUNNEL_INCOMING.getValue());
+        buffer.putInt(4, id);
+        buffer.position(8);
         buffer.put(sourceKey);
 
         return createParsedMessage(buffer.array());
@@ -82,7 +88,9 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
         ByteBuffer buffer = ByteBuffer.allocate(size);
         buffer.putShort((short)size);
-        buffer.putShort((short)MessageType.ONION_TUNNEL_READY.getValue());
+        buffer.putShort(2, (short)MessageType.ONION_TUNNEL_READY.getValue());
+        buffer.putInt(4, id);
+        buffer.position(8);
         buffer.put(destinationKey);
 
         return createParsedMessage(buffer.array());
@@ -136,7 +144,8 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
         // TODO: Add support for IPv6 AND IPv4 parsing!
         byte[] address = new byte[4];
-        buffer.get(address, 9, 4);
+        buffer.position(8);
+        buffer.get(address);
 
         try {
             InetAddress.getByAddress(address);
@@ -145,7 +154,8 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
         }
 
         byte[] key = new byte[data.length - 12];
-        buffer.get(key, 12, data.length - 12);
+        buffer.position(12);
+        buffer.get(key);
 
         try {
             new ASN1InputStream(new ByteArrayInputStream(key)).readObject();
