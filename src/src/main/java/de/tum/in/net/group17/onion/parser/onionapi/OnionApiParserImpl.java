@@ -1,4 +1,4 @@
-package de.tum.in.net.group17.onion.parser.onion;
+package de.tum.in.net.group17.onion.parser.onionapi;
 
 import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
@@ -18,14 +18,12 @@ import java.nio.ByteBuffer;
  * Implement a parser for the Onion API.
  * This class covers the first version of the Voidphone Onion API.
  */
-public class OnionParserImpl extends VoidphoneParser implements OnionParser {
+public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParser {
 
     /**
-     * Create an ONION ERROR message. Nothing can go wrong here.
+     * @inheritDoc
      *
-     * param requestType The request type of the request causing the error.
-     * @param tunnelID The ID of the tunnel where the error occured.
-     * @return An ParsedMessage containing the ONION ERROR message.
+     * This implementation throws an ParsingException on every error.
      */
     public ParsedMessage buildOnionErrorMsg(short requestType, int tunnelID) {
         // TODO: May check the request type
@@ -41,13 +39,10 @@ public class OnionParserImpl extends VoidphoneParser implements OnionParser {
     }
 
     /**
-     * Create a OnionTunnelIncoming message containing the given parameters.
-     * This method will throw an ParsingException on every parsing errors.
-     *      (We check the source key for validity).
+     * @inheritDoc
      *
-     * @param id ID of the tunnel.
-     * @param sourceKey Key of the source host.
-     * @return A ParsedMessage of creation was successful.
+     * We check the source key for validity.
+     * This implementation throws an ParsingException on every error.
      */
     public ParsedMessage buildOnionTunnelIncoming(int id, byte[] sourceKey) {
         int size = 8 + sourceKey.length; // Header, TunnelID and hostkey
@@ -69,13 +64,10 @@ public class OnionParserImpl extends VoidphoneParser implements OnionParser {
     }
 
     /**
-     * Create a OnionParseObject containing a ONION TUNNEL READY message with the given parameters.
-     * This method will throw an ParsingException of any parsing error.
-     *      (We check the destination key for validity)
+     * @inheritDoc
      *
-     * @param id The ID of the newly created tunnel.
-     * @param destinationKey The destination host's key.
-     * @return A ParsedMessage containing the message on success.
+     * We check teh destinationKey for validity.
+     * This implementation throws an ParsingException on every error.
      */
     public ParsedMessage buildOnionTunnelReadyMsg(int id, byte[] destinationKey) {
         int size = 8 + destinationKey.length; // Header, TunnelID and hostkey
@@ -97,11 +89,9 @@ public class OnionParserImpl extends VoidphoneParser implements OnionParser {
     }
 
     /**
-     * Parse an incomning message to the Onion module.
-     * The method will throw an IllegalArgumentExcaption on every parsing error!
+     * @inheritDoc
      *
-     * @param data The actual packet.
-     * @return A ParsedMessage containing the message typt and the data if parsing was successful.
+     * This implementation throws an ParsingException on every error.
      */
     public ParsedMessage parseMsg(byte[] data) {
         checkSize(data); // Throws an exception on all errors

@@ -12,6 +12,9 @@ import java.nio.ByteBuffer;
  * Created by Christoph Rudolf on 25.05.17.
  */
 public class AuthenticationParserImpl extends VoidphoneParser implements AuthenticationParser {
+    /**
+     * @inheritDoc
+     */
     public ParsedMessage buildSessionStart(int requestId, byte[] hostkey) {
         int size = 12 + hostkey.length;
         if(size > 65535)
@@ -26,6 +29,9 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         return createParsedMessage(buffer.array());
     }
 
+    /**
+     * @inheritDoc
+     */
     public ParsedMessage buildSessionIncoming1(int requestId, byte[] hostkey, byte[] payload) {
         int size = 14 + hostkey.length + payload.length;
         if(size > 65535)
@@ -38,10 +44,13 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         buffer.putInt(requestId);                                               // request ID
         buffer.putShort((short)hostkey.length);                                 // hostkey size
         buffer.put(hostkey);                                                    // hostkey in DER format
-        buffer.put(payload);                                                    // incoming payload from other onion auth
+        buffer.put(payload);                                                    // incoming payload from other onionapi auth
         return createParsedMessage(buffer.array());
     }
 
+    /**
+     * @inheritDoc
+     */
     public ParsedMessage buildSessionIncoming2(int requestId, short sessionId, byte[] payload) {
         int size = 12 + payload.length;
         if(size > 65535)
@@ -52,18 +61,27 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         buffer.putShort(MessageType.AUTH_SESSION_INCOMING_HS2.getValue());      // AUTH SESSION START
         buffer.putShort((short)0);                                              // reserved
         buffer.putShort(sessionId);                                             // reserved
-        buffer.put(payload);                                                    // incoming payload from other onion auth
+        buffer.put(payload);                                                    // incoming payload from other onionapi auth
         return createParsedMessage(buffer.array());
     }
 
+    /**
+     * @inheritDoc
+     */
     public ParsedMessage buildLayerEncrypt(int requestId, short[] sessionIds, byte[] payload) {
         return buildLayerCryptMessage(MessageType.AUTH_LAYER_ENCRYPT, requestId, sessionIds, payload);
     }
 
+    /**
+     * @inheritDoc
+     */
     public ParsedMessage buildLayerDecrypt(int requestId, short[] sessionIds, byte[] payload) {
         return buildLayerCryptMessage(MessageType.AUTH_LAYER_DECRYPT, requestId, sessionIds, payload);
     }
 
+    /**
+     * @inheritDoc
+     */
     private ParsedMessage buildLayerCryptMessage(MessageType type, int requestId, short[] sessionIds, byte[] payload) {
         // calculate whole size
         // header + reserved + layer number + request ID + session IDs + payload
@@ -85,6 +103,9 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         return createParsedMessage(buffer.array());
     }
 
+    /**
+     * @inheritDoc
+     */
     public ParsedMessage buildSessionClose(short sessionId) {
         int size = 8; // Size is static => We do not have to check it
         ByteBuffer buffer = ByteBuffer.allocate(size);
@@ -143,6 +164,9 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         return createParsedMessage(message);
     }
 
+    /**
+     * @inheritDoc
+     */
     public ParsedMessage parse(byte[] message) {
         checkSize(message); // Throws an exception if an error occurs
 

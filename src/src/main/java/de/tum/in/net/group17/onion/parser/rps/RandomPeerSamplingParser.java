@@ -12,18 +12,16 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 public interface RandomPeerSamplingParser {
     /**
      * Build a RPS Query message.
-     * Method should throw an IllegalArgumentException on parsing errors.
      *
-     * @return ParsedMessage containing the query message.
+     * @return The RpsParsedObject containing the RPS Query message.
      */
     ParsedMessage buildRpsQueryMsg();
 
     /**
-     * Parse an incoming message.
-     * Method should throw an IllegalArgumentException on parsing errors.
+     * Parse an incoming RPS message.
      *
-     * @param data Data sent by the RPS module.
-     * @return ParsedMessage if a valid packet was sent by the RPS module.
+     * @param data Incoming packet.
+     * @return RpsParsedObject containing the message type and packet data if parsing succeeds.
      */
     ParsedMessage parseMsg(byte[] data);
 }

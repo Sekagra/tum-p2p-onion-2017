@@ -22,10 +22,9 @@ import java.nio.ByteOrder;
 public class RandomPeerSamplingParserImpl extends VoidphoneParser implements RandomPeerSamplingParser {
 
     /**
-     * Build a RPS Query message.
-     * The method throws and ParsingException on every parse error!
+     * @inheritDoc
      *
-     * @return The RpsParsedObject containing the RPS Query message.
+     * The method throws and ParsingException on every parse error!
      */
     public ParsedMessage buildRpsQueryMsg() {
         ByteBuffer buffer = ByteBuffer.allocate(4);
@@ -38,11 +37,9 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
     }
 
     /**
-     * Parse an incoming RPS message.
-     * The method throws and ParsingException on every parse error!
+     * @inheritDoc
      *
-     * @param data Incoming packet.
-     * @return RpsParsedObject containing the message type and packet data if parsing succeeds.
+     * The method throws and ParsingException on every parse error!
      */
     public ParsedMessage parseMsg(byte[] data) {
         checkSize(data); // Throws an exception if an error occurs
