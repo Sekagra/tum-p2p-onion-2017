@@ -1,5 +1,8 @@
 package de.tum.in.net.group17.onion.parser;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * All message types specified in the current Voidphone specification.
  * Used by the concrete Parser implementations for the current Voidphone.
@@ -17,8 +20,8 @@ public enum MessageType {
     NSE_QUERY((short)520),
     NSE_ESTIMATE((short)521),
 
-    RSE_QUERY((short)540),
-    RSE_PEER((short)541),
+    RPS_QUERY((short)540),
+    RPS_PEER((short)541),
 
     ONION_TUNNEL_BUILD((short)560),
     ONION_TUNNEL_READY((short)561),
@@ -40,6 +43,28 @@ public enum MessageType {
     AUTH_SESSION_CLOSE((short)609);
 
     private final short value;
+    private static Map<Integer, MessageType> map = new HashMap<Integer, MessageType>();
+
+
+    /**
+     * Build the mapping between ID and MessageType
+     */
+    static {
+        for (MessageType type : MessageType.values()) {
+            map.put(new Integer(type.value), type);
+        }
+    }
+
+
+    /**
+     * Return the MessageType for a given ID.
+     *
+     * @param msgID Identifier of the message.
+     * @return The MessageType that corresponds to the given ID.
+     */
+    public static MessageType valueOf(int msgID) {
+        return MessageType.map.get(msgID);
+    }
     MessageType(short value) {
         this.value = value;
     }

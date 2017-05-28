@@ -1,5 +1,7 @@
 package de.tum.in.net.group17.onion.parser;
 
+import sun.plugin2.message.Message;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -20,8 +22,7 @@ public class ParsedMessage {
     public MessageType getType() {
         if(this.type == null) {
             ByteBuffer buffer = ByteBuffer.wrap(this.data);
-            buffer.position(2);
-            this.type = MessageType.values()[buffer.getShort()];
+            this.type = MessageType.valueOf(buffer.getShort(2));
         }
         return type;
     }

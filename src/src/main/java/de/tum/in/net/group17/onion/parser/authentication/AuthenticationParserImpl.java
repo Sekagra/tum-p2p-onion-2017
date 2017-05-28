@@ -1,8 +1,10 @@
 package de.tum.in.net.group17.onion.parser.authentication;
 
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.VoidphoneParser;
 import de.tum.in.net.group17.onion.parser.MessageType;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 
 import java.nio.ByteBuffer;
 
@@ -12,6 +14,9 @@ import java.nio.ByteBuffer;
 public class AuthenticationParserImpl extends VoidphoneParser implements AuthenticationParser {
     public ParsedMessage buildSessionStart(int requestId, byte[] hostkey) {
         int size = 12 + hostkey.length;
+        if(size > 65535)
+            throw new ParsingException("Message too large!");
+
         ByteBuffer buffer = ByteBuffer.allocate(size);
         buffer.putShort((short)size);                                   // size
         buffer.putShort(MessageType.AUTH_SESSION_START.getValue());     // AUTH SESSION START
@@ -23,6 +28,9 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
 
     public ParsedMessage buildSessionIncoming1(int requestId, byte[] hostkey, byte[] payload) {
         int size = 14 + hostkey.length + payload.length;
+        if(size > 65535)
+            throw new ParsingException("Message too large!");
+
         ByteBuffer buffer = ByteBuffer.allocate(size);
         buffer.putShort((short)size);                                           // size
         buffer.putShort(MessageType.AUTH_SESSION_INCOMING_HS1.getValue());      // AUTH SESSION START
@@ -36,6 +44,9 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
 
     public ParsedMessage buildSessionIncoming2(int requestId, short sessionId, byte[] payload) {
         int size = 12 + payload.length;
+        if(size > 65535)
+            throw new ParsingException("Message too large!");
+
         ByteBuffer buffer = ByteBuffer.allocate(size);
         buffer.putShort((short)size);                                           // size
         buffer.putShort(MessageType.AUTH_SESSION_INCOMING_HS2.getValue());      // AUTH SESSION START
@@ -57,6 +68,9 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         // calculate whole size
         // header + reserved + layer number + request ID + session IDs + payload
         int size = 12 + 2 * sessionIds.length + payload.length;
+        if(size > 65535)
+            throw new ParsingException("Message too large!");
+
         ByteBuffer buffer = ByteBuffer.allocate(size);
         buffer.putShort((short)size);                   // size
         buffer.putShort(type.getValue());               // AUTH SESSION ENCRYPT/DECRYPT
@@ -72,7 +86,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     }
 
     public ParsedMessage buildSessionClose(short sessionId) {
-        int size = 8;
+        int size = 8; // Size is static => We do not have to check it
         ByteBuffer buffer = ByteBuffer.allocate(size);
         buffer.putShort((short)size);                                   // size
         buffer.putShort(MessageType.AUTH_SESSION_CLOSE.getValue());     // AUTH SESSION CLOSE
@@ -88,10 +102,9 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     private ParsedMessage parseSessionHandshake1(byte[] message) {
         MessageType type = MessageType.AUTH_SESSION_HS1;
-        if(checkSize(message) && checkType(message, type)) {
-            return createParsedMessage(message);
-        }
-        return null;
+        checkSize(message); // Throws an exception if an error occurs
+        checkType(message, type); // Will throw a parsing exception on any error
+        return createParsedMessage(message);
     }
 
     /**
@@ -101,10 +114,9 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     private ParsedMessage parseSessionHandshake2(byte[] message) {
         MessageType type = MessageType.AUTH_SESSION_HS2;
-        if(checkSize(message) && checkType(message, type)) {
-            return createParsedMessage(message);
-        }
-        return null;
+        checkSize(message); // Throws an exception if an error occurs
+        checkType(message, type); // Will throw a parsing exception on any error
+        return createParsedMessage(message);
     }
 
     /**
@@ -114,10 +126,9 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     private ParsedMessage parseLayerEncryptResponse(byte[] message) {
         MessageType type = MessageType.AUTH_LAYER_ENCRYPT_RESP;
-        if(checkSize(message) && checkType(message, type)) {
-            return createParsedMessage(message);
-        }
-        return null;
+        checkSize(message); // Throws an exception if an error occurs
+        checkType(message, type); // Will throw a parsing exception on any error
+        return createParsedMessage(message);
     }
 
     /**
@@ -127,26 +138,25 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     private ParsedMessage parseLayerDecryptResponse(byte[] message) {
         MessageType type = MessageType.AUTH_LAYER_DECRYPT_RESP;
-        if(checkSize(message) && checkType(message, type)) {
-            return createParsedMessage(message);
-        }
-        return null;
+        checkSize(message); // Throws an exception if an error occurs
+        checkType(message, type); // Will throw a parsing exception on any error
+        return createParsedMessage(message);
     }
 
     public ParsedMessage parse(byte[] message) {
-        if(hasMinimumSize(message)) {
-            MessageType type = extractType(message);
-            switch (type) {
-                case AUTH_SESSION_HS1:
-                    return parseSessionHandshake1(message);
-                case AUTH_SESSION_HS2:
-                    return parseSessionHandshake2(message);
-                case AUTH_LAYER_ENCRYPT_RESP:
-                    return parseLayerEncryptResponse(message);
-                case AUTH_LAYER_DECRYPT_RESP:
-                    return parseLayerDecryptResponse(message);
-            }
+        checkSize(message); // Throws an exception if an error occurs
+
+        switch (extractType(message)) {
+            case AUTH_SESSION_HS1:
+                return parseSessionHandshake1(message);
+            case AUTH_SESSION_HS2:
+                return parseSessionHandshake2(message);
+            case AUTH_LAYER_ENCRYPT_RESP:
+                return parseLayerEncryptResponse(message);
+            case AUTH_LAYER_DECRYPT_RESP:
+                 return parseLayerDecryptResponse(message);
+            default:
+                throw new ParsingException("Not able to parse message. Type: " + extractType(message).getValue() + "!");
         }
-        return null;
     }
 }
