@@ -7,6 +7,7 @@ import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * Created by Christoph Rudolf on 25.05.17.
@@ -21,6 +22,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
             throw new ParsingException("Message too large!");
 
         ByteBuffer buffer = ByteBuffer.allocate(size);
+        buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putShort((short)size);                                   // size
         buffer.putShort(MessageType.AUTH_SESSION_START.getValue());     // AUTH SESSION START
         buffer.putInt(0);                                               // reserved
@@ -38,6 +40,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
             throw new ParsingException("Message too large!");
 
         ByteBuffer buffer = ByteBuffer.allocate(size);
+        buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putShort((short)size);                                           // size
         buffer.putShort(MessageType.AUTH_SESSION_INCOMING_HS1.getValue());      // AUTH SESSION START
         buffer.putInt(0);                                                       // reserved
@@ -57,6 +60,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
             throw new ParsingException("Message too large!");
 
         ByteBuffer buffer = ByteBuffer.allocate(size);
+        buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putShort((short)size);                                           // size
         buffer.putShort(MessageType.AUTH_SESSION_INCOMING_HS2.getValue());      // AUTH SESSION START
         buffer.putShort((short)0);                                              // reserved
@@ -90,6 +94,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
             throw new ParsingException("Message too large!");
 
         ByteBuffer buffer = ByteBuffer.allocate(size);
+        buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putShort((short)size);                   // size
         buffer.putShort(type.getValue());               // AUTH SESSION ENCRYPT/DECRYPT
         buffer.putShort((short)0);                      // reserved
@@ -109,6 +114,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     public ParsedMessage buildSessionClose(short sessionId) {
         int size = 8; // Size is static => We do not have to check it
         ByteBuffer buffer = ByteBuffer.allocate(size);
+        buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putShort((short)size);                                   // size
         buffer.putShort(MessageType.AUTH_SESSION_CLOSE.getValue());     // AUTH SESSION CLOSE
         buffer.putShort((short)0);                                      // reserved

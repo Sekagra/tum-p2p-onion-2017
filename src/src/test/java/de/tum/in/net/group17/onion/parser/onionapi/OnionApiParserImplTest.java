@@ -19,13 +19,13 @@ public class OnionApiParserImplTest {
     private static byte[] derKey;
 
     /**
-     * Create a OnionApiParser used in the test cases and a byte[] containing a test DER-formatted RSA key.
+     * Create a OnionApiParser used in the RpsPeerParsedMessage cases and a byte[] containing a RpsPeerParsedMessage DER-formatted RSA key.
      */
     @BeforeClass
     public static void initTest() {
         prs = new OnionApiParserImpl();
 
-        // Create a key in DER format used in different test cases
+        // Create a key in DER format used in different RpsPeerParsedMessage cases
         int[] tmp = {
                 0x82, 0x30, 0x22, 0x02, 0x0d, 0x30, 0x09, 0x06, 0x86, 0x2a, 0x86, 0x48, 0x0d, 0xf7, 0x01, 0x01, 0x05,
                 0x01, 0x03, 0x00, 0x02, 0x82, 0x00, 0x0f, 0x82, 0x30, 0x0a, 0x02, 0x82, 0x02, 0x01, 0x02, 0xaa, 0x00,
@@ -64,7 +64,7 @@ public class OnionApiParserImplTest {
 
         derKey = new byte[tmp.length];
         // Java has signed bytes => To specify values > 127 we have to use this method
-        // As this is only a test case, performance is no issue
+        // As this is only a RpsPeerParsedMessage case, performance is no issue
         for(int i = 0; i < tmp.length; ++i) {
             derKey[i] = (byte)tmp[i];
         }

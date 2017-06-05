@@ -5,7 +5,7 @@ import org.junit.Test;
 
 /**
  * Created by Christoph Rudolf on 25.05.17.
- * Additional test cases by Marko Dorfhuber(PraMiD) on 28.05.17.
+ * Additional RpsPeerParsedMessage cases by Marko Dorfhuber(PraMiD) on 28.05.17.
  */
 public class VoidphoneParserTest {
     private static VoidphoneParser prs;

@@ -1,6 +1,7 @@
 package de.tum.in.net.group17.onion.parser;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * Implementation that provides common methods used among all parser
@@ -25,6 +26,7 @@ public class VoidphoneParser {
             throw new ParsingException("Packet too long!");
 
         ByteBuffer buffer = ByteBuffer.wrap(message);
+        buffer.order(ByteOrder.BIG_ENDIAN);
         if((int)buffer.getShort(0) != message.length)
             throw new ParsingException("Package size does not match size field in header!");
     }
@@ -38,6 +40,7 @@ public class VoidphoneParser {
      */
     protected void checkType(byte[] message, MessageType expectedType) {
         ByteBuffer buffer = ByteBuffer.wrap(message);
+        buffer.order(ByteOrder.BIG_ENDIAN);
         MessageType actualType = MessageType.valueOf(buffer.getShort(2));
         if(actualType.getValue() != expectedType.getValue())
             throw new ParsingException("Unexpected message. Have: " + actualType.getValue() +
@@ -56,19 +59,10 @@ public class VoidphoneParser {
      */
     protected MessageType extractType(byte[] message) {
         ByteBuffer buffer = ByteBuffer.wrap(message);
-        MessageType t = MessageType.valueOf(buffer.getShort(2));
-        if(t == null)
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        MessageType type = MessageType.valueOf(buffer.getShort(2));
+        if(type == null)
             throw new ParsingException("Unknown message type! Have: " + buffer.getShort(2));
-        return t;
-    }
-
-    /**
-     * Creates a parsed message on behalf of the inheriting parsers in order to set the constructor of ParsedMessage to
-     * a lower visibility.
-     * @param message The raw message data.
-     * @return A ParsedMessage
-     */
-    protected ParsedMessage createParsedMessage(byte[] message) {
-        return new ParsedMessage(message);
+        return type;
     }
 }

@@ -1,13 +1,15 @@
 package de.tum.in.net.group17.onion.parser.rps;
 
-import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.VoidphoneParser;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Primitive;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -27,13 +29,7 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
      * The method throws and ParsingException on every parse error!
      */
     public ParsedMessage buildRpsQueryMsg() {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-
-        buffer.putShort((short)4);
-        buffer.putShort((short)MessageType.RPS_QUERY.getValue());
-
-        return createParsedMessage(buffer.array());
+        return new RpsQueryParsedMessage();
     }
 
     /**
@@ -43,7 +39,6 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
      */
     public ParsedMessage parseMsg(byte[] data) {
         checkSize(data); // Throws an exception if an error occurs
-        ByteBuffer buffer = ByteBuffer.wrap(data);
 
         switch(extractType(data)) {
             case RPS_PEER:
@@ -61,24 +56,40 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
      * @return RpsParsedObject of type RPS_MSG_TYPE.RPS_PEER if the packet is a valid RPS PEER message.
      */
     private ParsedMessage parseRpsPeerMsg(byte[] data) {
+        InetAddress ipAddress;
+        ASN1Primitive key;
         if (data.length < 13) // Contains header, port, res, IP address (IPv4 here!) and key (No length known)
             throw new ParsingException("Packet is too short to contain a header, an IP and a hostkey!");
 
         ByteBuffer buffer = ByteBuffer.wrap(data);
-        // TODO: We assume to have IPv4 addresses -> Change to handle both v4 and v6 if we know how to do this
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        buffer.position(4);
+        boolean isIpv4 = true;  // TODO: Check flag for v4 or v6 address
+        try {
+            if (isIpv4) {
+                byte[] addr = new byte[4];
+                buffer.get(addr, 0, 4);
+                ipAddress = Inet4Address.getByAddress(addr);
+            } else {
+                byte[] addr = new byte[16];
+                buffer.get(addr, 0, 16);
+                ipAddress = Inet6Address.getByAddress(addr);
+            }
+        } catch(UnknownHostException e) {
+            //Can not happen, but throw execption to avoid compiler warnings
+            throw new ParsingException("Invalid IP address!");
+        }
 
-        // We do not have to check validity of the given IP address: Only some random bits for us.
-
-        byte[] key = new byte[data.length - 12];
+        byte[] keyRaw = new byte[data.length - 12];
         buffer.position(12);
-        buffer.get(key);
+        buffer.get(keyRaw);
 
         try {
-            new ASN1InputStream(new ByteArrayInputStream(key)).readObject();
+            key = (new ASN1InputStream(new ByteArrayInputStream(keyRaw)).readObject()).toASN1Primitive();
         } catch (IOException e) {
            throw new ParsingException("Invalid hostkey!");
         }
 
-        return createParsedMessage(data);
+        return new RpsPeerParsedMessage(key, ipAddress);
     }
 }

@@ -45,7 +45,7 @@ public class RpsParserTestImpl {
 
         ByteBuffer data = ByteBuffer.allocate(tmp.length);
         // Java has signed bytes => To specify values > 127 we have to use this method
-        // As this is only a test case, performance is no issue
+        // As this is only a RpsPeerParsedMessage case, performance is no issue
         data.putShort((short)tmp.length);
         for(int i = 2; i < tmp.length; ++i) {
             data.put(i, (byte)tmp[i]);
