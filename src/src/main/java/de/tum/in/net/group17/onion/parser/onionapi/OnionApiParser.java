@@ -28,7 +28,7 @@ public interface OnionApiParser {
      * @param sourceKey Key of the source host.
      * @return A ParsedMessage of creation was successful.
      */
-    ParsedMessage buildOnionTunnelIncomingMsg(int id, ASN1Primitive sourceKey);
+    ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey);
 
     /**
      * Create a OnionParseObject containing a ONION TUNNEL READY message with the given parameters.
@@ -37,7 +37,7 @@ public interface OnionApiParser {
      * @param destinationKey The destination host's key.
      * @return A ParsedMessage containing the message on success.
      */
-    ParsedMessage buildOnionTunnelReadyMsg(int id, ASN1Primitive destinationKey);
+    ParsedMessage buildOnionTunnelReadyMsg(int id, byte[] destinationKey);
 
     /**
      * Parse an incomning message to the Onion module.

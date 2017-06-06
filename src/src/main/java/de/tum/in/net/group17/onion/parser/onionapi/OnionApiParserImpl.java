@@ -43,16 +43,26 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * The host key is checked for validity.
      * This implementation throws an ParsingException on every error.
      */
-    public ParsedMessage buildOnionTunnelIncomingMsg(int id, ASN1Primitive sourceKey) {
+    public ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey) {
+        ASN1Primitive key;
+
         try {
-            int size = 8 + sourceKey.getEncoded().length; // Header, TunnelID and key
-            if (size > 65535)
-                throw new ParsingException("Message too large!");
+            key = new ASN1InputStream(new ByteArrayInputStream(sourceKey)).readObject().toASN1Primitive();
         } catch(IOException e) {
             throw new ParsingException("Invalid source key.");
         }
 
-        return new OnionTunnelIncomingParsedMessage(id, sourceKey);
+        try {
+            // Check the encoded version is more save => Maybe changes in length during the conversion
+            int size = 8 + key.getEncoded().length; // Header, TunnelID and key
+            if (size > 65535)
+                throw new ParsingException("Message too large!");
+        } catch(IOException e) {
+            // This should never happen..
+            throw new ParsingException("Invalid source key.");
+        }
+
+        return new OnionTunnelIncomingParsedMessage(id, key);
     }
 
     /**
@@ -61,16 +71,26 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * We check the destination key for validity.
      * This implementation throws an ParsingException on every error.
      */
-    public ParsedMessage buildOnionTunnelReadyMsg(int id, ASN1Primitive destinationKey) {
+    public ParsedMessage buildOnionTunnelReadyMsg(int id, byte[] destinationKey) {
+        ASN1Primitive key;
+
         try {
-            int size = 8 + destinationKey.getEncoded().length; // Header, TunnelID and destination key
+            key = new ASN1InputStream(new ByteArrayInputStream(destinationKey)).readObject().toASN1Primitive();
+        } catch(IOException e) {
+            throw new ParsingException("Invalid source key.");
+        }
+
+        try {
+            // Check the encoded version is more save => Maybe changes in length during the conversion
+            int size = 8 + key.getEncoded().length; // Header, TunnelID and key
             if (size > 65535)
                 throw new ParsingException("Message too large!");
         } catch(IOException e) {
-            throw new ParsingException("Invalid destination key!");
+            // This should not happen...
+            throw new ParsingException("Invalid source key.");
         }
 
-        return new OnionTunnelReadyParsedMessage(id, destinationKey);
+        return new OnionTunnelReadyParsedMessage(id, key);
     }
 
     /**
