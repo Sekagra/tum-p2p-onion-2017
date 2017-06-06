@@ -4,8 +4,11 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.VoidphoneParser;
 import de.tum.in.net.group17.onion.parser.MessageType;
-import de.tum.in.net.group17.onion.parser.ParsingException;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Primitive;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -18,17 +21,17 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     public ParsedMessage buildSessionStart(int requestId, byte[] hostkey) {
         int size = 12 + hostkey.length;
+        ASN1Primitive key;
+
         if(size > 65535)
             throw new ParsingException("Message too large!");
 
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.putShort((short)size);                                   // size
-        buffer.putShort(MessageType.AUTH_SESSION_START.getValue());     // AUTH SESSION START
-        buffer.putInt(0);                                               // reserved
-        buffer.putInt(requestId);                                       // request ID
-        buffer.put(hostkey);                                            // hostkey in DER format
-        return createParsedMessage(buffer.array());
+        try {
+            key = new ASN1InputStream(new ByteArrayInputStream(hostkey)).readObject().toASN1Primitive();
+            return new AuthSessionStartParsedMessage(requestId, key);
+        } catch(IOException e) {
+            throw new ParsingException("Invalid host key!");
+        }
     }
 
     /**
@@ -36,19 +39,18 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     public ParsedMessage buildSessionIncoming1(int requestId, byte[] hostkey, byte[] payload) {
         int size = 14 + hostkey.length + payload.length;
+        ASN1Primitive key;
+
         if(size > 65535)
             throw new ParsingException("Message too large!");
 
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.putShort((short)size);                                           // size
-        buffer.putShort(MessageType.AUTH_SESSION_INCOMING_HS1.getValue());      // AUTH SESSION START
-        buffer.putInt(0);                                                       // reserved
-        buffer.putInt(requestId);                                               // request ID
-        buffer.putShort((short)hostkey.length);                                 // hostkey size
-        buffer.put(hostkey);                                                    // hostkey in DER format
-        buffer.put(payload);                                                    // incoming payload from other onionapi auth
-        return createParsedMessage(buffer.array());
+        try {
+            key = new ASN1InputStream(new ByteArrayInputStream(hostkey)).readObject().toASN1Primitive();
+            return new AuthSessionIncomingHs1ParsedMessage(requestId, key, payload);
+        } catch(IOException e) {
+            throw new ParsingException("Invalid host key!");
+        }
+
     }
 
     /**
@@ -59,115 +61,139 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         if(size > 65535)
             throw new ParsingException("Message too large!");
 
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.putShort((short)size);                                           // size
-        buffer.putShort(MessageType.AUTH_SESSION_INCOMING_HS2.getValue());      // AUTH SESSION START
-        buffer.putShort((short)0);                                              // reserved
-        buffer.putShort(sessionId);                                             // reserved
-        buffer.put(payload);                                                    // incoming payload from other onionapi auth
-        return createParsedMessage(buffer.array());
+        return new AuthSessionIncomingHs2ParsedMessage(sessionId, requestId, payload);
     }
 
     /**
      * @inheritDoc
      */
     public ParsedMessage buildLayerEncrypt(int requestId, short[] sessionIds, byte[] payload) {
-        return buildLayerCryptMessage(MessageType.AUTH_LAYER_ENCRYPT, requestId, sessionIds, payload);
+        checkSizeCryptMessage(requestId, sessionIds, payload);
+
+        return new AuthLayerEncryptParsedMessage(requestId, sessionIds, payload);
     }
 
     /**
      * @inheritDoc
      */
     public ParsedMessage buildLayerDecrypt(int requestId, short[] sessionIds, byte[] payload) {
-        return buildLayerCryptMessage(MessageType.AUTH_LAYER_DECRYPT, requestId, sessionIds, payload);
+        checkSizeCryptMessage(requestId, sessionIds, payload);
+
+        return new AuthLayerDecryptParsedMessage(requestId, sessionIds, payload);
     }
 
-    /**
-     * @inheritDoc
-     */
-    private ParsedMessage buildLayerCryptMessage(MessageType type, int requestId, short[] sessionIds, byte[] payload) {
-        // calculate whole size
-        // header + reserved + layer number + request ID + session IDs + payload
-        int size = 12 + 2 * sessionIds.length + payload.length;
+    private void checkSizeCryptMessage(int requestId, short[] sessionIds, byte[] payload) {
+        int size;
+
+        if(sessionIds == null || sessionIds.length > 255 || sessionIds.length < 1)
+            throw new ParsingException("Invalid number of session IDs!");
+
+        size = 12 + 2 * sessionIds.length + payload.length;
         if(size > 65535)
             throw new ParsingException("Message too large!");
-
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.putShort((short)size);                   // size
-        buffer.putShort(type.getValue());               // AUTH SESSION ENCRYPT/DECRYPT
-        buffer.putShort((short)0);                      // reserved
-        buffer.putChar((char)sessionIds.length);        // session ID
-        buffer.putChar((char)0);                        // reserved
-        buffer.putInt(requestId);                       // request ID
-        for (int i=0; i < sessionIds.length; i++) {     // session ID 1 ...
-            buffer.putShort(sessionIds[i]);             // ... session ID n
-        }
-        buffer.put(payload);                            // encrypted payload
-        return createParsedMessage(buffer.array());
     }
 
     /**
      * @inheritDoc
      */
     public ParsedMessage buildSessionClose(short sessionId) {
-        int size = 8; // Size is static => We do not have to check it
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.putShort((short)size);                                   // size
-        buffer.putShort(MessageType.AUTH_SESSION_CLOSE.getValue());     // AUTH SESSION CLOSE
-        buffer.putShort((short)0);                                      // reserved
-        buffer.putShort(sessionId);                                     // session ID
-        return createParsedMessage(buffer.array());
+        return new AuthSessionCloseParsedMessage(sessionId);
     }
 
     /**
      * Confirm the size and type matching the specification of the AUTH_SESSION_HS1 message.
+     *
      * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity, null if the format is violated.
+     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violations.
      */
     private ParsedMessage parseSessionHandshake1(byte[] message) {
-        MessageType type = MessageType.AUTH_SESSION_HS1;
-        checkSize(message); // Throws an exception if an error occurs
-        checkType(message, type); // Will throw a parsing exception on any error
-        return createParsedMessage(message);
+        ByteBuffer buffer;
+        byte[] payload = new byte[message.length - 12];
+        int requestId;
+        short sessId;
+
+        // No explicit length known
+        checkType(message, MessageType.AUTH_SESSION_HS1); // Will throw a parsing exception on any error
+
+        buffer = ByteBuffer.wrap(message);
+        sessId = buffer.getShort(6);
+        requestId = buffer.getInt(8);
+
+        buffer.position(12);
+        payload = new byte[message.length - 12];
+        buffer.get(payload);
+
+        return new AuthSessionHs1ParsedMessage(sessId, requestId, payload);
     }
 
     /**
      * Confirm the size and type matching the specification of the AUTH_SESSION_HS2 message.
+     *
      * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity, null if the format is violated.
+     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violations.
      */
     private ParsedMessage parseSessionHandshake2(byte[] message) {
-        MessageType type = MessageType.AUTH_SESSION_HS2;
-        checkSize(message); // Throws an exception if an error occurs
-        checkType(message, type); // Will throw a parsing exception on any error
-        return createParsedMessage(message);
+        ByteBuffer buffer;
+        byte[] payload = new byte[message.length - 12];
+        int requestId;
+        short sessId;
+
+        // No explicit length known
+        checkType(message, MessageType.AUTH_SESSION_HS2); // Will throw a parsing exception on any error
+
+        buffer = ByteBuffer.wrap(message);
+        sessId = buffer.getShort(6);
+        requestId = buffer.getInt(8);
+
+        buffer.position(12);
+        buffer.get(payload);
+
+        return new AuthSessionHs2ParsedMessage(sessId, requestId, payload);
     }
 
     /**
      * Confirm the size and type matching the specification of the AUTH_LAYER_ENCRYPT_RESP message.
+     *
      * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity, null if the format is violated.
+     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violations.
      */
     private ParsedMessage parseLayerEncryptResponse(byte[] message) {
-        MessageType type = MessageType.AUTH_LAYER_ENCRYPT_RESP;
-        checkSize(message); // Throws an exception if an error occurs
-        checkType(message, type); // Will throw a parsing exception on any error
-        return createParsedMessage(message);
+        return parseLayerCryptResponse(MessageType.AUTH_LAYER_ENCRYPT_RESP, message);
     }
 
     /**
      * Confirm the size and type matching the specification of the AUTH_LAYER_DECRYPT_RESP message.
+     *
      * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity, null if the format is violated.
+     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violations.
      */
     private ParsedMessage parseLayerDecryptResponse(byte[] message) {
-        MessageType type = MessageType.AUTH_LAYER_DECRYPT_RESP;
-        checkSize(message); // Throws an exception if an error occurs
+        return parseLayerCryptResponse(MessageType.AUTH_LAYER_DECRYPT_RESP, message);
+    }
+
+    /**
+     * Parse a AUTH_LAYER_EN-/DECRYPT_RESP message.
+     *
+     * @param type Is this a decrypt/encrypt message?
+     * @param message The received message.
+     * @return The parsed message to confirm its validity; This method throws a ParsingException on every format violations.
+     */
+    private ParsedMessage parseLayerCryptResponse(MessageType type, byte[] message) {
+        ByteBuffer buffer;
+        byte[] payload;
+        int requestId;
+
         checkType(message, type); // Will throw a parsing exception on any error
-        return createParsedMessage(message);
+
+        buffer = ByteBuffer.wrap(message);
+        requestId = buffer.getInt(8);
+        payload = new byte[message.length - 12];
+        buffer.position(12);
+        buffer.get(payload);
+
+        return (type == MessageType.AUTH_LAYER_ENCRYPT_RESP ?
+                new AuthLayerEncryptResParsedMessage(requestId, payload) :
+                new AuthLayerDecryptResParsedMessage(requestId, payload));
     }
 
     /**

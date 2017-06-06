@@ -1,5 +1,6 @@
 package de.tum.in.net.group17.onion.parser.rps;
 
+import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.VoidphoneParser;
@@ -58,20 +59,24 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
     private ParsedMessage parseRpsPeerMsg(byte[] data) {
         InetAddress ipAddress;
         ASN1Primitive key;
+        ByteBuffer buffer;
+        byte[] addr;
+
         if (data.length < 13) // Contains header, port, res, IP address (IPv4 here!) and key (No length known)
             throw new ParsingException("Packet is too short to contain a header, an IP and a hostkey!");
+        checkType(data, MessageType.RPS_PEER); // Will throw a parsing exception on any error
 
-        ByteBuffer buffer = ByteBuffer.wrap(data);
+        buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.position(4);
         boolean isIpv4 = true;  // TODO: Check flag for v4 or v6 address
         try {
             if (isIpv4) {
-                byte[] addr = new byte[4];
+                addr = new byte[4];
                 buffer.get(addr, 0, 4);
                 ipAddress = Inet4Address.getByAddress(addr);
             } else {
-                byte[] addr = new byte[16];
+                addr = new byte[16];
                 buffer.get(addr, 0, 16);
                 ipAddress = Inet6Address.getByAddress(addr);
             }

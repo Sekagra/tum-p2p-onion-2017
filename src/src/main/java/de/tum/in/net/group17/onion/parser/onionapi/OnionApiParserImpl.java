@@ -104,12 +104,13 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @return A ParsedMessage on success.
      */
     private ParsedMessage parseOnionCoverMsg(byte[] data) {
+        ByteBuffer buffer;
+
         if(data.length != 8)
             throw new ParsingException("An ONION COVER message must have exactly 8 bytes!");
+        checkType(data, MessageType.ONION_COVER); // Will throw a parsing exception on any error
 
-        // Private method -> We know that this is a cover message
-
-        ByteBuffer buffer = ByteBuffer.wrap(data);
+        buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.position(2);
         buffer.position(4);
@@ -125,9 +126,13 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @return An ParsedMessage if parsing was successful.
      */
     private ParsedMessage parseOnionTunnelBuildMsg(byte[] data) {
-        ByteBuffer buffer = ByteBuffer.wrap(data);
+        ByteBuffer buffer;
+
+        checkType(data, MessageType.ONION_TUNNEL_BUILD); // Will throw a parsing exception on any error
+        // Length is unknown => No check possible
+
+        buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.BIG_ENDIAN);
-        // Private method -> We know that this is a build message
 
         buffer.position(6);
         short port = buffer.getShort();
@@ -166,12 +171,12 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @return A ParsedMessage if the packet is valid.
      */
     private ParsedMessage parseOnionTunnelDestroyMsg(byte[] data) {
-        // Private method -> We know that this is a destroy message
-
+        ByteBuffer buffer;
         if(data.length != 8)
             throw new ParsingException("A ONION TUNNEL DESTROY message must have exactly 8 bytes!");
+        checkType(data, MessageType.ONION_TUNNEL_DESTROY); // Will throw a parsing exception on any error
 
-        ByteBuffer buffer = ByteBuffer.wrap(data);
+        buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.position(4);
         int tunnelId = buffer.getInt();
@@ -187,11 +192,13 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @return A ParsedMessage if the ONION TUNNEL DATA packet is valid.
      */
     private ParsedMessage parseOnionTunnelDataMsg(byte[] data) {
-        // Private method -> We know that this is a data message
+        ByteBuffer buffer;
+
         if(data.length < 9)
             throw new ParsingException("The packet is too short to contain any data!");
+        checkType(data, MessageType.ONION_TUNNEL_DATA); // Will throw a parsing exception on any error
 
-        ByteBuffer buffer = ByteBuffer.wrap(data);
+        buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.BIG_ENDIAN);
         // TODO: Change to version without .position in every call -> Nicer to read
         int tunnelId = buffer.getShort();
