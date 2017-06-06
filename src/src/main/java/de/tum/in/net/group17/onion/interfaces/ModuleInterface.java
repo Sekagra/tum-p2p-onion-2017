@@ -32,18 +32,6 @@ public abstract class ModuleInterface {
     }
 
     protected Channel connect(ChannelHandler handler, InetAddress host, int port) throws InterruptedException {
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
-        try {
-            Bootstrap b = new Bootstrap();
-            b.group(workerGroup);
-            b.channel(NioSocketChannel.class);
-            b.option(ChannelOption.SO_KEEPALIVE, true);
-            b.handler(handler);
-
-            // Start client, wait for the connection and return the channel
-            return b.connect(host, port).sync().channel();
-        } finally {
-            //workerGroup.shutdownGracefully();
-        }
+        return null;
     }
 }

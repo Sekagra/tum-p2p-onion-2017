@@ -22,8 +22,4 @@ public class ConfigurationProvider {
         }
         return null;
     }
-
-    public int getAuthModuleReponsePort() {
-        return 9002;
-    }
 }

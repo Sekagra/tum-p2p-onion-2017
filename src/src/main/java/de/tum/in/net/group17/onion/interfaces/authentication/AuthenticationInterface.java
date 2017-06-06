@@ -11,30 +11,24 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
  * Created by Christoph Rudolf on 27.05.17.
  */
 public interface AuthenticationInterface {
-
-    /**
-     * Triggers the interface to build a connection to the module it is targeted to interface with.
-     */
-    void listen();
-
     /**
      * Issue the start of a new session on the Onion Authentication module.
      * @param peer The peer to start a new session with.
-     * @param callback A callback function to be called once an answers has been retrieved.
+     * @param callback A callback function to be called once an answer has been retrieved.
      */
     void startSession(Peer peer, AuthResult callback);
 
     /**
      * Forward a received handshake initiation packet to the Onion module.
      * @param peer The peer with whom a session is initiated.
-     * @param callback A callback function to be called once an answers has been retrieved.
+     * @param callback A callback function to be called once an answer has been retrieved.
      */
     void forwardIncomingHandshake1(Peer peer, ParsedMessage hs1, AuthResult callback);
 
     /**
      * Forward a received handshake initiation packet to the Onion module.
      * @param peer The peer with whom a session is initiated.
-     * @param callback A callback function to be called once an answers has been retrieved.
+     * @param callback A callback function to be called once an answer has been retrieved.
      */
     void forwardIncomingHandshake2(Peer peer, ParsedMessage hs2, AuthResult callback);
 

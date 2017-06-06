@@ -7,8 +7,6 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParserImpl;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 /**
  * Created by Christoph Rudolf on 27.05.17.
  */
