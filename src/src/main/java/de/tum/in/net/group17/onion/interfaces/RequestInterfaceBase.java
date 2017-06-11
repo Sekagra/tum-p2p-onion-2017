@@ -1,5 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces;
 
+import de.tum.in.net.group17.onion.model.results.RawRequestResult;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -15,7 +16,7 @@ import java.net.InetAddress;
  * Provides a wrapping and basic handling of netty.
  * Created by Christoph Rudolf on 05.06.17.
  */
-public class RequestInterfaceBase {
+public abstract class RequestInterfaceBase {
     private Channel channel;
     protected InetAddress host;
     protected int port;

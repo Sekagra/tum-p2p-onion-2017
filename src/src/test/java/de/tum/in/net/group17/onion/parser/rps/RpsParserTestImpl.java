@@ -27,7 +27,7 @@ public class RpsParserTestImpl {
     @Test
     public void testRpsQueryMessage() {
         ParsedMessage obj = prs.buildRpsQueryMsg();
-        byte[] data = obj.getData();
+        byte[] data = obj.serialize();
         byte[] compareData = {0, 4, 2, 28};
 
         Assert.assertArrayEquals("Parsed object contains invalid data", compareData, data);
@@ -52,13 +52,13 @@ public class RpsParserTestImpl {
         }
 
         ParsedMessage obj = prs.parseMsg(data.array());
-        Assert.assertArrayEquals("Parsed object contains invalid data!", data.array(), obj.getData());
+        Assert.assertArrayEquals("Parsed object contains invalid data!", data.array(), obj.serialize());
         Assert.assertEquals("Invalid message type!", MessageType.RPS_PEER, obj.getType());
     }
 
     @Test(expected=ParsingException.class)
     public void testParseOutgoingMessage() {
-        prs.parseMsg(prs.buildRpsQueryMsg().getData());
+        prs.parseMsg(prs.buildRpsQueryMsg().serialize());
     }
 
     @Test(expected=ParsingException.class)

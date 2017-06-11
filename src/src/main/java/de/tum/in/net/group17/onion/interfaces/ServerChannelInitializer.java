@@ -1,20 +1,19 @@
 package de.tum.in.net.group17.onion.interfaces;
 
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
-
 /**
- * Initializer for a Netty client parsing messages by their length field
- * Created by Christoph Rudolf on 06.06.17.
+ * Initializer for a Netty server parsing messages by their length field.
+ * Created by Christoph Rudolf on 11.06.17.
  */
-public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> {
-    private SimpleChannelInboundHandler handler;
+public class ServerChannelInitializer extends ChannelInitializer<SocketChannel> {
+    private ChannelHandler handler;
 
-    public ClientChannelInitializer(SimpleChannelInboundHandler handler) {
+    public ServerChannelInitializer(ChannelHandler handler) {
         this.handler = handler;
     }
 

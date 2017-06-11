@@ -9,6 +9,9 @@ import java.net.UnknownHostException;
  * Created by Christoph Rudolf on 27.05.17.
  */
 public class ConfigurationProvider {
+    public int getOnionApiPort() {
+        return 9002;
+    }
 
     public int getAuthModuleRequestPort() {
         return 9001;

@@ -1,6 +1,5 @@
-package de.tum.in.net.group17.onion.interfaces;
+package de.tum.in.net.group17.onion.model.results;
 
-import de.tum.in.net.group17.onion.parser.ParsedMessage;
 
 /**
  * This acts as a template for callbacks given to any server interface.

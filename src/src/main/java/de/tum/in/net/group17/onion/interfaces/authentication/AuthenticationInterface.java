@@ -1,7 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.authentication;
 
-import de.tum.in.net.group17.onion.interfaces.RawRequestResult;
-import de.tum.in.net.group17.onion.interfaces.RequestResult;
+import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;

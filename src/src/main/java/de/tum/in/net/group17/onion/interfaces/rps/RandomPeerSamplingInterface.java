@@ -1,6 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.rps;
 
-import de.tum.in.net.group17.onion.interfaces.RequestResult;
+import de.tum.in.net.group17.onion.model.results.RequestResult;
 
 /**
  * This interface is responsible for maintaining the connection to the RPS module.

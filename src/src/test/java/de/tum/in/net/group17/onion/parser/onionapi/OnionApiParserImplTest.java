@@ -77,25 +77,25 @@ public class OnionApiParserImplTest {
                 0x02, 0x36, 0x00, 0x00,
                 0x01, 0x01, 0x01, 0x01
         };
-        ParsedMessage generated = prs.buildOnionErrorMsg(MessageType.ONION_COVER.getValue(), 0x01010101);
+        ParsedMessage generated = prs.buildOnionErrorMsg(MessageType.ONION_COVER, 0x01010101);
 
-        Assert.assertArrayEquals(expected, generated.getData());
+        Assert.assertArrayEquals(expected, generated.serialize());
         Assert.assertEquals(MessageType.ONION_ERROR.getValue(), generated.getType().getValue());
     }
 
     @Test(expected= ParsingException.class)
     public void testInvalidRequest() {
-        prs.buildOnionErrorMsg(MessageType.AUTH_LAYER_DECRYPT.getValue(), 0x01010101);
+        prs.buildOnionErrorMsg(MessageType.AUTH_LAYER_DECRYPT, 0x01010101);
     }
 
     @Test
     public void testBuildOnionTunnelIncoming() {
         ParsedMessage generated = prs.buildOnionTunnelIncomingMsg(0x01010101, derKey);
-        ByteBuffer buf = ByteBuffer.wrap(generated.getData());
+        ByteBuffer buf = ByteBuffer.wrap(generated.serialize());
         byte[] containedKey = new byte[derKey.length];
 
         Assert.assertEquals(MessageType.ONION_TUNNEL_INCOMING.getValue(), generated.getType().getValue());
-        Assert.assertEquals(generated.getData().length, buf.getShort());
+        Assert.assertEquals(generated.serialize().length, buf.getShort());
         Assert.assertEquals(0x01010101, buf.getInt(4));
 
         buf.position(8);
@@ -113,11 +113,11 @@ public class OnionApiParserImplTest {
     @Test
     public void testBuildOnionTunnelReady() {
         ParsedMessage generated = prs.buildOnionTunnelReadyMsg(0x01010101, derKey);
-        ByteBuffer buf = ByteBuffer.wrap(generated.getData());
+        ByteBuffer buf = ByteBuffer.wrap(generated.serialize());
         byte[] containedKey = new byte[derKey.length];
 
         Assert.assertEquals(MessageType.ONION_TUNNEL_READY.getValue(), generated.getType().getValue());
-        Assert.assertEquals(generated.getData().length, buf.getShort());
+        Assert.assertEquals(generated.serialize().length, buf.getShort());
         Assert.assertEquals(0x01010101, buf.getInt(4));
 
         buf.position(8);
@@ -157,7 +157,7 @@ public class OnionApiParserImplTest {
                 0x10, 0x10, 0x00, 0x00 };
         ParsedMessage parsed = prs.parseMsg(data);
         Assert.assertEquals(MessageType.ONION_COVER.getValue(), parsed.getType().getValue());
-        Assert.assertEquals(data, parsed.getData());
+        Assert.assertEquals(data, parsed.serialize());
     }
 
     @Test
@@ -168,7 +168,7 @@ public class OnionApiParserImplTest {
                 0x11, 0x11, 0x11, 0x11 };
         ParsedMessage parsed = prs.parseMsg(data);
         Assert.assertEquals(MessageType.ONION_TUNNEL_DATA.getValue(), parsed.getType().getValue());
-        Assert.assertEquals(data, parsed.getData());
+        Assert.assertEquals(data, parsed.serialize());
     }
 
     @Test
@@ -178,7 +178,7 @@ public class OnionApiParserImplTest {
                 0x01, 0x01, 0x01, 0x01 };
         ParsedMessage parsed = prs.parseMsg(data);
         Assert.assertEquals(MessageType.ONION_TUNNEL_DESTROY.getValue(), parsed.getType().getValue());
-        Assert.assertEquals(data, parsed.getData());
+        Assert.assertEquals(data, parsed.serialize());
     }
 
     @Test
@@ -194,6 +194,6 @@ public class OnionApiParserImplTest {
         data[1] = (byte)data.length;
         ParsedMessage parsed = prs.parseMsg(data);
         Assert.assertEquals(MessageType.ONION_TUNNEL_BUILD.getValue(), parsed.getType().getValue());
-        Assert.assertEquals(data, parsed.getData());
+        Assert.assertEquals(data, parsed.serialize());
     }
 }
