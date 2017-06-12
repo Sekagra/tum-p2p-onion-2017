@@ -21,7 +21,7 @@ public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> 
     @Override
     protected void initChannel(SocketChannel socketChannel) throws Exception {
         ChannelPipeline pipeline = socketChannel.pipeline();
-        pipeline.addLast("framer", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 0));
+        pipeline.addLast("framer", new LengthFieldBasedFrameDecoder(65535, 0, 2, -2, 0));
         pipeline.addLast("handler", this.handler);
     }
 }
