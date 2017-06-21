@@ -196,6 +196,15 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
                 new AuthLayerDecryptResParsedMessage(requestId, payload));
     }
 
+    private ParsedMessage parseAuthErrorRespone(byte[] message) {
+        ByteBuffer buffer;
+
+        checkType(message, MessageType.AUTH_ERROR); // Will throw an parsing exception on every error
+
+        buffer = ByteBuffer.wrap(message);
+        return new AuthErrorParsedMessage(buffer.getInt(8));
+    }
+
     /**
      * @inheritDoc
      */
@@ -211,6 +220,8 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
                 return parseLayerEncryptResponse(message);
             case AUTH_LAYER_DECRYPT_RESP:
                  return parseLayerDecryptResponse(message);
+            case AUTH_ERROR:
+                return parseAuthErrorRespone(message);
             default:
                 throw new ParsingException("Not able to parse message. Type: " + extractType(message).getValue() + "!");
         }

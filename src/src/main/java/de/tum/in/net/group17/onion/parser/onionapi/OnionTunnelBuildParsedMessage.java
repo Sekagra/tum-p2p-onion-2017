@@ -16,7 +16,6 @@ public class OnionTunnelBuildParsedMessage extends ParsedMessage {
     private final short port;
     private final InetAddress ipAddress;
     private final ASN1Primitive destinationKey;
-    private final boolean isIpv4;
 
     /**
      * Create a new ONION TUNNEL BUILD message.
@@ -30,7 +29,6 @@ public class OnionTunnelBuildParsedMessage extends ParsedMessage {
         this.port = port;
         this.ipAddress = address;
         this.destinationKey = dstKey;
-        this.isIpv4 = address instanceof Inet4Address;
     }
 
     /**
@@ -50,7 +48,7 @@ public class OnionTunnelBuildParsedMessage extends ParsedMessage {
      * @inheritDoc
      */
     public short getSize() {
-        return (short)(8 + getRawKey().length + (isIpv4 ? 4 : 16));
+        return (short)(8 + getRawKey().length + (isIpv4() ? 4 : 16));
     }
 
     /**
@@ -86,6 +84,15 @@ public class OnionTunnelBuildParsedMessage extends ParsedMessage {
      */
     public ASN1Primitive getDestinationKey() {
         return destinationKey;
+    }
+
+    /**
+     * Return if this message contains an IPv4 address.
+     *
+     * @return true, if the message contains an IPv4 address.
+     */
+    public boolean isIpv4() {
+        return ipAddress instanceof Inet4Address;
     }
 
     /**

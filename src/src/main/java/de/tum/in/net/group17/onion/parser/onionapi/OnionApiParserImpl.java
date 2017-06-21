@@ -9,6 +9,8 @@ import org.bouncycastle.asn1.ASN1Primitive;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -147,6 +149,8 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      */
     private ParsedMessage parseOnionTunnelBuildMsg(byte[] data) {
         ByteBuffer buffer;
+        InetAddress address;
+        byte[] addrRaw;
 
         checkType(data, MessageType.ONION_TUNNEL_BUILD); // Will throw a parsing exception on any error
         // Length is unknown => No check possible
@@ -154,19 +158,23 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
         buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.BIG_ENDIAN);
 
-        buffer.position(6);
-        short port = buffer.getShort();
-
-        // TODO: Add support for IPv6 AND IPv4 parsing!
-        byte[] addressRaw = new byte[4];
-        buffer.position(8);
-        buffer.get(addressRaw);
-        InetAddress address;
-
+        short port = buffer.getShort(6);
         try {
-            address = InetAddress.getByAddress(addressRaw);
+            // TODO: We simply assume that the bit is available here to -> Ask Tree
+            if ((buffer.getShort(4) & (short)0x0001) != 0) {
+                buffer.position(4);
+                addrRaw = new byte[4];
+                buffer.get(addrRaw, 0, 4);
+                address = Inet4Address.getByAddress(addrRaw);
+            } else {
+                buffer.position(4);
+                addrRaw = new byte[16];
+                buffer.get(addrRaw, 0, 16);
+                address = Inet6Address.getByAddress(addrRaw);
+            }
         } catch(UnknownHostException e) {
-            throw new ParsingException("Cannot parse the IP address!");
+            //Can not happen, but throw exception to avoid compiler warnings
+            throw new ParsingException("Invalid IP address!");
         }
 
         byte[] keyRaw = new byte[data.length - 12];

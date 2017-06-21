@@ -68,20 +68,22 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
 
         buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.position(4);
-        boolean isIpv4 = true;  // TODO: Check flag for v4 or v6 address
+
+        short port= buffer.getShort(4);
         try {
-            if (isIpv4) {
+            if ((buffer.getShort(6) & (short)0x0001) != 0) {
+                buffer.position(4);
                 addr = new byte[4];
                 buffer.get(addr, 0, 4);
                 ipAddress = Inet4Address.getByAddress(addr);
             } else {
+                buffer.position(4);
                 addr = new byte[16];
                 buffer.get(addr, 0, 16);
                 ipAddress = Inet6Address.getByAddress(addr);
             }
         } catch(UnknownHostException e) {
-            //Can not happen, but throw execption to avoid compiler warnings
+            //Can not happen, but throw exception to avoid compiler warnings
             throw new ParsingException("Invalid IP address!");
         }
 
@@ -95,6 +97,6 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
            throw new ParsingException("Invalid hostkey!");
         }
 
-        return new RpsPeerParsedMessage(key, ipAddress);
+        return new RpsPeerParsedMessage(port, key, ipAddress);
     }
 }

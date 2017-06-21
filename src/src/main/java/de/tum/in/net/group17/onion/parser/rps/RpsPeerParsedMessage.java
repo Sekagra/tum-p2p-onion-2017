@@ -15,19 +15,20 @@ import java.nio.ByteBuffer;
 public class RpsPeerParsedMessage extends ParsedMessage {
     private final ASN1Primitive key;
     private final InetAddress ipAddress;
-    private final boolean isIpv4;
+    private final short port;
 
     /**
      * Create a new RPS PEER message from the given parameters.
      * This object may only be created from a corresponding parser after checking all parameters in the package.
      *
+     * @param port The port used for this peer.
      * @param key Key contained in the packet.
      * @param addr Address contained in the packet.
      */
-    protected RpsPeerParsedMessage(ASN1Primitive key, InetAddress addr) {
+    protected RpsPeerParsedMessage(short port, ASN1Primitive key, InetAddress addr) {
         this.key = key;
         this.ipAddress = addr;
-        this.isIpv4 = addr instanceof Inet4Address;
+        this.port = port;
     }
 
     /**
@@ -45,7 +46,7 @@ public class RpsPeerParsedMessage extends ParsedMessage {
      * @inheritDoc
      */
     public short getSize() {
-        short ipLen = (short)(isIpv4 ? 4 : 16);
+        short ipLen = (short)(isIpv4() ? 4 : 16);
         return (short) (4 + getKeyRaw().length + ipLen);
     }
 
@@ -71,6 +72,15 @@ public class RpsPeerParsedMessage extends ParsedMessage {
     }
 
     /**
+     * Return the port contained in this packet.
+     *
+     * @return The port contained in this packet.
+     */
+    public short getPort() {
+        return port;
+    }
+
+    /**
      * Return the key stored in this packet.
      *
      * @return DER formatted key.
@@ -86,5 +96,14 @@ public class RpsPeerParsedMessage extends ParsedMessage {
      */
     public InetAddress getAddress() {
         return this.ipAddress;
+    }
+
+    /**
+     * Return if this message contains an IPv4 address.
+     *
+     * @return true, if this message contains an IPv4 address.
+     */
+    public boolean isIpv4() {
+        return ipAddress instanceof Inet4Address;
     }
 }
