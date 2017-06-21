@@ -1,0 +1,87 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{collar}
+\tikzpeople@addcolorkey{cross}
+
+\newcommand{\tikzpeople@priest@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@priest@paintcross
+	\tikzpeople@priest@paintcollar
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthair
+	\tikzpeople@priest@painthat
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@priest@definecolors}{
+	\definecolor{skin}{rgb}{0.84,0.58,0.24}
+	\definecolor{shirt}{rgb}{0,0,0}
+	\definecolor{collar}{RGB}{232,232,232}
+	\definecolor{cross}{rgb}{1,0.8,0.09}
+	\definecolor{hair}{rgb}{0.45,0.24,0}
+	\definecolor{hat}{rgb}{0.8,0.11,0}
+}
+
+\newcommand{\tikzpeople@priest@definestyles}{
+	\tikzset{
+		collar/.style  ={color=\tikzpeople@collar!80,top color=\tikzpeople@collar!30, bottom color=\tikzpeople@collar!90,shading angle=45},
+		cross/.style   ={color=\tikzpeople@cross, top color=\tikzpeople@cross!80, bottom color=\tikzpeople@cross,shading angle=45},
+		necklace/.style={color=\tikzpeople@cross,dash pattern=on 0.1*\scalingfactor off 0.3*\scalingfactor,line width=0.15*\scalingfactor,cap=round}
+	}
+}
+
+\newcommand{\tikzpeople@priest@painthat}{
+	\draw[hat] (50:3pt) arc (50:140:3pt) to [out=340,in=210] (50:3pt);
+}
+
+\newcommand{\tikzpeople@priest@paintcollar}{
+	\draw[collar] 
+		(230:3.4pt|-2pt,0) -- (230:3.4pt) arc (230:317:3.2pt) -- +(0,0.8pt);
+	\draw[shirt] 
+		(227:3.2pt) -- +(0pt,-0.4pt) arc (227:280:3.2pt) -- +(0pt, 0.4pt) arc 
+		(280:227:3.2pt);
+	\draw[shirt]
+		(-40:3.2pt) -- +(0pt,-0.4pt) arc (-40:-70:3.2pt) -- +(0pt, 0.4pt) arc 
+		(-70:-40:3.2pt);
+}
+
+\newcommand{\tikzpeople@priest@paintcross}{
+	{
+		\pgftransformrotate{10}
+		\path[cross] (0.6pt,-7.2pt) -- (0.9pt,-7.2pt) -- (0.9pt,-6.3pt) -- 
+			(1.4pt,-6.3pt) -- (1.4pt,-6.0pt) -- (0.9pt,-6.0pt) -- (0.9pt,-5.5pt) -- 
+			(0.6pt,-5.5pt) -- (0.6pt,-6.0pt) -- (0.1pt,-6.0pt) -- (0.1pt,-6.3pt) --
+			(0.6pt,-6.3pt) -- (0.6pt,-7.2pt);
+	}
+	\begin{scope}
+		\clip
+			(-4.0pt,-8.0pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+			( 5.0pt,-7.0pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) .. 
+			(-4.0pt,-8.0pt);
+		\draw[necklace] (1.5pt,-5.3pt) .. controls (1.1pt,-5.2pt) and 
+			(-1.8pt,-4.0pt) .. (-2.6pt,-2.9pt);
+		\draw[necklace] ( 1.9pt,-5.3pt) .. controls ( 2.1pt,-4.9pt) and 
+			(2.8pt,-3.5pt) .. (2.9pt,-2.6pt);
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@priest@colors}{
+	shirt/200/{-1/-1}, hat/160/{-.25/1.5}, hair/180/{-.75/1}, skin/20/{.6/.7}, 
+	collar/0/{.15/.05}, cross/340/{.4/-.72}%
+}

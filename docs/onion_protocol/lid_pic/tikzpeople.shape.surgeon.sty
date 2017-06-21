@@ -1,0 +1,76 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{mask}
+
+\newcommand{\tikzpeople@surgeon@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@surgeon@paintshirtdetails
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthair
+	\tikzpeople@surgeon@painthat
+	\tikzpeople@surgeon@paintmask
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@surgeon@paintshirtdetails}{
+	\draw[shirt,thick,color=\tikzpeople@shirt,shading angle=90] 
+		(230:3pt) .. controls +(-0.4pt,-1.5pt) .. ++(0pt,-3pt) .. controls 
+		+(1.5pt,0.5pt) .. ++(3pt,0.2pt) .. controls +(0.5pt,0.4pt) ..	++(2pt,0.7pt) 
+		.. controls +(0pt,0.5pt) ..	(312:3pt);
+	\draw[skin] (231:3pt) -- (1pt,-4.85pt)--(311:3pt) -- cycle;
+}
+
+\newcommand{\tikzpeople@surgeon@painthat}{
+	\draw[hat] 
+		(160:3pt) ++(.3pt,1.6pt) -- (160:3pt) arc (-180:0:2.85pt and 1pt) -- 
+		++(-.3pt,1.6pt) arc (0:180:2.55pt and 1pt) arc (-180:0:2.55pt and 1pt);
+}
+
+\newcommand{\tikzpeople@surgeon@paintmask}{
+	\begin{scope}
+		\clip (0,0) circle (\pgflinewidth/\scalingfactor +3);
+		\draw[mask,color=\tikzpeople@mask!40,shading angle=-90] 
+			(-17:3pt) arc (295:235:6.1pt) -- ++(0,-.05pt) arc (235:295:6.1pt) --cycle;
+		\draw[mask] 
+			(-18:3pt) arc (295:235:6pt) -- ++(0,-.05pt) arc (230:245:5pt) -- 
+			++(0,-.6pt) arc (260:245:6pt) -- ++(0,-.1pt) arc (235:300:6pt) --cycle;
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@surgeon@definecolors}{
+	\definecolor{shirt}{RGB}{171,201,177}
+	\definecolor{hat}{RGB}{171,201,177}
+	\definecolor{mask}{RGB}{171,201,177}
+}
+
+\newcommand{\tikzpeople@surgeon@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			mask/.style={color=\tikzpeople@mask,top color=\tikzpeople@mask!70, bottom color=\tikzpeople@mask,shading angle=90}
+		}
+	\else
+		\tikzset{
+			mask/.style={color=\tikzpeople@mask!80,top color=\tikzpeople@mask!40, bottom color=\tikzpeople@mask!80,shading angle=90}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@surgeon@colors}{
+	shirt/200/{-1/-1}, hair/180/{-.8/.9}, hat/160/{-.7/1.3}, mask/350/{.5/.5}, 
+	skin/10/{.6/.9}%
+}

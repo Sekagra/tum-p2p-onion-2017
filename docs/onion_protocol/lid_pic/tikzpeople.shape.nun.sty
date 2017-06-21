@@ -1,0 +1,85 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{plaid}
+
+\newcommand{\tikzpeople@nun@paint}{
+	\tikzpeople@nun@paintshirt
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@nun@painthat
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@nun@definecolors}{
+	\definecolor{shirt}{rgb}{0,0,0}
+	\definecolor{hat}{rgb}{0,0,0}
+	\definecolor{plaid}{RGB}{232,232,232}
+	\definecolor{hair}{rgb}{0,0,0}
+}
+
+\newcommand{\tikzpeople@nun@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			plaid/.style={top color=\tikzpeople@plaid!70, bottom color=\tikzpeople@plaid,shading angle=45}
+		}
+	\else
+		\tikzset{
+			plaid/.style={top color=\tikzpeople@plaid!30, bottom color=\tikzpeople@plaid!90,shading angle=45}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@nun@painthat}{
+	\begin{scope}
+		\clip(0,0) circle (3.05pt);
+		\path[plaid,draw=none]
+			( -1.3pt, -0.1pt) .. controls (0pt,-0.1pt) and (2pt,0.2pt) .. 
+			(10:3.2pt) arc (10:180:3.2pt) -- cycle;
+	\end{scope}
+	\draw[hat]
+		(15:3.05pt) arc (15:170:3.05pt) --
+		(-3.05pt, 0.2pt) .. controls (-3.3pt,-1.0pt) and (-3.3pt,-2.3pt) ..
+		(-3.2pt,-3.6pt) .. controls (-2.7pt,-4.0pt) and (-1.7pt,-4.3pt) .. 
+		(-1.2pt,-4.5pt) .. controls (-1.6pt,-2.0pt) and (-1.6pt, 0.0pt) .. 
+		(-1.3pt, 0.2pt) .. controls ( 0.0pt, 0.1pt) and ( 2.0pt, 0.5pt) .. 
+		(15:3.05pt);
+}
+
+\newcommand{\tikzpeople@nun@paintshirt}{
+	\begin{scope}
+		\clip
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) ..
+			(-4pt,-8pt);
+		\path[shirt]
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) ..
+			(-4pt,-8pt);
+		\path[plaid]
+			(-3.9 pt, 0.0pt) -- (-3.9pt,-5.5pt) .. controls (-2pt,-7.5pt) and 
+			(3pt,-6.5pt) .. ( 4.55pt,-4.7pt) .. controls (4.45pt,-4.3pt) .. 
+			( 4.2 pt,-4.0pt) -- (4.2pt,0pt);
+	\end{scope}
+	\draw[color=\tikzpeople@shirt\if@tikzpeople@saturated\else!80\fi]
+		(-4pt,-8pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. ( 5pt,-7pt) .. 
+		controls ( 5pt,  0pt) and (-5pt, 0pt) .. (-4pt,-8pt);
+}
+
+\newcommand{\tikzpeople@nun@colors}{
+	shirt/190/{-1/-1.2}, hat/170/{-.65/.7},	skin/20/{.6/.9}, plaid/340/{.9/-.4,.1/.9}%
+}

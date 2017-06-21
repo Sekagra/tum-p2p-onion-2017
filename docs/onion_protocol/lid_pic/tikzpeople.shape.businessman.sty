@@ -1,0 +1,104 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{tie}
+\tikzpeople@addcolorkey{monogram}
+\tikzpeople@addtextkey{monogramtext}{BP}
+
+\newcommand{\tikzpeople@businessman@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@businessman@paintundershirt
+	\tikzpeople@businessman@paintopenshirt
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthair
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@businessman@definecolors}{
+	\definecolor{shirt}{rgb}{0.12,0.39,0.14}
+	\definecolor{undershirt}{rgb}{0.9,0.9,0.9}
+	\definecolor{tie}{rgb}{0.5,0.1,0.1}
+	\definecolor{monogram}{rgb}{0,0,0.5}
+}
+
+\newcommand{\tikzpeople@businessman@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			tie/.style={color=\tikzpeople@tie,top color=\tikzpeople@tie!70, bottom color=\tikzpeople@tie,shading angle=45}
+		}
+	\else
+		\tikzset{
+			tie/.style={color=\tikzpeople@tie!80,top color=\tikzpeople@tie!40, bottom color=\tikzpeople@tie!80,shading angle=45}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@businessman@paintundershirt}{
+	\begin{scope}
+		\clip 
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt,0pt) ..
+			(-4pt,-8pt);
+		\draw[undershirt]
+			(-2.2pt,-1pt) -- (2pt,-8.5pt) -- (2pt,-1pt);
+		\draw[tie]
+			(0  pt,-2.5pt) -- (0.8pt,-3.2pt) -- (1.1pt,-6  pt) -- (1.7pt,-8.7pt) -- 
+			(2pt,-8.7pt) -- (2  pt,-5.5pt) -- (1  pt,-3.1pt) -- (1.2pt,-2  pt) -- 
+			(0.3pt,-2  pt);
+		\draw[undershirt,shading angle=-45]
+			(0.5pt,-3pt) -- (0.1pt,-3.7pt) -- (-1pt,-3pt);
+		\draw[undershirt,shading angle=-45] 
+			(0.9pt,-2.5pt) -- (1.8pt,-3.2pt) -- (2.2pt,-2.2pt);
+	\end{scope}
+		{
+			\pgftransformrotate{20}
+			\pgf@xa=0.5pt*\scalingfactor
+			\if@tikzpeople@mirrored
+				\pgftransformxscale{-1}
+				\pgftext[at=\pgfpoint{1pt}{-4pt}]{\resizebox{\pgf@xa}{!}{\color{\tikzpeople@monogram}{$\mathcal{\tikzpeople@monogramtext}$}}}
+			\else
+				\pgftext[at=\pgfpoint{0.3pt}{-4pt}]{\resizebox{\pgf@xa}{!}{\color{\tikzpeople@monogram}{$\mathcal{\tikzpeople@monogramtext}$}}}
+			\fi
+		}
+}
+
+\newcommand{\tikzpeople@businessman@paintopenshirt}{
+	\begin{scope}
+		\clip 
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt,0pt) ..
+			(-4pt,-8pt);
+		\draw[shirt,shading angle=-45]
+			(-2pt,-2.6 pt)   -- (-1.5pt,-5pt)   -- (-0.5pt,-5pt) -- (-1.1pt,-5.2pt) -- 
+			(1.6pt,-8.75pt)  -- (1.9pt,-8.75pt) .. controls (1.7pt,-7pt) and 
+			(-0pt,-3.2pt)    .. (-1.6pt,-2pt)   -- cycle;
+		\draw[shirt,shading angle=-45]
+			(1.9pt,-2pt) .. controls (1.9pt,-1.8pt)	and (1.9pt,-8.5pt) .. 
+			(1.9pt,-8.75pt) -- (2.3pt,-8.5pt) -- (3.2pt,-5.2pt) -- 
+			(2.6pt,-5.2 pt) -- (3.2pt,-5  pt) -- (2.3pt,-2.3pt) -- cycle;
+	\end{scope}
+	\draw[color=\tikzpeople@shirt!80]
+		(-4pt,-8pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+		( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) ..
+		(-4pt,-8pt);
+}
+
+\newcommand{\tikzpeople@businessman@colors}{
+	shirt/200/{-1/-.75},	hair/150/{-.4/1.3}, skin/30/{.5/.8}, 
+	undershirt/180/{0/-.2}, tie/330/{.32/-.7}, monogram/0/{.3/-.17}%
+}

@@ -1,0 +1,106 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{details}
+\tikzpeople@addcolorkey{visor}
+\tikzpeople@addcolorkey{straps}
+
+\newcommand{\tikzpeople@pilot@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@pilot@paintshirtdetails
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@pilot@painthat
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@pilot@paintvisor
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@pilot@paintshirtdetails}{
+	\begin{scope}
+		\clip
+			(-4.0pt,-8.0pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. (5.0pt,-7.0pt) 
+			.. controls ( 5pt,  0pt) and (-5pt, 0pt) .. (-4.0pt,-8.0pt);
+		\draw[details,thick]
+			(220:3pt)++(4pt,-3.5pt)  .. controls +(290:1pt) and +(90:1pt) .. 
+			++(280:4pt);
+		\draw[straps,shading angle=-45]
+			(278:7pt) -- ++(16:3pt) -- ++(0,-0.8pt) -- ++(197:3pt) -- cycle;
+		\draw[straps] 
+			(230:3pt) .. controls +(2pt,-3pt) and +(0,2.5pt) .. ++(2.25pt,-7pt) -- 
+			++(1pt,0) .. controls +(0,2.5pt) and +(2pt,-3pt) .. +(-2.25pt,7pt) --cycle;
+		\draw[straps]
+			(300:2pt) .. controls +(2pt,-3pt) and +(0,2.5pt) .. ++(2.25pt,-7pt) -- 
+			++(1pt,0) .. controls +(0,2.5pt) and +(2pt,-3pt) .. +(-2.25pt,7pt) --cycle;
+	\end{scope}
+	\draw[shirt,shading angle=-45] 
+		(220:3pt) .. controls +(-0.4pt,-1.5pt) .. ++(0.5pt,-3pt) .. controls 
+		+(1pt,0.5pt) .. ++(3.5pt,-0.5pt) .. controls +(1pt,1.5pt) .. ++(2.3pt,2.2pt)
+		.. controls +(135:1.5pt) .. (320:3pt);
+	\draw[details,thick] 
+		(220:3pt)++(0.5pt,-3pt) .. controls +(1pt,0.5pt) .. ++(3.5pt,-0.5pt) .. 
+		controls +(1pt,1.5pt) .. ++(2.3pt,2.2pt);
+	\draw[undershirt]
+		(225:3pt) -- ++(3.7pt,-2.9pt) --(311:3pt) -- cycle;
+}
+
+\newcommand{\tikzpeople@pilot@paintvisor}{
+	\draw[visor,rounded corners=.4pt*\scalingfactor] 
+		(155:2.5pt) to [out=40,in=170] (45:3.2pt) to [out=310,in=90] (2:3.2pt) -- 
+		(348:2pt) -- (40:1.3pt) -- (300:.5pt) -- (200:1.5pt) -- cycle;
+}
+
+\newcommand{\tikzpeople@pilot@painthat}{
+	\draw[hat] 
+		(5:3pt) arc (5:255:3pt) to [out=120,in=250] ++(-0.1pt,2.7pt) 
+		to[out=350,in=210] (5:3pt);
+}
+
+\newcommand{\tikzpeople@pilot@definecolors}{
+	\definecolor{shirt}{rgb}{.51,0.18,0.02}
+	\definecolor{hat}{RGB}{232,232,232}
+	\definecolor{visor}{RGB}{122,150,165}
+	\definecolor{undershirt}{RGB}{99,97,96}
+	\definecolor{straps}{rgb}{0,0,0}
+	\definecolor{details}{rgb}{0.3,0.3,0.3}
+}
+
+\newcommand{\tikzpeople@pilot@definestyles}{
+	\if@tikzpeople@saturated
+		\pgfdeclareradialshading{visor}{\pgfqpoint{-15pt}{10pt}}{%
+			color(0pt)=(\tikzpeople@visor!30);
+			color(40pt)=(\tikzpeople@visor)}
+		\tikzset{
+			visor/.style  ={shading=visor,color=\tikzpeople@visor},
+			details/.style={color=\tikzpeople@details},
+			straps/.style ={color=\tikzpeople@straps,top color=\tikzpeople@straps!20, bottom color=\tikzpeople@straps!50,shading angle=45}
+		}
+	\else
+		\pgfdeclareradialshading{visor}{\pgfqpoint{-15pt}{10pt}}{%
+			color(0pt)=(\tikzpeople@visor!20);
+			color(40pt)=(\tikzpeople@visor!80)}
+		\tikzset{
+			visor/.style  ={shading=visor,color=\tikzpeople@visor!80},
+			details/.style={color=\tikzpeople@details!80},
+			straps/.style ={color=\tikzpeople@straps!60,top color=\tikzpeople@straps!5, bottom color=\tikzpeople@straps!20,shading angle=45}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@pilot@colors}{
+	shirt/200/{-1/-.95}, visor/30/{.7/1.1}, hat/160/{-.75/.9}, skin/10/{.5/.6}, 
+	undershirt/180/{.15/-.1},  straps/350/{.8/-.5},  decoration/330/{.35/-.7}%
+}

@@ -1,0 +1,74 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{details}
+
+\newcommand{\tikzpeople@chef@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@chef@paintshirtdetails
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthair
+	\tikzpeople@chef@painthat
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@chef@paintshirtdetails}{
+		\draw[details]
+			(230:3pt) .. controls (0.24pt,-5pt) and (0.29pt,-8pt) .. (0.3pt,-9pt);
+		\draw[shirt,thick,shading angle=-45]
+			(230:3pt) .. controls +(-0.4pt,-1.5pt) .. ++(0pt,-3pt) .. controls 
+			+(1.5pt,0.5pt) .. ++(3pt,0.2pt) .. controls +(0.5pt,0.4pt) ..
+			++(2pt,0.7pt) .. controls +(0pt,0.5pt) .. (312:3pt);
+		\draw[skin] (231:3pt) -- (1pt,-4.85pt) -- (311:3pt) -- cycle;
+}
+
+\newcommand{\tikzpeople@chef@painthat}{
+	\draw[hat] 
+		(160:3pt) ++(0pt,2pt) -- (160:3pt) arc (-180:0:2.85pt and 1pt) -- 
+		++(0pt,2pt);
+	\draw[hat,bottom color=\tikzpeople@hat!90!black] 
+		(0pt,2.7pt) ellipse (3.2pt and 1.12pt);
+	\begin{scope}
+		\clip (0pt,2.7pt) ellipse (3.2pt and 1.12pt);
+		\draw[hat] 
+			(-3.2pt,3.2pt) arc (-180:0:3.2pt and 1.12pt) -- ++(0pt,1.5pt) -- 
+			(-3.2pt,4.2pt) -- cycle;
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@chef@definecolors}{
+	\definecolor{shirt}{RGB}{232,232,232}
+	\definecolor{hat}{RGB}{232,232,232}
+	\definecolor{details}{rgb}{0.3,0.3,0.3}
+}
+\newcommand{\tikzpeople@chef@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			details/.style={color=\tikzpeople@details}
+		}
+	\else
+		\tikzset{
+			details/.style={color=\tikzpeople@details!80}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@chef@colors}{
+	shirt/340/{.75/-.75},	hair/160/{-.75/.9}, hat/30/{.5/1.3}, skin/0/{.4/.6}, 
+	details/200/{-.1/-1}%
+}

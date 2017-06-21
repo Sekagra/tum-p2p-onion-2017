@@ -1,0 +1,117 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{hatshield}
+\tikzpeople@addcolorkey{hatbadge}
+\tikzpeople@addcolorkey{badge}
+
+\newcommand{\tikzpeople@police@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@police@paintshirtdetails
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthair
+	\tikzpeople@police@painthat
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@police@paintshirtdetails}{
+	\begin{scope}
+		\clip
+			(-4.0pt,-8.0pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+			( 5.0pt,-7.0pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) .. (-4.0pt,-8.0pt);
+		\draw[shirt,color=black!85,shading angle=-45]	
+			(220:3.5pt) .. controls +(0.05pt,-1.5pt) .. ++(0.5pt,-3pt) .. controls 
+			+(1.3pt,0.8pt) .. ++(3pt,0.5pt) .. controls +(1pt,0.6pt) .. ++(3pt,0.8pt) 
+			.. controls +(-0.5pt,0.9pt) .. (315:3.3pt);
+		\draw[undershirt] 
+			(180:3pt) ++(-0.5pt,-1pt) -- (1.5pt,-6pt) -- (300:4pt)-- ++(0pt,1pt);
+		\fill[draw,color=black!85] 
+			(1.6pt,-6.1pt) -- ++(0.1pt,-1.5pt) -- ++(0.05pt,.75pt);
+		\draw[color=black!85] (1.6pt,-6.1pt) -- +(1pt,5pt);
+		\draw[skin]	(222:3pt) -- (267:4pt) arc (267:300:4pt) -- ++(0.5pt,2pt);
+	\end{scope}
+	\draw[badge,shading angle=-45] 
+		(70:-7pt) .. controls +(0.75pt,-0.05pt) .. ++(1.5pt,0.1pt) -- 
+		++(0.2pt,-0.15pt) .. controls +(-.5pt,-.5pt) .. ++(0.1pt,-.8pt) .. controls 
+		+(0.5pt,-.5pt) and +(0pt,0.35pt) .. ++(-1pt,-1pt) .. controls +(0pt,0.35pt) 
+		and +(-0.5pt,-0.35pt) .. ++(-.8pt,1pt) .. controls +(0.3pt,0.2pt) .. 
+		++(0pt,.5pt) -- (70:-7pt);
+}
+
+\newcommand{\tikzpeople@police@painthat}{
+	\path (160:3pt) arc (-180:-120:2.85pt and 1pt) coordinate (tikzpeople@tmp);
+	\draw[hatbottom,rounded corners=.75pt] 
+		(tikzpeople@tmp) -- ++(340:1.5pt) .. controls ++(340:1pt) .. ++(10:3.8pt) .. 
+		controls ++(45:.2pt) .. (20:3pt);
+	\draw[hatbottom] 
+		(160:3pt) ++(0pt,1pt) -- (160:3pt) arc (-180:0:2.85pt and 1pt) -- 
+		++(0pt,1pt);
+	\draw[hattop,rounded corners=.75pt] 
+		(160:3pt) ++(0pt,0.5pt) arc (-180:-22:3pt and 1.05pt) -- ++(1pt,1.5pt) -- 
+		++(0pt,.4pt) .. controls +(-4pt,.5pt) .. (142:4.8pt) -- ++(0pt,-0.5pt) -- 
+		cycle;
+	\begin{scope}
+		\clip[rounded corners=.75pt] 
+			(160:3pt) ++(0pt,0.5pt) arc (-180:-22:3pt and 1.05pt) -- ++(1pt,1.5pt) -- 
+			++(0pt,.4pt) .. controls +(-4pt,.5pt) .. (142:4.8pt) -- ++(0pt,-0.5pt) -- 
+			cycle;
+		\draw[hatbottom,nearly opaque] 
+			(153:3.5pt) ++(0pt,-2pt) -- (153:3.5pt) .. controls ++(350:1.5pt) .. 
+			++(10:2.5pt) .. controls ++(335:1.2pt) .. ++(2:2.5pt) coordinate 
+			(hatbadge) .. controls ++(335:1.2pt) .. ++(10:2.5pt) -- ++(0pt,-2pt);
+	\end{scope}
+	\draw[hatbadge] 
+		(hatbadge) ++(0.2pt,-0.2pt) coordinate (tikzpeople@tmp) .. controls ++(190:.5pt) .. 
+		++(200:.75pt) .. controls ++(270:.75pt) .. ++(300:1pt) .. controls 
+		++(70:.5pt) .. ++(55:1.1pt) .. controls ++(135:.3pt) .. (tikzpeople@tmp);
+}
+
+\newcommand{\tikzpeople@police@definecolors}{
+	\definecolor{shirt}{rgb}{0.18,0.38,0.80}
+	\definecolor{hat}{rgb}{0.18,0.38,0.80}
+	\definecolor{badge}{rgb}{0.96,0.55,0.1}
+	\definecolor{hatbadge}{rgb}{0.82,0.82,0.82}
+	\definecolor{hatshield}{rgb}{0.031,0.09,0.19}
+	\definecolor{undershirt}{RGB}{232,232,232}
+}
+
+\newcommand{\tikzpeople@police@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			shirt/.style    ={color=\tikzpeople@shirt!90,top color=\tikzpeople@shirt!90, bottom color=\tikzpeople@shirt,shading angle=45},
+			hattop/.style   ={color=\tikzpeople@hat!90,top color=\tikzpeople@hat!90, bottom color=\tikzpeople@hat,shading angle=45},
+			hatbottom/.style={color=\tikzpeople@hatshield,top color=\tikzpeople@hatshield!80, bottom color=\tikzpeople@hatshield,shading angle=45},
+			badge/.style    ={color=\tikzpeople@badge,top color=\tikzpeople@badge!70, bottom color=\tikzpeople@badge,shading angle=45},
+			hatbadge/.style ={color=\tikzpeople@hatbadge,top color=\tikzpeople@hatbadge!70, bottom color=\tikzpeople@hatbadge,shading angle=45}
+		}
+	\else
+		\tikzset{
+			shirt/.style    ={color=\tikzpeople@shirt!80,top color=\tikzpeople@shirt!80, bottom color=\tikzpeople@shirt,shading angle=45},
+			hattop/.style   ={color=\tikzpeople@hat!80,top color=\tikzpeople@hat!80, bottom color=\tikzpeople@hat,shading angle=45},
+			hatbottom/.style={color=\tikzpeople@hatshield!80,top color=\tikzpeople@hatshield!60, bottom color=\tikzpeople@hatshield!90,shading angle=45},
+			badge/.style    ={color=\tikzpeople@badge!80,top color=\tikzpeople@badge!40, bottom color=\tikzpeople@badge!80,shading angle=45},
+			hatbadge/.style ={color=\tikzpeople@hatbadge!80,top color=\tikzpeople@hatbadge!40, bottom color=\tikzpeople@hatbadge!80,shading angle=45}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@police@colors}{
+	shirt/190/{-1/-.6}, hat/150/{-.9/1.6}, hair/170/{-.75/.9}, skin/350/{.4/.4}, 
+	badge/210/{-.7/-1.2}, hatbadge/30/{.4/1.3}, hatshield/10/{.7/1}, 
+	undershirt/330/{.3/-.5}%
+}

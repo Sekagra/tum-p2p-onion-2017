@@ -1,0 +1,77 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\newcommand{\tikzpeople@devil@paint}{
+	\@tikzpeople@eviltrue
+	\tikzpeople@devil@painttail
+	\tikzpeople@person@paintshirt
+	\tikzpeople@devil@painttorso
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthairstyletwo
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@devil@definecolors}{
+	\definecolor{skin}{RGB}{216,52,38}
+	\definecolor{hair}{named}{black}
+	\definecolor{shirt}{named}{black}
+}
+
+\newcommand{\tikzpeople@devil@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			tail/.style ={color=\tikzpeople@skin,double=\tikzpeople@skin!90,double distance=.4pt*\scalingfactor},
+			horns/.style={skin}
+		}
+	\else
+		\tikzset{
+			skin/.style ={color=\tikzpeople@skin!80,top color=\tikzpeople@skin!50,bottom color=\tikzpeople@skin!80},
+			tail/.style ={color=\tikzpeople@skin!80,double=\tikzpeople@skin!70,double distance=.4pt*\scalingfactor},
+			horns/.style={skin}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@devil@painttail}{
+		\draw[tail]
+			(250:7pt) to[out=80,in=10] ++(130:3.5pt) to[out=190,in=190,looseness=3] ++(95:2.5pt) to[out=10,in=300,looseness=2] ++(100:3pt) coordinate (tikzpeople@tmp);
+		{
+		\pgftransformrotate{30}
+		\draw[skin] (tikzpeople@tmp) ++(-.1pt,0) to[out=200,in=80] ++(-.8pt,-.7pt) to[out=90,in=220] ++(.9pt,2pt) to[out=320,in=90] ++(.9pt,-2pt) to[out=80,in=340] ++(-.8pt,.7pt);
+		}
+}
+
+\newcommand{\tikzpeople@devil@painttorso}{
+	\begin{scope}
+		\clip 
+		(-4.0pt,-8.0pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+		( 5.0pt,-7.0pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) .. 
+		(-4.0pt,-8.0pt) -- cycle;
+		\draw[skin]
+			(-1.9pt,-1pt) to[out=290,in=80]
+			(-1.2pt,-9.2pt) -- (4.5pt,-9pt) to[out=120,in=280] (1.6pt,-1pt);
+		\draw[color=\tikzpeople@shirt\if@tikzpeople@saturated\else!80\fi]
+			(-4.0pt,-8.0pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+			( 5.0pt,-7.0pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) .. 
+			(-4.0pt,-8.0pt) -- cycle;
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@devil@colors}{
+	shirt/200/{-1/-.6},	hair/160/{-.75/.7}, skin/20/{.6/.7,.15/-.4}%
+}

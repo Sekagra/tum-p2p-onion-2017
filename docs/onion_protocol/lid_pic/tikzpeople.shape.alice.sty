@@ -1,0 +1,73 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{details}
+
+\newcommand{\tikzpeople@alice@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@alice@paintshirtdetails
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@alice@painthair
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@alice@painthair}{
+	\draw[hair]
+		(15:3pt) arc (15:160:3pt) arc (160:190:5pt) 
+		to[out=280,in=190,in looseness=.5,out looseness=.7] (230:2.9pt)
+  	to[out=120,in=120,looseness=2] (-1.7pt,-1pt) 
+  	to[out=60,in=170,out looseness=2,in looseness=.75] (-1pt,0.3pt) 
+  	to [out=350,in=200,out looseness=1.5,in looseness=.75] (15:3pt) -- cycle;
+}
+
+\newcommand{\tikzpeople@alice@paintshirtdetails}{
+	\begin{scope}
+		\clip 
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt,0pt) ..
+			(-4pt,-8pt);
+		\draw[shirt,shading angle=-45] 
+			(2pt,-8.7pt) -- ++(-3.8pt,3.8pt) -- ++(2.5pt,1.5pt)--cycle;
+		\draw[shirt,shading angle=-45] 
+			(2pt,-8.7pt) -- ++(1.2pt,4.7pt) -- ++(-2.4pt,.3pt)--cycle;
+	\end{scope}
+	\fill[color=\tikzpeople@shirt!40!black]
+		(230:3pt) ++(0pt,-2pt) 
+		to[out=359,in=101, in looseness=1.5, out looseness=1.1]	++(3.8pt,-4pt) -- 
+		++(-.8pt,4pt);
+	\draw[undershirt]
+		(230:3pt) to[out=230,in=100] ++(0pt,-2pt) to[out=0,in=110]	++(3.4pt,-2pt) 
+		to[out=70,in=190] ++(1.7pt,2.7pt) to[out=100,in=340] (310:3pt);
+	\draw[skin]
+		(250:3pt) to[out=330,in=110] (1.4pt,-5.7pt) 
+		to[out=80,in=269, out looseness=1.5] (305:3pt);
+}
+
+\newcommand{\tikzpeople@alice@definecolors}{
+	\definecolor{shirt}{RGB}{253,156,40}
+	\definecolor{undershirt}{RGB}{232,232,232}
+	\definecolor{skin}{RGB}{148,60,19}
+	\definecolor{hair}{rgb}{0,0,0}
+}
+\newcommand{\tikzpeople@alice@definestyles}{
+}
+
+\newcommand{\tikzpeople@alice@colors}{
+	shirt/340/{1/-.75},	hair/160/{-.65/1}, skin/20/{.25/.6}, 
+	details/200/{-.45/-.2}%
+}

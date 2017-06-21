@@ -1,0 +1,92 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{pearls}
+
+\newcommand{\tikzpeople@bob@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@bob@paintundershirt
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@bob@painthair
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@bob@definecolors}{
+	\definecolor{shirt}{RGB}{98,98,98}
+	\definecolor{pearls}{RGB}{252,137,172}
+	\definecolor{undershirt}{rgb}{0.9,0.9,0.9}
+}
+
+\newcommand{\tikzpeople@bob@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			pearls/.style={top color=\tikzpeople@pearls!70,bottom color=\tikzpeople@pearls,shading angle=-45}
+		}
+	\else
+		\tikzset{
+			pearls/.style={top color=\tikzpeople@pearls!40,bottom color=\tikzpeople@pearls!80,shading angle=-45}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@bob@painthair}{
+	\if@tikzpeople@female
+		\draw[hair,shading angle=\if@tikzpeople@mirrored45\else-45\fi]
+			(0:3.1pt) arc (0:120:3.1pt) -- (60:.8pt) to [out=30,in=130]
+			(0:3.1pt) -- cycle;
+		\draw[hair,line join=bevel,shading angle=\if@tikzpeople@mirrored-90\else90\fi]
+			(120:3.1pt) arc (120:210:3.1pt) to[out=300,in=155,looseness=1] (235:3pt)  
+			to [out=120,in=160,looseness=1.5] (60:.80pt) -- (120:3.1pt) -- cycle;
+	\else
+		\draw[hair, shading angle=\if@tikzpeople@mirrored45\else-45\fi]
+			(25:3.1pt) arc (25:120:3.1pt) -- (60:.8pt) to [out=30,in=170]
+			(25:3.1pt) -- cycle;
+		\draw[hair,line join=bevel,shading angle=\if@tikzpeople@mirrored-90\else90\fi]
+			(120:3.1pt) arc (120:190:3.1pt) to[out=283,in=210,looseness=.5] 
+			(220:3pt) arc (300:405:.1pt) to[out=135,in=150,looseness=2] 
+			(-1.7pt,-.6pt) to [out=90,in=180,looseness=1.5] (60:.80pt) -- 
+			(120:3.1pt) -- cycle;
+	\fi
+}
+
+\newcommand{\tikzpeople@bob@paintundershirt}{
+	\begin{scope}
+		\clip 
+			(-1.9pt,-1pt) to[out=290,in=130,looseness=.75] 
+			(2pt,-7.8pt)  to[out=80,in=280,looseness=.75] (1.9pt,-1pt);
+		\draw[undershirt]
+			(-1.9pt,-1pt) to[out=290,in=130,looseness=.75] 
+			(2pt,-7.8pt)  to[out=80,in=280,looseness=.75] (1.9pt,-1pt);
+		\draw[skin]
+			(245:2.9pt) to[out=300,in=270,looseness=1.5] (311:3pt) -- cycle;
+		\draw[color=\tikzpeople@shirt\if@tikzpeople@saturated\else!80\fi]
+			(-1.9pt,-1pt) to[out=290,in=130,looseness=.75] 
+			(2pt,-7.8pt)  to[out=80,in=280,looseness=.75] (1.9pt,-1pt);
+		\if@tikzpeople@female
+			\path[postaction={decorate},decoration={
+				markings,
+				mark=between positions 0.04 and 1 step 0.06 with {\pgftransformscale{\scalingfactor}\fill[pearls] (0pt,0pt) circle (.1pt);}}]
+				(245:2.9pt) to[out=300,in=270,looseness=1.8] (311:3pt);
+		\fi
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@bob@colors}{
+	shirt/200/{-1/-.6},	hair/160/{-.65/1}, skin/20/{.25/.4}, 
+	undershirt/340/{.15/-.4}%
+}

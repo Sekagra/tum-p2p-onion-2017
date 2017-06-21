@@ -1,0 +1,104 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{bill}
+\tikzpeople@addcolorkey{tongue}
+
+\newcommand{\tikzpeople@duck@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@duck@painttorso
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@duck@paintbill
+	\tikzpeople@person@painthair
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@duck@definecolors}{
+	\definecolor{skin}{RGB}{252,167,0}
+	\definecolor{bill}{RGB}{247, 78, 19}
+	\definecolor{hair}{named}{black}
+	\definecolor{tongue}{RGB}{246,38,10}
+}
+
+\newcommand{\tikzpeople@duck@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			shirt/.style   ={skin},
+			bill/.style    ={color=\tikzpeople@bill,top color=\tikzpeople@bill!70,bottom color=\tikzpeople@bill,shading angle=45},
+			tongue/.style  ={color=\tikzpeople@tongue,top color=\tikzpeople@tongue!30!\tikzpeople@bill,bottom color=\tikzpeople@tongue},
+			feathers/.style={color=\tikzpeople@skin,decoration={zigzag,segment length=\scalingfactor*.8pt,amplitude=\scalingfactor*.25pt},decorate,line width=\scalingfactor*.05pt}
+		}
+	\else
+		\tikzset{
+			shirt/.style   ={skin},
+			bill/.style    ={color=\tikzpeople@bill!80,top color=\tikzpeople@bill!50,bottom color=\tikzpeople@bill!80,shading angle=45},
+			tongue/.style  ={color=\tikzpeople@tongue!80,outer color=\tikzpeople@tongue!20!\tikzpeople@bill!80,inner color=\tikzpeople@tongue!80},
+			feathers/.style={color=\tikzpeople@skin!80,decoration={zigzag,segment length=\scalingfactor*.8pt,amplitude=\scalingfactor*.25pt},decorate,line width=\scalingfactor*.05pt}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@duck@painttorso}{
+	\begin{scope}
+		\clip 
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt,0pt) ..
+			(-4pt,-8pt);
+		\draw[feathers]
+			(-3.5 pt,-4.2pt) .. controls (-2pt,-6.2pt) and (3pt,-5.2pt) .. 
+			( 4.3pt,-3.7pt);
+		\draw[feathers]
+			(-4.2pt,-5.7pt) .. controls (-2pt,-7.7pt) and (3pt,-6.7pt) .. 
+			(4.7pt, -4.9pt);
+		\draw[feathers]
+			(-4.3pt,-7.2pt) .. controls (-2pt,-9.2pt) and (3pt,-8.2pt) .. 
+			(5pt, -6.2pt);
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@duck@paintbill}{
+	\path
+		(263:1.6pt) coordinate (tikzpeople@bill1) +(0,.12pt) coordinate 
+		(tikzpeople@bill2) +(0,-.12pt) coordinate (tikzpeople@bill3) (340:3pt) 
+		++(350:1.5pt) coordinate (tikzpeople@bill4) +(0,.12pt) coordinate 
+		(tikzpeople@bill5) +(0,-.12pt) coordinate (tikzpeople@bill6) ++(200:1.8pt) 
+		coordinate (tikzpeople@bill7) +(0,.12pt) coordinate (tikzpeople@bill8) 
+		+(0,-.15pt) coordinate (tikzpeople@bill9)--cycle;
+	\draw[bill] 
+		(tikzpeople@bill3) to[out=320,in=190] (tikzpeople@bill6);
+	\draw[tongue]
+		(tikzpeople@bill7) to[out=5,in=215] (tikzpeople@bill4) to[out=170,in=10] 
+		(tikzpeople@bill7)--cycle;
+	\draw[bill] 
+		(tikzpeople@bill1) to[out=340,in=190] (tikzpeople@bill7) to[out=5,in=215] 
+		(tikzpeople@bill4) to[out=0,in=0] (tikzpeople@bill6) to[out=220,in=0] 
+		(tikzpeople@bill9) to[out=190,in=340] (tikzpeople@bill3) to[out=160,in=160] 
+		(tikzpeople@bill1)--cycle;
+	\draw[bill] 
+		(tikzpeople@bill1) to[out=340,in=190] (tikzpeople@bill7) to[out=0,in=180] 
+		(tikzpeople@bill4) to[out=0,in=0] (tikzpeople@bill5) to[out=170,in=10] 
+		(tikzpeople@bill8) to[out=190,in=340] (tikzpeople@bill2) to[out=160,in=160] 
+		(tikzpeople@bill1)--cycle;
+	\draw[bill,line join=bevel] 
+		(tikzpeople@bill2) to[out=340,in=190] (tikzpeople@bill8) to[out=10,in=170] 
+		(tikzpeople@bill5) to[out=160,in=330] (340:3pt) to[out=180,in=0] (337:1.7pt)
+		to[out=180,in=0,in looseness=1.2] (tikzpeople@bill2)--cycle;
+}
+
+\newcommand{\tikzpeople@duck@colors}{
+	skin/200/{-1/-.6},	hair/160/{-.75/.8}, bill/20/{.6/.5}, tongue/0/{.9/.42}%
+}

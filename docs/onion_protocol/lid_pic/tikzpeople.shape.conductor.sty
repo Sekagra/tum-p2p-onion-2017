@@ -1,0 +1,141 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{hatshield}
+\tikzpeople@addcolorkey{hatbadge}
+\tikzpeople@addcolorkey{badge}
+
+
+\newcommand{\tikzpeople@conductor@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@conductor@paintshirtdetails
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthairstyletwo
+	\tikzpeople@conductor@painthat
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@conductor@paintundershirt}{
+	\draw[undershirt]
+		(-2.2pt,-1pt) -- (2pt,-8.5pt) -- (2pt,-1pt);
+	\draw[tie]
+		(0  pt,-2.5pt) -- (0.8pt,-3.2pt) -- (1.1pt,-6  pt) -- (1.7pt,-8.7pt) -- 
+		(1.9pt,-8.7pt) -- (2  pt,-5.5pt) -- (1  pt,-3.1pt) -- (1.2pt,-2  pt) -- 
+		(0.3pt,-2  pt);
+	\draw[undershirt,shading angle=-45]
+		(0.5pt,-3pt) -- (0.1pt,-3.7pt) -- (-1pt,-3pt);
+	\draw[undershirt,shading angle=-45] 
+		(0.9pt,-2.5pt) -- (1.8pt,-3.2pt) -- (2.2pt,-2.2pt);
+}
+
+\newcommand{\tikzpeople@conductor@paintopenshirt}{
+	\begin{scope}
+		\clip 
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. ( 5pt,-7pt) .. 
+			controls ( 5pt,  0pt) and (-5pt,0pt) .. (-4pt,-8pt);
+		\draw[shirt,shading angle=-45]
+			(-2  pt,-2.6 pt) -- (-1.5pt,-5   pt) -- (-0.5pt,-5pt) -- 
+			(-1.1pt,-5.2 pt) -- ( 1.6pt,-8.75pt) -- ( 1.9pt,-8.75pt) .. controls 
+			(1.7pt,-7pt) and (-0pt,-3.2pt) .. (-1.6pt,-2pt) -- cycle;
+		\draw[shirt,shading angle=-45]
+			(2pt,-2pt) .. controls (2.2pt,-1.8pt)	and (1.9pt,-8.5pt) .. 
+			(1.9pt,-8.75pt) -- (2.3pt,-8.5pt) -- (3.2pt,-5.2pt) -- (2.6pt,-5.2 pt) -- 
+			(3.2pt,-5  pt) -- (2.3pt,-2.3pt) -- cycle;
+	\end{scope}
+	\draw[color=\tikzpeople@shirt\if@tikzpeople@saturated\else!80\fi]
+		(-4pt,-8pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. ( 5pt,-7pt) .. 
+		controls ( 5pt,  0pt) and (-5pt, 0pt) .. (-4pt,-8pt);
+}
+
+\newcommand{\tikzpeople@conductor@paintshirtdetails}{
+	\tikzpeople@conductor@paintundershirt
+	\tikzpeople@conductor@paintopenshirt
+	\draw[badge]
+		(264:7pt) to[out=354 ,in=186] ++(0:0.5pt) -- ++(270:0.15pt) 
+		to[in=354 ,out=186] ++(180:0.5pt) -- (264:7pt);
+	\draw[badge] 
+		(261:7.5pt) to[out=354 ,in=186] ++(0:1.5pt) -- ++(270:0.25pt) 
+		to[in=354 ,out=186] ++(180:1.5pt) -- (261:7.5pt);
+}
+
+\newcommand{\tikzpeople@conductor@painthat}{
+	\path
+		(160:3pt) arc (-180:-120:2.85pt and 1pt) coordinate (tikzpeople@tmp);
+	\draw[hatbottom,rounded corners=.75pt]
+		(tikzpeople@tmp) -- ++(340:1.5pt) .. controls ++(340:1pt) .. 
+		++(10:3.8pt) .. controls ++(45:.2pt) .. (20:3pt);
+	\draw[hatbottom]
+		(160:3pt) ++(0pt,1pt) -- (160:3pt) arc (-180:0:2.85pt and 1pt) -- 
+		++(0pt,1pt);
+	\draw[hattop,rounded corners=.75pt]
+		(160:3pt) ++(0pt,0.5pt) arc (-180:-22:3pt and 1.05pt) -- ++(1pt,1.5pt) -- 
+		++(0pt,.4pt) .. controls +(-4pt,.5pt) .. (142:4.8pt) -- ++(0pt,-0.5pt) -- 
+		cycle;
+	\begin{scope}
+		\clip[rounded corners=.75pt]
+			(160:3pt) ++(0pt,0.5pt) arc (-180:-22:3pt and 1.05pt) -- ++(1pt,1.5pt) -- 
+			++(0pt,.4pt) .. controls +(-4pt,.5pt) .. (142:4.8pt) -- ++(0pt,-0.5pt) -- 
+			cycle;
+		\draw[hatbottom,nearly opaque]
+			(153:3.5pt) ++(0pt,-2pt) -- (153:3.5pt) .. controls ++(350:1.5pt) .. 
+			++(10:2.5pt) .. controls ++(335:1.2pt) .. ++(2:2.5pt) coordinate 
+			(hatbadge) .. controls ++(335:1.2pt) .. ++(10:2.5pt) -- ++(0pt,-2pt);
+	\end{scope}
+	\draw[hatbadge]
+		(hatbadge) ++(0.2pt,-0.2pt) coordinate (tikzpeople@tmp) .. controls ++(190:.5pt) .. 
+		++(200:.75pt) .. controls ++(270:.75pt) .. ++(300:1pt) .. controls 
+		++(70:.5pt) .. ++(55:1.1pt) .. controls ++(135:.3pt) .. (tikzpeople@tmp);
+}
+
+\newcommand{\tikzpeople@conductor@definecolors}{
+	\definecolor{shirt}{rgb}{0.18,0.38,0.80}
+	\definecolor{hat}{rgb}{0.18,0.38,0.80}
+	\definecolor{hair}{rgb}{0,0,0}
+	\definecolor{badge}{rgb}{0.96,0.55,0.1}
+	\definecolor{hatbadge}{rgb}{0.96,0.55,0.1}
+	\definecolor{hatshield}{rgb}{0.031,0.09,0.19}
+	\definecolor{undershirt}{RGB}{232,232,232}
+	\definecolor{tie}{rgb}{0.04,0.15,0.37}
+}
+\newcommand{\tikzpeople@conductor@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			shirt/.style    ={color=\tikzpeople@shirt!90,top color=\tikzpeople@shirt!90, bottom color=\tikzpeople@shirt,shading angle=45},
+			hattop/.style   ={color=\tikzpeople@hat!90,top color=\tikzpeople@hat!90, bottom color=\tikzpeople@hat,shading angle=45},
+			hatbottom/.style={color=\tikzpeople@hatshield,top color=\tikzpeople@hatshield!80, bottom color=\tikzpeople@hatshield,shading angle=45},
+			badge/.style    ={color=\tikzpeople@badge,top color=\tikzpeople@badge!70, bottom color=\tikzpeople@badge,shading angle=45},
+			hatbadge/.style ={color=\tikzpeople@hatbadge,top color=\tikzpeople@hatbadge!70, bottom color=\tikzpeople@hatbadge,shading angle=45},
+			tie/.style      ={color=\tikzpeople@tie,top color=\tikzpeople@tie!70, bottom color=\tikzpeople@tie,shading angle=45}
+		}
+	\else
+		\tikzset{
+			shirt/.style    ={color=\tikzpeople@shirt!80,top color=\tikzpeople@shirt!80, bottom color=\tikzpeople@shirt,shading angle=45},
+			hattop/.style   ={color=\tikzpeople@hat!80,top color=\tikzpeople@hat!80, bottom color=\tikzpeople@hat,shading angle=45},
+			hatbottom/.style={color=\tikzpeople@hatshield!80,top color=\tikzpeople@hatshield!60, bottom color=\tikzpeople@hatshield!90,shading angle=45},
+			badge/.style    ={color=\tikzpeople@badge!80,top color=\tikzpeople@badge!40, bottom color=\tikzpeople@badge!80,shading angle=45},
+			hatbadge/.style ={color=\tikzpeople@hatbadge!80,top color=\tikzpeople@hatbadge!40, bottom color=\tikzpeople@hatbadge!80,shading angle=45},
+			tie/.style      ={color=\tikzpeople@tie!80,top color=\tikzpeople@tie!40, bottom color=\tikzpeople@tie!80,shading angle=45}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@conductor@colors}{
+	shirt/190/{-.8/-.5},	hat/140/{-.6/1.5}, hair/175/{-.75/.8}, skin/10/{.5/.6}, 
+	badge/210/{-.25/-1.25}, hatshield/155/{.15/.85}, hatbadge/30/{.4/1.3}, 
+	undershirt/350/{.3/-.15}, tie/330/{.35/-.8}%
+}

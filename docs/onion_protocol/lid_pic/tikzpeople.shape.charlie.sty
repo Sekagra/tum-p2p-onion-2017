@@ -1,0 +1,125 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{buttons}
+
+\newcommand{\tikzpeople@charlie@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@charlie@paintundershirt
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@charlie@painthair
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@charlie@definecolors}{
+	\definecolor{hair}{RGB}{107,68,35}
+	\definecolor{shirt}{RGB}{0,100,105}
+	\definecolor{buttons}{RGB}{128,70,27}
+}
+
+\newcommand{\tikzpeople@charlie@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			collar/.style ={color=\tikzpeople@shirt!70,inner color=\tikzpeople@shirt!50, outer color=\tikzpeople@shirt!50},
+			buttons/.style={color=\tikzpeople@buttons,inner color=\tikzpeople@buttons!80, outer color=\tikzpeople@buttons}
+		}
+	\else
+		\tikzset{
+			collar/.style ={color=\tikzpeople@shirt!30,inner color=\tikzpeople@shirt!10, outer color=\tikzpeople@shirt!30},
+			buttons/.style={color=\tikzpeople@buttons!80,inner color=\tikzpeople@buttons!60, outer color=\tikzpeople@buttons!80}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@charlie@painthair}{
+	\if@tikzpeople@female
+		\draw[hair,shading angle=-45]
+			(340:3pt) arc (-20:120:3pt) -- (120:1.4pt) to [out=300,in=90,in looseness=2]
+			(340:3pt) -- cycle;
+		\draw[hair,line join=bevel]
+			(120:3pt) arc (120:230:3pt) to[out=110,in=300,out looseness=2] 
+			(120:1.4pt) -- (120:3pt) -- cycle;
+	\else
+		\draw[hair,shading angle=-45]
+			(10:3pt) arc (10:120:3pt) -- (120:1.4pt) to [out=300,in=210,looseness=.5]
+			(10:3pt) -- cycle;
+		\draw[hair,line join=bevel]
+			(120:3pt) arc (120:210:3pt) to[out=90,in=300,looseness=1] (120:1.4pt) -- 
+			(120:3pt) -- cycle;
+	\fi
+}
+
+\newcommand{\tikzpeople@charlie@paintundershirt}{
+	\begin{scope}
+		\clip 
+			(-4.0pt,-8.0pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+			( 5.0pt,-7.0pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) .. 
+			(-4.0pt,-8.0pt) (205:3.1pt) arc (205:335:3.1pt) to[out=200,in=340] 
+			(205:3.1pt) --cycle;
+		\draw[color=\tikzpeople@shirt!80,line width=.05*\scalingfactor,cap=round] 
+			(2pt,-8.7pt) to[out=90,in=290] (285:3.1pt);
+		{
+			\if@tikzpeople@female
+				\pgftransformshift{\pgfpoint{-.3pt}{0pt}}
+			\else
+				\pgftransformshift{\pgfpoint{.3pt}{0pt}}
+			\fi
+			\path[postaction={decoration={markings,
+				mark=between positions .12 and .8 step 0.16 with {
+					\draw[buttons] (0pt,0pt) circle (.15*\scalingfactor);
+					\path[fill=\tikzpeople@buttons]
+						(0:.02*\scalingfactor) circle (.01*\scalingfactor)
+						(180:.02*\scalingfactor) circle (.01*\scalingfactor);},
+				    },decorate}] (2pt,-8.7pt) to[out=90,in=290] (285:3.1pt);
+		}
+		\if@tikzpeople@female
+			\draw[skin]
+				(245:2.9pt) to[out=310,in=160] (286:4pt) to[out=40,in=260] 
+				(315:2.8pt) -- cycle;
+			\draw[collar]
+				(245:2.75pt) to[out=310,in=160] (286:3.9pt) to[out=40,in=260] 
+				(315:2.7pt) -- (315:2.9pt) to[out=260,in=40] 
+				(286:4.1pt) to[out=160,in=310] (245:3pt) --cycle;
+		\else
+			\draw[skin]
+				(245:2.9pt) to[out=300,in=280,looseness=1.3] (315:2.8pt) -- cycle;
+			\draw[collar]
+				(245:2.75pt) to[out=300,in=280,looseness=1.3] (315:2.7pt) -- 
+				(315:2.9pt) to[out=280,in=300,looseness=1.3] (245:3pt) -- cycle;
+		\fi
+		\begin{scope}
+			\if@tikzpeople@female
+				\clip
+					(245:2.75pt) to[out=310,in=160]  (286:3.9pt)  to[out=40,in=260] 
+					(315:2.7pt) -- (315:2.9pt) to[out=260,in=40] 
+					(286:4.1pt) to[out=160,in=310] (245:3pt) --cycle;
+			\else
+				\clip
+					(245:2.75pt) to[out=300,in=280,looseness=1.3] (315:2.7pt) -- 
+					(315:2.9pt) to[out=280,in=300,looseness=1.3] (245:3pt) -- cycle;
+			\fi
+			\draw[color=\tikzpeople@shirt!40,line width=.05*\scalingfactor,cap=round]
+				(2pt,-8.7pt) to[out=90,in=290] (285:3.1pt);
+		\end{scope}
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@charlie@colors}{
+	shirt/200/{-1/-.75}, hair/160/{-.75/1}, skin/20/{.5/.8}, 
+	buttons/340/{.39/-.59}%
+}

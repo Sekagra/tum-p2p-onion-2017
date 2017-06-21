@@ -1,0 +1,114 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{ringtop}
+\tikzpeople@addcolorkey{ringmid}
+\tikzpeople@addcolorkey{ringbot}
+
+\newcommand{\tikzpeople@mexican@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@mexican@paintrings
+	\tikzpeople@person@painthead
+	\tikzpeople@mexican@painthair
+	\tikzpeople@mexican@painthat
+	\tikzpeople@person@paintgoatee
+}
+
+\newcommand{\tikzpeople@mexican@definecolors}{
+	\definecolor{hair}{rgb}{0,0,0}
+	\definecolor{shirt}{rgb}{0,0.3,0}
+	\definecolor{ringtop}{rgb}{1,1,0}
+	\definecolor{ringmid}{rgb}{0,0.8,1}
+	\definecolor{ringbot}{rgb}{1,0,0}
+	\definecolor{hat}{rgb}{0.7,0,0}
+}
+
+\newcommand{\tikzpeople@mexican@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			ringtop/.style ={top color=\tikzpeople@ringtop!80, bottom color=\tikzpeople@ringtop,shading angle=45},
+			ringmid/.style ={top color=\tikzpeople@ringmid!80, bottom color=\tikzpeople@ringmid,shading angle=45},
+			ringbot/.style ={top color=\tikzpeople@ringbot!80, bottom color=\tikzpeople@ringbot,shading angle=45},
+			innerhat/.style={color=\tikzpeople@hat,top color=\tikzpeople@hat!80, bottom color=\tikzpeople@hat,shading angle=45}
+		}
+	\else
+		\tikzset{
+			ringtop/.style ={top color=\tikzpeople@ringtop!80, bottom color=\tikzpeople@ringtop,shading angle=45},
+			ringmid/.style ={top color=\tikzpeople@ringmid!80, bottom color=\tikzpeople@ringmid,shading angle=45},
+			ringbot/.style ={top color=\tikzpeople@ringbot!80, bottom color=\tikzpeople@ringbot,shading angle=45},
+			innerhat/.style={color=\tikzpeople@hat!80,top color=\tikzpeople@hat!60, bottom color=\tikzpeople@hat,shading angle=45}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@mexican@painthair}{
+	\draw[hair]
+		(-3.5pt, 1  pt) .. controls (-3.3pt, 0pt) and (-4.3pt,-1.1pt) ..
+		(-4.5pt,-1.3pt) .. controls (-3.8pt,-2pt) and (-2  pt,-2.9pt) .. 
+		(-1.2pt,-3.3pt) .. controls (-1.6pt,-2pt) and (-1.6pt, 0  pt) .. 
+		(-1.3pt, 1  pt);
+}
+
+\newcommand{\tikzpeople@mexican@painthat}{
+	{
+		\pgftransformrotate{4}
+		\draw[hat] (-0.3pt,2pt) ellipse (6.4pt and 2.2pt);
+		\draw[innerhat] (-0.3pt,2.5pt) ellipse (5.4pt and 1.3pt);
+	}{
+		\pgftransformrotate{1}
+		\draw[hat]
+			(-3  pt,2.3pt) .. controls (-3  pt,4.5pt) and (-1.4pt,6.7pt) .. 
+			(-0.7pt,6.7pt) .. controls ( 0.2pt,6.7pt) and ( 2.3pt,3.5pt) .. 
+			( 1.9pt,2.7pt) .. controls ( 1.2pt,2  pt) and (-2.3pt,1.8pt) .. 
+			(-3  pt,2.3pt);
+	}
+}
+
+\newcommand{\tikzpeople@mexican@paintrings}{
+	\begin{scope}
+		\clip (-4pt,-8pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) ..
+			(-4pt,-8pt);
+		\shade[ringtop]
+			(-3.4 pt,-4pt) .. controls (-2.0pt,-6.0pt) and ( 3pt,-5  pt) .. 
+			( 3.85pt,-3.5pt) .. controls ( 3.6pt,-3.1pt) .. 
+			( 3.4 pt,-3  pt) .. controls ( 3  pt,-4.2pt) and (-2pt,-5.3pt) .. (-3pt,-3.4pt);
+		\draw[color=\tikzpeople@ringtop,dash pattern=on 0 off 0.2*\scalingfactor,line width=0.08*\scalingfactor,line cap=round]
+			(-3.4 pt,-4.2pt) .. controls (-2pt,-6.2pt) and (3pt,-5.2pt) .. 
+			( 3.85pt,-3.7pt);
+	
+		\shade[ringmid]
+			(-4pt,-5.4pt) .. controls (-2pt,-7.5pt) and (3pt,-6.5pt) .. 
+			(4.6pt,-4.65pt) -- (4.25 pt,-3.95pt) .. controls (3pt,-5.7pt) and 
+			(-2pt,-6.7pt) .. (-3.8pt,-4.7pt);
+		\draw [color=\tikzpeople@ringmid,dash pattern=on 0 off 0.2*\scalingfactor,line width=0.08*\scalingfactor,line cap=round]
+			(-4pt,-5.6pt) .. controls (-2pt,-7.7pt) and (3pt,-6.7pt) .. (4.6pt, -4.8pt);
+	
+		\shade [ringbot]
+			(-4.1pt,-6.9pt) .. controls (-2pt,-9pt) and (3pt,-8pt) .. (5pt, -5.9pt) --
+			(4.8pt,-5.15pt) .. controls (3pt,-7.2pt) and (-2pt,-8.2pt) .. (-4.1pt,-6.1pt);
+		\draw [color=\tikzpeople@ringbot,dash pattern=on 0 off 0.2*\scalingfactor,line width=0.08*\scalingfactor,line cap=round]
+			(-4.1pt,-7.1pt) .. controls (-2pt,-9.2pt) and (3pt,-8.2pt) .. (5pt, -6.1pt);
+		\end{scope}
+	\draw[color=\tikzpeople@shirt\if@tikzpeople@saturated\else!80\fi]
+		(-4pt,-8pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+		( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) ..
+		(-4pt,-8pt);
+}
+
+\newcommand{\tikzpeople@mexican@colors}{
+	shirt/350/{.5/0}, hat/30/{1/1.25}, hair/150/{-1.1/.5}, skin/10/{.35/.5}, 
+	ringtop/170/{-.9/-.25}, ringmid/190/{-1/-.7}, ringbot/210/{-1.1/-1.1}%
+}

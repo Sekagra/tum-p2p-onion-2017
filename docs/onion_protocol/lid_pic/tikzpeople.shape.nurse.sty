@@ -1,0 +1,89 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{badge}
+\tikzpeople@addcolorkey{badgeclip}
+\tikzpeople@addcolorkey{badgename}
+\tikzpeople@addcolorkey{redcross}
+\tikzpeople@addtextkey{badgetext}{Nurse}
+
+\newcommand{\tikzpeople@nurse@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@nurse@paintshirtdetails
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthairstyletwo
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@nurse@paintshirtdetails}{
+	\begin{scope}
+		\clip 
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt,0pt) ..
+			(-4pt,-8pt);
+		\draw[skin]
+			(245:3pt) .. controls (1pt,-4.85pt) .. (1.3pt,-4.85pt) .. controls 
+			(1.7pt,-4.6pt) .. (311:3pt) -- cycle;
+		\draw[shirt,shading angle=-45] 
+			(-.1pt,-7.2pt) to[out=204,in=348] (-2.5pt,-7.2pt) -- ++(270:1.3pt) arc 
+			(180:360:1.2pt) --cycle;
+		\draw[color=\tikzpeople@shirt!90!black,thick] 
+			(-.1pt,-7.2pt) to[out=204,in=348] (-2.5pt,-7.2pt);
+		\draw[badge] 
+			(-.4pt,-7.6pt) to[out=185,in=355] (-2.1pt,-7.6pt) -- ++(270:.7pt) 
+			to[out=355,in=185] (-.4pt,-8.3pt) --cycle;
+		\draw[badgeclip] 
+			(-1.1pt,-7.3pt) rectangle ++(-.2pt,-.4pt);
+		\draw[draw=\tikzpeople@redcross,fill=\tikzpeople@redcross] 
+			(-1.8pt,-7.8pt) -- ++(0pt,-.1pt) -- ++(-.1pt,0pt) -- ++(0pt,-.1pt) -- 
+			++(.1pt,0pt) -- ++(0pt,-.1pt) -- ++(.1pt,0pt) -- ++(0pt,.1pt) -- 
+			++(.1pt,0pt) -- ++(0pt,.1pt) -- ++(-.1pt,0pt) -- ++(0pt,.1pt) --cycle;
+		{
+			\pgf@xa=0.6pt*\scalingfactor
+			\pgftext[at=\pgfpoint{-1pt}{-7.95pt}]{\resizebox{\pgf@xa}{!}{\color{\tikzpeople@badgename}\if@tikzpeople@mirrored\reflectbox{\tikzpeople@badgetext}\else{\tikzpeople@badgetext}\fi}}
+		}
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@nurse@definecolors}{
+	\definecolor{shirt}{RGB}{237,113,102}
+	\definecolor{badgename}{rgb}{0,0,0}
+	\definecolor{badge}{rgb}{1,1,1}
+	\definecolor{badgeclip}{rgb}{0.4,0.4,0.4}
+	\definecolor{redcross}{rgb}{1,0,0}
+	\definecolor{hair}{rgb}{0,0,0}
+}
+\newcommand{\tikzpeople@nurse@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			badge/.style={fill=\tikzpeople@badge,draw=\tikzpeople@badge!30!black},
+			badgeclip/.style={top color=\tikzpeople@badgeclip!70, bottom color=\tikzpeople@badgeclip,shading angle=45,rounded corners=.08*\scalingfactor}
+		}
+	\else
+		\tikzset{
+			badge/.style={fill=\tikzpeople@badge,draw=\tikzpeople@badge!30!black},
+			badgeclip/.style={top color=\tikzpeople@badgeclip!30, bottom color=\tikzpeople@badgeclip,shading angle=45,rounded corners=.08*\scalingfactor}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@nurse@colors}{
+	shirt/0/{.9/-.35}, hair/150/{-.75/.9}, badgeclip/170/{-.45/-1.2}, 
+	redcross/190/{-.6/-1.35}, badge/210/{-.5/-1.4}, badgename/340/{-.4/-1.35}, 
+	skin/20/{.6/.6}%
+}

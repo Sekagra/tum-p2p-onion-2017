@@ -1,0 +1,97 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{details}
+\tikzpeople@addcolorkey{collar}
+\tikzpeople@addcolorkey{lining}
+
+\newcommand{\tikzpeople@guard@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@person@painthead
+	\tikzpeople@guard@paintcollar
+	\tikzpeople@guard@paintshirtdetails
+	\tikzpeople@guard@painthat
+}
+
+\newcommand{\tikzpeople@guard@paintshirtdetails}{
+	\begin{scope}
+		\clip 
+			(-4.0pt,-8.0pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+			( 5.0pt,-7.0pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) .. 
+			(-4.0pt,-8.0pt) (205:3.1pt) arc (205:335:3.1pt) to[out=200,in=340] (205:3.1pt) --cycle;
+		\draw[lining,postaction={
+				    decoration={
+				        markings,
+				        mark=at position 0.1  with {\coordinate (tikzpeople@tmp1) at (0,\if@tikzpeople@mirrored\else-\fi.4pt*\scalingfactor);},
+				        mark=at position 0.23 with {\coordinate (tikzpeople@tmp2) at (0,\if@tikzpeople@mirrored\else-\fi.4pt*\scalingfactor);},
+				        mark=at position 0.50 with {\coordinate (tikzpeople@tmp3) at (0,\if@tikzpeople@mirrored\else-\fi.4pt*\scalingfactor);},
+				        mark=at position 0.62 with {\coordinate (tikzpeople@tmp4) at (0,\if@tikzpeople@mirrored\else-\fi.4pt*\scalingfactor);},
+				        mark=at position 0.75 with {\coordinate (tikzpeople@tmp5) at (0,\if@tikzpeople@mirrored\else-\fi.4pt*\scalingfactor);};
+				    },decorate
+				}] (2pt,-8.7pt) to[out=90,in=290] (290:3.6pt) -- (300:3.4pt) -- ++(102:0.6pt);
+    \draw[details] (tikzpeople@tmp1) circle (0.2pt);
+    \draw[details] (tikzpeople@tmp2) circle (0.2pt);
+    \draw[details] (tikzpeople@tmp3) circle (0.2pt);
+    \draw[details] (tikzpeople@tmp4) circle (0.2pt);
+    \draw[details] (tikzpeople@tmp5) circle (0.2pt);
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@guard@paintcollar}{
+	\draw[collar] (225:3pt) ++(-0.06pt,-0.5pt) arc (225:320:3.1pt and 2.5pt) -- ++(-0.06pt,0.6pt) arc (320:225:3pt and 2.5pt) -- cycle;
+	\draw[lining] (225:3pt) ++(-0.06pt,-0.5pt) arc (225:320:3.1pt and 2.5pt);
+}
+
+\newcommand{\tikzpeople@guard@painthat}{
+	\begin{scope}
+		\pgftransformrotate{10}
+		\draw[hat] (215:3pt) arc (200:0:2.75pt and 2.4pt)	.. controls (3.5pt,0pt) .. 
+			(3.2pt,4pt) .. controls (3.2pt,8pt) and (-3.2pt,8pt) .. (-3.2pt,4pt) .. 
+			controls (-3.5pt,0pt) and (-3.5pt,-1pt) .. (215:3pt);
+		\begin{scope}
+			\clip (0pt,0pt) circle (3pt);
+			\draw[color=\tikzpeople@details, line width=0.2*\scalingfactor,cap=round, dash pattern=on 0.4*\scalingfactor off 0.23*\scalingfactor]
+				(205:2.8pt) to[out=-40,in=230] (-30:3pt);
+		\end{scope}
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@guard@definecolors}{
+	\definecolor{shirt}{rgb}{0.62,0.1,0}
+	\definecolor{hat}{rgb}{0,0,0}
+	\definecolor{collar}{rgb}{0.29,0.29,0.29}
+	\definecolor{details}{rgb}{1,0.82,0}
+	\definecolor{lining}{rgb}{0.9,0.9,0.9}
+}
+\newcommand{\tikzpeople@guard@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			collar/.style ={color=\tikzpeople@collar,top color=\tikzpeople@collar!70, bottom color=\tikzpeople@collar,shading angle=45},
+			details/.style={color=\tikzpeople@details, top color=\tikzpeople@details!70, bottom color=\tikzpeople@details, shading angle=45},
+			lining/.style ={color=\tikzpeople@lining}
+		}
+	\else
+		\tikzset{
+			collar/.style ={color=\tikzpeople@collar!80,top color=\tikzpeople@collar!40, bottom color=\tikzpeople@collar!80,shading angle=45},
+			details/.style={color=\tikzpeople@details!80, top color=\tikzpeople@details!40, bottom color=\tikzpeople@details!80, shading angle=45},
+			lining/.style ={color=\tikzpeople@lining}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@guard@colors}{
+	shirt/200/{-.75/-1}, hat/160/{-.75/1.3}, skin/20/{.5/.7}, collar/0/{.2/.1}, 
+	details/180/{.45/-.4,-.5/.3}, lining/340/{.4/-.8}%
+}

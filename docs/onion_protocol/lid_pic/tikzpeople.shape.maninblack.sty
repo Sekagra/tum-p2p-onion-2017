@@ -1,0 +1,119 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{tie}
+\tikzpeople@addcolorkey{glasses}
+\tikzpeople@addcolorkey{earpiece}
+
+\newcommand{\tikzpeople@maninblack@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@maninblack@paintundershirt
+	\tikzpeople@maninblack@paintopenshirt
+	\tikzpeople@person@paintrighthorn
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthair
+	\tikzpeople@maninblack@paintglasses
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@paintlefthorn
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@maninblack@definecolors}{
+	\definecolor{shirt}{rgb}{0,0,0}
+	\definecolor{undershirt}{rgb}{0.9,0.9,0.9}
+	\definecolor{tie}{rgb}{0,0,0}
+	\definecolor{hair}{rgb}{0,0,0}
+	\definecolor{earpiece}{rgb}{0.9,0.9,0.9}
+	\definecolor{glasses}{rgb}{0,0,.1}
+}
+
+\newcommand{\tikzpeople@maninblack@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			tie/.style          ={color=\tikzpeople@tie,top color=\tikzpeople@tie!70, bottom color=\tikzpeople@tie,shading angle=45},
+			glasses/.style      ={color=\tikzpeople@glasses,top color=\tikzpeople@glasses!70, bottom color=\tikzpeople@glasses,shading angle=45},
+			earpiece/.style     ={color=\tikzpeople@earpiece,top color=\tikzpeople@earpiece!70, bottom color=\tikzpeople@earpiece,shading angle=45},
+			earpiececable/.style={color=\tikzpeople@earpiece,decoration={coil,segment length=\scalingfactor*.12pt,amplitude=\scalingfactor*.1pt, pre length=\scalingfactor*.1pt},decorate,line width=\scalingfactor*.05pt}
+		}
+	\else
+		\tikzset{
+			tie/.style          ={color=\tikzpeople@tie!80,top color=\tikzpeople@tie!40, bottom color=\tikzpeople@tie!80,shading angle=45},
+			glasses/.style      ={color=\tikzpeople@glasses!90,top color=\tikzpeople@glasses!50, bottom color=\tikzpeople@glasses!90,shading angle=45},
+			earpiece/.style     ={color=\tikzpeople@earpiece!80,top color=\tikzpeople@earpiece!40, bottom color=\tikzpeople@earpiece!80,shading angle=45},
+			earpiececable/.style={color=\tikzpeople@earpiece!80,decoration={coil,segment length=\scalingfactor*.12pt,amplitude=\scalingfactor*.1pt, pre length=\scalingfactor*.1pt},decorate,line width=\scalingfactor*.05pt}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@maninblack@paintglasses}{
+	\draw[glasses] 
+		(170:1.1pt) -- ++(173:1.8pt) -- ++(270:.1pt) to[out=340, in=140] (210:1pt);
+	\draw[glasses] 
+		(15:3pt) to[out=200,in=355] (170:1.1pt) to[out=280,in=180] ++(290:1.05pt) 
+		to[out=350,in=180,out looseness=3] (1.3pt,.1pt)  
+		to[out=0,in=180,in looseness=2] ++(310:1pt) to[out=0,in=230,in looseness=.5]
+		(357:3pt) arc (-3:15:3pt);
+	\begin{scope}
+		\clip (0pt,0pt) circle (3pt);
+		\draw[earpiececable] 
+			(190:2.1pt) ++(0,-.2pt) to[out=270,in=120] (240:3.2pt);
+		\draw[earpiece] (190:2.1pt) ellipse (.1pt and .2pt);
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@maninblack@paintundershirt}{
+	\begin{scope}
+		\clip 
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt,0pt) ..
+			(-4pt,-8pt);
+		\draw[undershirt]
+			(-2.2pt,-1pt) -- (2pt,-8.5pt) -- (2pt,-1pt);
+		\draw[tie]
+			(0pt,-2.5pt) -- (0.8pt,-3.2pt) -- (1.1pt,-6  pt) -- (1.7pt,-8.7pt) -- 
+			(2pt,-8.7pt) -- (2  pt,-5.5pt) -- (1  pt,-3.1pt) -- (1.2pt,-2  pt) -- 
+			(0.3pt,-2  pt);
+		\draw[undershirt,shading angle=-45]
+			(0.5pt,-3pt) -- (0.1pt,-3.7pt) -- (-1pt,-3pt);
+		\draw[undershirt,shading angle=-45] 
+			(0.9pt,-2.5pt) -- (1.8pt,-3.2pt) -- (2.2pt,-2.2pt);
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@maninblack@paintopenshirt}{
+	\begin{scope}
+		\clip 
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt,0pt) ..
+			(-4pt,-8pt);
+		\draw[shirt,shading angle=-45]
+			(-2pt,-2.6 pt)   -- (-1.5pt,-5pt)   -- (-0.5pt,-5pt) -- (-1.1pt,-5.2pt) -- 
+			(1.6pt,-8.75pt)  -- (1.9pt,-8.75pt) .. controls (1.7pt,-7pt) and 
+			(-0pt,-3.2pt)    .. (-1.6pt,-2pt)   -- cycle;
+		\draw[shirt,shading angle=-45]
+			(1.9pt,-2pt) .. controls (1.9pt,-1.8pt)	and (1.9pt,-8.5pt) .. 
+			(1.9pt,-8.75pt) -- (2.3pt,-8.5pt) -- (3.2pt,-5.2pt) -- 
+			(2.6pt,-5.2 pt) -- (3.2pt,-5  pt) -- (2.3pt,-2.3pt) -- cycle;
+	\end{scope}
+	\draw[color=\tikzpeople@shirt!80]
+		(-4pt,-8pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+		( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) ..
+		(-4pt,-8pt);
+}
+
+\newcommand{\tikzpeople@maninblack@colors}{
+	shirt/210/{-1/-.75},hair/150/{-.4/1.3},skin/0/{.4/.5},earpiece/170/{-.68/.74},
+	undershirt/190/{0/-.2}, tie/330/{.32/-.7}, glasses/30/{.6/.9}%
+}

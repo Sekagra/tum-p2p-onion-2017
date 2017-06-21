@@ -1,0 +1,122 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{tie}
+
+\newcommand{\tikzpeople@groom@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@groom@paintshirtdetails
+	{
+		\pgftransformshift{\pgfpoint{0}{-.8pt}}
+		\tikzpeople@person@paintrighthorn
+	}
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthair
+	\tikzpeople@groom@painthat
+	\tikzpeople@person@paintgoatee
+	{
+		\pgftransformshift{\pgfpoint{0}{-1.3pt}}
+		\tikzpeople@person@paintlefthorn
+	}
+	{
+		\pgftransformshift{\pgfpoint{0}{.5pt}}
+		\tikzpeople@person@painthalo
+	}
+}
+
+\newcommand{\tikzpeople@groom@paintshirtdetails}{
+	\begin{scope}
+		\clip 
+			(-4.0pt,-8.0pt) .. controls (-2pt,-10pt) and ( 3pt,-9pt) .. 
+			( 5.0pt,-7.0pt) .. controls ( 5pt,  0pt) and (-5pt, 0pt) .. 
+			(-4.0pt,-8.0pt);
+		\draw[shirt,shading angle=-45] 
+			(200:4.5pt) .. controls +(300:4pt) .. (-.2pt,-7.8pt) .. controls 
+			+(320:.5pt) .. (2pt,-8.5pt) .. controls +(30:.7pt) .. (3.5pt,-7pt) .. 
+			controls +(89:2pt) .. (330:3.3pt);
+		\draw[undershirt] 
+			(200:3pt) .. controls +(300:4pt) .. (2pt,-8.5pt) .. controls +(85:4pt) .. 
+			(310:3pt);
+		\draw[skin] (240:3pt) -- (.4pt,-3.7pt) -- (311:3pt) -- cycle;
+		\draw[tie] 
+			(.4pt,-3.8pt) .. controls +(165:1pt) .. ++(-1.4pt,.2pt) .. controls 
+			+(310:.5pt) .. ++(.3pt,-.8pt) .. controls +(20:.75pt) .. (.4pt,-3.8pt) .. 
+			controls +(32:1.2pt) .. ++(1.3pt,.7pt) .. controls +(270:.5pt) .. 
+			++(.2pt,-.8pt) .. controls +(180:1pt) .. (.4pt,-3.8pt);
+		\draw[tie] (.4pt,-3.8pt) circle (.2pt);
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@groom@painthat}{
+	\begin{scope}
+		\pgftransformrotate{10}
+		\path[hat]
+			(30:3pt) ++(0pt,3pt) coordinate (tikzpeople@tmp) 
+			(150:3pt) to[out=85,in=275] ++(0pt,3pt) to[out=10,in=170] (tikzpeople@tmp) 
+			to[out=265,in=95] (30:3pt) --cycle;
+		\begin{scope}
+			\clip 
+				(30:3pt) ++(0pt,3pt) coordinate (tikzpeople@tmp) (150:3pt) to[out=85,in=275] 
+				++(0pt,3pt) to[out=10,in=170] (tikzpeople@tmp) to[out=265,in=95] (30:3pt) --cycle;
+			\path[hatwrap]
+				(30:3pt) ++(0pt,1.3pt) coordinate (tikzpeople@tmp) (150:3pt) ++(0pt,.7pt) 
+				coordinate (tikzpeople@tmp2) (150:3pt) ++(0pt,1.5pt) to[out=355,in=185] (tikzpeople@tmp) -- 
+				++(0pt,-.7pt) to[out=185,in=355] (tikzpeople@tmp2) --cycle;
+		\end{scope}
+	\end{scope}
+	\begin{scope}
+		\pgftransformrotate{4}
+		\begin{scope}
+			\pgftransformshift{\pgfpoint{-.05pt}{.075pt}}
+			\path[hatrim]
+				(170:3pt) ++(-.5pt,1.75pt) coordinate (tikzpeople@tmp)  arc (255:291:11pt) arc 
+				(111:-69:.1pt) arc (291:253:11pt) to[out=163, in= 163,in looseness=3] 
+				(tikzpeople@tmp);
+		\end{scope}
+		\path[hat]
+			(25:3pt) to[out=170,in=10] (160:3pt) arc (160:170:3pt) 
+			to[out=180,in=160,looseness=2] ++(-.5pt,1.75pt) arc (255:291:11pt) 
+			to[out=10,in=10] (25:3pt);
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@groom@definecolors}{
+	\definecolor{shirt}{rgb}{0,0,0}
+	\definecolor{hat}{rgb}{0,0,0}
+	\definecolor{undershirt}{RGB}{232,232,232}
+	\definecolor{tie}{RGB}{194,0,0}
+}
+
+\newcommand{\tikzpeople@groom@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			hatrim/.style ={color=\tikzpeople@hat!60,top color=\tikzpeople@hat!30, bottom color=\tikzpeople@hat!60,shading angle=90},
+			hatwrap/.style={color=\tikzpeople@hat!80,top color=\tikzpeople@hat!60, bottom color=\tikzpeople@hat!80,shading angle=45},
+			tie/.style    ={color=\tikzpeople@tie,inner color=\tikzpeople@tie!80, outer color=\tikzpeople@tie}
+		}
+	\else
+		\tikzset{
+			hatrim/.style ={color=\tikzpeople@hat!40,top color=\tikzpeople@hat!10, bottom color=\tikzpeople@hat!40,shading angle=90},
+			hatwrap/.style={color=\tikzpeople@hat!60,top color=\tikzpeople@hat!40, bottom color=\tikzpeople@hat!60,shading angle=45},
+			shirt/.style  ={color=\tikzpeople@shirt!80,top color=\tikzpeople@shirt!50, bottom color=\tikzpeople@shirt!80,shading angle=45},
+			tie/.style    ={color=\tikzpeople@tie!80,inner color=\tikzpeople@tie!60, outer color=\tikzpeople@tie!80}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@groom@colors}{
+	shirt/200/{-.75/-.8}, hair/160/{-.7/.9}, hat/20/{.3/2}, skin/0/{.5/.7}, 
+	undershirt/340/{.25/-.5},tie/180/{-.15/-.25}%
+}

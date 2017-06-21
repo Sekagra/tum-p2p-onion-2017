@@ -1,0 +1,147 @@
+%% Copyright 2016 Nils Fleischhacker
+%%
+%% This work may be distributed and/or modified under the 
+%% conditions of the LaTeX Project Public License, either 
+%% version 1.3 of this license or (at your option) any later 
+%% version. The latest version of this license is in
+%%
+%%   http://www.latex-project.org/lppl.txt
+%%
+%% and version 1.3 or later is part of all distributions of 
+%% LaTeX version 2005/12/01 or later.
+%%
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Nils Fleischhacker.
+\tikzpeople@addcolorkey{vest}
+\tikzpeople@addcolorkey{patches}
+\tikzpeople@addcolorkey{stitching}
+\tikzpeople@addcolorkey{tie}
+
+\newcommand{\tikzpeople@cowboy@paint}{
+	\tikzpeople@person@paintshirt
+	\tikzpeople@cowboy@paintshirtdetails
+	{
+		\pgftransformshift{\pgfpoint{0}{.8pt}}
+		\tikzpeople@person@paintrighthorn
+	}
+	\tikzpeople@person@painthead
+	\tikzpeople@person@painthair
+	\tikzpeople@cowboy@painthat
+	{
+		\pgftransformshift{\pgfpoint{0}{1.2pt}}
+		\tikzpeople@person@paintlefthorn
+	}
+	\tikzpeople@person@paintgoatee
+	\tikzpeople@person@painthalo
+}
+
+\newcommand{\tikzpeople@cowboy@paintshirtdetails}{
+	\begin{scope}
+		\clip 
+			(-4pt,-8pt) .. controls (-2pt,-10pt) and (3pt,-9pt) .. 
+			( 5pt,-7pt) .. controls ( 5pt,  0pt) and (-5pt,0pt) ..
+			(-4pt,-8pt);
+		\draw[vest,postaction={
+		      decoration={
+		          markings,
+		          mark=at position 0.16 with {\coordinate (tikzpeople@tmp1) at (-.1pt*\scalingfactor,-.1pt*\scalingfactor);},
+		          mark=at position 0.28 with {\coordinate (tikzpeople@tmp2) at (-.1pt*\scalingfactor,-.1pt*\scalingfactor);},
+		          mark=at position 0.6 with {\coordinate (tikzpeople@tmp3) at (-.1pt*\scalingfactor,-.1pt*\scalingfactor);},
+		          mark=at position 0.72 with {\coordinate (tikzpeople@tmp4) at (-.1pt*\scalingfactor,-.1pt*\scalingfactor);};
+		      },decorate
+		  }]
+			(232:3pt) to[out=315,in=90] ++(2.5pt,-5.5pt) -- 
+			++(-2.5pt,0) to[out=90,in=315] ++(-2pt,4pt)--cycle;
+		\draw[patches,postaction={
+		      decoration={
+		          markings,
+		          mark=between positions 0.22 and 0.48 step 0.045 with {\draw[stitching] (.2pt*\scalingfactor,-.1pt*\scalingfactor) -- (0,.1pt*\scalingfactor);},
+		          mark=between positions 0.73 and 1 step 0.045 with {\draw[stitching] (.2pt*\scalingfactor,-.1pt*\scalingfactor) -- (0,.1pt*\scalingfactor);}
+		      },decorate
+		  }]
+		  (tikzpeople@tmp1) to[out=300,in=105] (tikzpeople@tmp2) to[out=190,in=45] (tikzpeople@tmp3) to[out=100,in=300] 
+		  (tikzpeople@tmp4)  to[out=40,in=190] (tikzpeople@tmp1);
+		\draw[vest,postaction={
+		      decoration={
+		          markings,
+		          mark=at position 0.14 with {\coordinate (tikzpeople@tmp1) at (.1pt*\scalingfactor,.1pt*\scalingfactor);},
+		          mark=at position 0.25 with {\coordinate (tikzpeople@tmp2) at (.1pt*\scalingfactor,.1pt*\scalingfactor);},
+		          mark=at position 0.615 with {\coordinate (tikzpeople@tmp3) at (.1pt*\scalingfactor,.1pt*\scalingfactor);},
+		          mark=at position 0.715 with {\coordinate (tikzpeople@tmp4) at (.1pt*\scalingfactor,.1pt*\scalingfactor);};
+		      },decorate
+		  }]
+			(314:3pt) to[out=245,in=100] ++(-.5pt,-5.5pt) -- 
+			++(1.8pt,.8pt) to[out=95,in=250] ++(.5pt,4.5pt)--cycle;
+		\draw[patches,postaction={
+		      decoration={
+		          markings,
+		          mark=between positions 0.28 and 0.52 step 0.055 with {\draw[stitching] (-.2pt*\scalingfactor,-.1pt*\scalingfactor) -- (0,.1pt*\scalingfactor);},
+		          mark=between positions 0.76 and 1 step 0.055 with {\draw[stitching] (-.2pt*\scalingfactor,-.1pt*\scalingfactor) -- (0,.1pt*\scalingfactor);}
+		      },decorate
+		  }]
+		  (tikzpeople@tmp1) to[out=255,in=92] (tikzpeople@tmp2) to[out=357,in=178] (tikzpeople@tmp3) to[out=98,in=268] 
+		  (tikzpeople@tmp4) to[out=170,in=0] (tikzpeople@tmp1);
+		\draw[tie,shading angle=-45] 
+			(.2pt,-3.7pt) to[out=280,in=80] ++(-.2pt,-1.5pt) .. controls +(-.2pt,1pt) 
+			and +(-1.3pt,-.1pt) ..  (.2pt,-3.7pt);
+		\draw[tie] 
+			(234:3pt) to[out=316,in=120] (.4pt,-4.4pt) to[out=40,in=250] (312:3pt);
+		\draw[tie,shading angle=-45] 
+			(1pt,-3.8pt) to[out=300,in=80] ++(.5pt,-1pt) to[out=260,in=85] 
+			++(-.3pt,-1.4pt) arc (85:92:.3pt) to[out=92,in=268] 
+			++(-1.2pt,2.2pt) to[out=88,in=135] (1pt,-3.8pt) -- cycle;
+	\end{scope}
+}
+
+\newcommand{\tikzpeople@cowboy@painthat}{
+	\pgftransformrotate{5}
+	\path[hat] 
+		(15:3pt) ++(-.7pt,3pt) coordinate (tikzpeople@tmp) (165:3pt) -- 
+		++(.7pt,3pt) to[out=10,in=170] (tikzpeople@tmp) -- (15:3pt) --cycle;
+	\begin{scope}
+		\pgftransformshift{\pgfpoint{0}{.2pt}}
+		\path[hatrim] 
+			(203:3pt) ++(-2.5pt,3.3pt) coordinate (tikzpeople@tmp)  arc (250:282:19pt) arc 
+			(102:-78:.3pt) arc (282:248.5:19pt) to[out=150, in= 160] (tikzpeople@tmp);
+	\end{scope}
+	\path[hat] 
+		(357:3pt) to[out=160,in=20] (183:3pt) arc (183:203:3pt) to[out=180,in=175] 
+		++(-2.5pt,3.3pt) arc (250:282:19pt) to[out=10,in=10] (335:3pt) arc 
+		(335:357:3pt) --cycle;
+}
+
+\newcommand{\tikzpeople@cowboy@definecolors}{
+	\definecolor{shirt}{RGB}{56,52,182}
+	\definecolor{hat}{RGB}{105,49,0}
+	\definecolor{hair}{RGB}{28,26,25}
+	\definecolor{vest}{RGB}{204,100,0}
+	\definecolor{patches}{RGB}{254,145,42}
+	\definecolor{stitching}{RGB}{184,90,0}
+	\definecolor{tie}{RGB}{205,0,20}
+}
+\newcommand{\tikzpeople@cowboy@definestyles}{
+	\if@tikzpeople@saturated
+		\tikzset{
+			hatrim/.style={color=\tikzpeople@hat!70,top color=\tikzpeople@hat!20, bottom color=\tikzpeople@hat!70,shading angle=90},
+			vest/.style={color=\tikzpeople@vest,top color=\tikzpeople@vest!70,bottom color=\tikzpeople@vest,shading angle=45},
+			patches/.style={color=\tikzpeople@patches,top color=\tikzpeople@patches!70,bottom color=\tikzpeople@patches,shading angle=45},
+			stitching/.style={line cap=round,line width=.09pt*\scalingfactor,color=\tikzpeople@stitching},
+			tie/.style={color=\tikzpeople@tie,top color=\tikzpeople@tie!70, bottom color=\tikzpeople@tie,shading angle=45}
+		}
+	\else
+		\tikzset{
+			hatrim/.style={color=\tikzpeople@hat!40,top color=\tikzpeople@hat!10, bottom color=\tikzpeople@hat!40,shading angle=90},
+			vest/.style={color=\tikzpeople@vest!80,top color=\tikzpeople@vest!40, bottom color=\tikzpeople@vest!80,shading angle=45},
+			patches/.style={color=\tikzpeople@patches!80,top color=\tikzpeople@patches!40, bottom color=\tikzpeople@patches!80,shading angle=45},
+			stitching/.style={line cap=round,line width=.09pt*\scalingfactor,color=\tikzpeople@stitching},
+			tie/.style={color=\tikzpeople@tie!80,top color=\tikzpeople@tie!50, bottom color=\tikzpeople@tie!80,shading angle=45}
+		}
+	\fi
+}
+
+\newcommand{\tikzpeople@cowboy@colors}{
+	shirt/350/{1/-.5}, hair/180/{-.7/.7}, hat/160/{-1/1}, tie/10/{.1/-.25}, 
+	skin/30/{.5/.8}, vest/195/{-.7/-.3}, patches/210/{-.5/-.7}, 
+	stitching/330/{-.18/-.85,.53/-.71}%
+}
