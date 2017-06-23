@@ -16,7 +16,7 @@ import java.net.InetAddress;
  * Provides a wrapping and basic handling of netty.
  * Created by Christoph Rudolf on 05.06.17.
  */
-public abstract class RequestInterfaceBase {
+public abstract class TcpClientInterfaceBase {
     private Channel channel;
     protected InetAddress host;
     protected int port;

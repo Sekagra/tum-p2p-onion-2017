@@ -1,7 +1,7 @@
 package de.tum.in.net.group17.onion.interfaces.onionapi;
 
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
-import de.tum.in.net.group17.onion.interfaces.ServerInterfaceBase;
+import de.tum.in.net.group17.onion.interfaces.TcpServerInterfaceBase;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParser;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -13,10 +13,15 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * Implementation of the Onion API interface offering services to the UI/CM.
  * Created by Christoph Rudolf on 11.06.17.
  */
-public class OnionApiInterfaceImpl extends ServerInterfaceBase implements OnionApiInterface {
+public class OnionApiInterfaceImpl extends TcpServerInterfaceBase implements OnionApiInterface {
     private OnionApiParser parser;
     private ConfigurationProvider config;
 
+    /**
+     * Create a new Onion API interface.
+     * @param config The configuration of the Onion module to read listening ports and other values from.
+     * @param parser The parser for packets that are expected to be received at the Onion API interface.
+     */
     public OnionApiInterfaceImpl(ConfigurationProvider config, OnionApiParser parser) {
         this.parser = parser;
         this.config = config;
@@ -46,6 +51,13 @@ public class OnionApiInterfaceImpl extends ServerInterfaceBase implements OnionA
             public void channelReadComplete(ChannelHandlerContext ctx) throws Exception{
                 System.out.println( "channelReadComplete ++++");
                 ctx.fireChannelReadComplete();
+            }
+
+            @Override
+            public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+                super.channelUnregistered(ctx);
+                System.out.println(ctx.channel().remoteAddress().toString() + " has disconnected (Unregister).");
+
             }
         };
     }

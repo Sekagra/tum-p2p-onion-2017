@@ -2,9 +2,12 @@ package de.tum.in.net.group17.onion.interfaces;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+
+import java.util.concurrent.Callable;
 
 
 /**
@@ -13,7 +16,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
  * Provides a wrapping and basic handling of netty.
  * Created by Christoph Rudolf on 11.06.17.
  */
-public abstract class ServerInterfaceBase {
+public abstract class TcpServerInterfaceBase {
     protected int port;
 
     /**
@@ -26,7 +29,7 @@ public abstract class ServerInterfaceBase {
             ServerBootstrap b = new ServerBootstrap()
                     .group(entryGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(new ServerChannelInitializer(getHandler()));
+                    .childHandler(new ServerChannelInitializer(() -> getHandler()));
 
             // Bind and start to accept incoming connections.
             b.bind(port).sync().channel().closeFuture().sync();
@@ -39,7 +42,7 @@ public abstract class ServerInterfaceBase {
     }
 
     /**
-     * Retrieve a handler specificly for the interface's implementation.
+     * Retrieve a handler specifically for the interface's implementation.
      * @return A ChannelHandler to be used for this server instance.
      */
     protected abstract ChannelHandler getHandler();

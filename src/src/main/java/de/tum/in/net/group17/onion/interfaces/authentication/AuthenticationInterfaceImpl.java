@@ -1,7 +1,7 @@
 package de.tum.in.net.group17.onion.interfaces.authentication;
 
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
-import de.tum.in.net.group17.onion.interfaces.RequestInterfaceBase;
+import de.tum.in.net.group17.onion.interfaces.TcpClientInterfaceBase;
 import de.tum.in.net.group17.onion.model.results.RawRequestResult;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
@@ -15,11 +15,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Implementation of an interface to the Onion Authentication module.
  * Created by Christoph Rudolf on 06.06.17.
  */
-public class AuthenticationInterfaceImpl extends RequestInterfaceBase implements AuthenticationInterface {
+public class AuthenticationInterfaceImpl extends TcpClientInterfaceBase implements AuthenticationInterface {
     private AuthenticationParser parser;
     private ConfigurationProvider config;
     private final AtomicInteger requestCounter;
 
+    /**
+     * Create a new authentication interface.
+     * @param config The configuration of the Onion module to read listening ports and other values from.
+     * @param parser The parser for packets that are expected to be received from the Onion Authentication module.
+     */
     public AuthenticationInterfaceImpl(ConfigurationProvider config, AuthenticationParser parser) {
         this.parser = parser;
         this.config = config;

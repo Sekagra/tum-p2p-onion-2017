@@ -13,6 +13,10 @@ public class ConfigurationProvider {
         return 9002;
     }
 
+    public int getOnionPort() {
+        return 9003;
+    }
+
     public int getAuthModuleRequestPort() {
         return 9001;
     }

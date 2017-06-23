@@ -12,10 +12,8 @@ import org.junit.Test;
 public class OnionApiInterfaceTest {
     @Test
     public void receiveRawData() throws Exception {
+        System.out.println("Server is listening for test...");
         OnionApiInterfaceImpl intf = new OnionApiInterfaceImpl(new ConfigurationProvider(), new OnionApiParserImpl());
         intf.listen();
-        System.out.println("Server is listening for test...");
-
-
     }
 }
