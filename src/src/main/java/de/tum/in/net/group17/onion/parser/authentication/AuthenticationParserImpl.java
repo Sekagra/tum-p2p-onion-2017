@@ -130,7 +130,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      * Confirm the size and type matching the specification of the AUTH_SESSION_HS2 message.
      *
      * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violations.
+     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violation.
      */
     private ParsedMessage parseSessionHandshake2(byte[] message) {
         ByteBuffer buffer;
@@ -155,7 +155,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      * Confirm the size and type matching the specification of the AUTH_LAYER_ENCRYPT_RESP message.
      *
      * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violations.
+     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violation.
      */
     private ParsedMessage parseLayerEncryptResponse(byte[] message) {
         return parseLayerCryptResponse(MessageType.AUTH_LAYER_ENCRYPT_RESP, message);
@@ -165,7 +165,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      * Confirm the size and type matching the specification of the AUTH_LAYER_DECRYPT_RESP message.
      *
      * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violations.
+     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violation.
      */
     private ParsedMessage parseLayerDecryptResponse(byte[] message) {
         return parseLayerCryptResponse(MessageType.AUTH_LAYER_DECRYPT_RESP, message);
@@ -176,7 +176,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      *
      * @param type Is this a decrypt/encrypt message?
      * @param message The received message.
-     * @return The parsed message to confirm its validity; This method throws a ParsingException on every format violations.
+     * @return The parsed message to confirm its validity; This method throws a ParsingException on every format violation.
      */
     private ParsedMessage parseLayerCryptResponse(MessageType type, byte[] message) {
         ByteBuffer buffer;
@@ -196,6 +196,12 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
                 new AuthLayerDecryptResParsedMessage(requestId, payload));
     }
 
+    /**
+     * Parse an ONION_AUTH_ERROR message.
+     *
+     * @param message The message sent by the Onion Auth module.
+     * @return A ParsedMessage to confirm the validity of the message; This method throws a ParsingException on every format violation.
+     */
     private ParsedMessage parseAuthErrorRespone(byte[] message) {
         ByteBuffer buffer;
 

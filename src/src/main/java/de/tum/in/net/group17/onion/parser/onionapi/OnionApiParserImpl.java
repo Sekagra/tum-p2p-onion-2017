@@ -27,7 +27,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
     /**
      * @inheritDoc
      *
-     * This implementation throws an ParsingException on every error.
+     * This implementation throws a ParsingException on every error.
      */
     public ParsedMessage buildOnionErrorMsg(MessageType requestType, int tunnelId) {
         if (requestType != MessageType.ONION_TUNNEL_BUILD
@@ -43,7 +43,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @inheritDoc
      *
      * The host key is checked for validity.
-     * This implementation throws an ParsingException on every error.
+     * This implementation throws a ParsingException on every error.
      */
     public ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey) {
         ASN1Primitive key;
@@ -71,7 +71,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @inheritDoc
      *
      * We check the destination key for validity.
-     * This implementation throws an ParsingException on every error.
+     * This implementation throws a ParsingException on every error.
      */
     public ParsedMessage buildOnionTunnelReadyMsg(int id, byte[] destinationKey) {
         ASN1Primitive key;
@@ -98,7 +98,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
     /**
      * @inheritDoc
      *
-     * This implementation throws an ParsingException on every error.
+     * This implementation throws a ParsingException on every error.
      */
     public ParsedMessage parseMsg(byte[] data) {
         checkSize(data); // Throws an exception on all errors

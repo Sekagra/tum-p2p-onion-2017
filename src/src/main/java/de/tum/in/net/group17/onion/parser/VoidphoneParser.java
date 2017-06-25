@@ -13,7 +13,7 @@ import java.nio.ByteOrder;
 public class VoidphoneParser {
     /**
      * Check an message's size value.
-     * This method throws an ParsingException on any errors.
+     * This method throws a ParsingException on any errors.
      *
      * @param message The message we shall check.
      */

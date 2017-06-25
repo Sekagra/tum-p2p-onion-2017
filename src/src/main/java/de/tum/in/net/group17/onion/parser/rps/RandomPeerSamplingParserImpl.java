@@ -27,7 +27,7 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
     /**
      * @inheritDoc
      *
-     * The method throws and ParsingException on every parse error!
+     * The method throws a ParsingException on every parse error!
      */
     public ParsedMessage buildRpsQueryMsg() {
         return new RpsQueryParsedMessage();
@@ -36,7 +36,7 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
     /**
      * @inheritDoc
      *
-     * The method throws and ParsingException on every parse error!
+     * The method throws a ParsingException on every parse error!
      */
     public ParsedMessage parseMsg(byte[] data) {
         checkSize(data); // Throws an exception if an error occurs
@@ -51,7 +51,7 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
 
     /**
      * Parse an RPS PEER message.
-     * The method throws an ParsingException on every parsing error!
+     * The method throws a ParsingException on every parsing error!
      *
      * @param data Array containing the packet to parse.
      * @return RpsParsedObject of type RPS_MSG_TYPE.RPS_PEER if the packet is a valid RPS PEER message.

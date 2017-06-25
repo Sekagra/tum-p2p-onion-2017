@@ -31,6 +31,12 @@ public enum MessageType {
     ONION_ERROR((short)565),
     ONION_COVER((short)566),
 
+    ONION_TUNNEL_INIT((short)595),
+    ONION_TUNNEL_ACCEPT((short)596),
+    ONION_TUNNEL_RELAY((short)597),
+    ONION_TUNNEL_TRANSPORT((short)598),
+    ONION_TUNNEL_TEARDOWN((short)599),
+
     AUTH_SESSION_START((short)600),
     AUTH_SESSION_HS1((short)601),
     AUTH_SESSION_INCOMING_HS1((short)602),
