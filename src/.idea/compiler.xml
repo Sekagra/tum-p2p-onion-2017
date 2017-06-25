@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="Group17_Onion" target="1.5" />
+      <module name="Group17_Onion" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
