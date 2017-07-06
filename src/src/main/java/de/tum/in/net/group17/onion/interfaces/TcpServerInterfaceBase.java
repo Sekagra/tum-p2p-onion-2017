@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
  */
 public abstract class TcpServerInterfaceBase {
     protected int port;
-2
+
     /**
      * Start listening to incoming requests on the specified port for this server interface.
      */
