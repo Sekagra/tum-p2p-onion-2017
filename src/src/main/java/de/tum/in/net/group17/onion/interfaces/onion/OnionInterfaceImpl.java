@@ -1,7 +1,8 @@
 package de.tum.in.net.group17.onion.interfaces.onion;
 
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
-import de.tum.in.net.group17.onion.interfaces.UdpServerInterfaceBase;
+import de.tum.in.net.group17.onion.interfaces.UdpClient;
+import de.tum.in.net.group17.onion.interfaces.UdpServer;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionToOnionParser;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -18,13 +19,15 @@ public class OnionInterfaceImpl implements OnionInterface {
     private ConfigurationProvider config;
     private OnionToOnionParser parser;
     private int port;
-    private UdpServerInterfaceBase server;
+    private UdpServer server;
+    private UdpClient client;
 
     public OnionInterfaceImpl(ConfigurationProvider config, OnionToOnionParser parser) {
         this.parser = parser;
         this.config = config;
         this.port = this.config.getOnionPort();
-        this.server = new UdpServerInterfaceBase();
+        this.server = new UdpServer();
+        this.client = new UdpClient();
     }
 
     /**

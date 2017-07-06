@@ -12,7 +12,7 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
  * Provides a wrapping and basic handling of netty.
  * Created by Christoph Rudolf on 21.06.17.
  */
-public class UdpServerInterfaceBase {
+public class UdpServer {
 
     /**
      * Start listening to incoming requests on the specified port for this server interface.

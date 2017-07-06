@@ -6,4 +6,5 @@ package de.tum.in.net.group17.onion.interfaces.onion;
  * Created by Christoph Rudolf on 21.06.17.
  */
 public interface OnionInterface {
+
 }

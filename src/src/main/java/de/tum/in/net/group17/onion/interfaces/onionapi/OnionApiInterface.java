@@ -6,5 +6,7 @@ package de.tum.in.net.group17.onion.interfaces.onionapi;
  * Created by Christoph Rudolf on 11.06.17.
  */
 public interface OnionApiInterface {
+    void listen();
 
+    void sendIncoming();
 }
