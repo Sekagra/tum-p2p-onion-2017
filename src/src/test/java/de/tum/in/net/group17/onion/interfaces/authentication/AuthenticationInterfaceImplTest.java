@@ -1,6 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.authentication;
 
-import de.tum.in.net.group17.onion.config.ConfigurationProvider;
+import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
@@ -13,7 +13,7 @@ import org.junit.Test;
 public class AuthenticationInterfaceImplTest {
     @Test
     public void startSession() throws Exception {
-        AuthenticationInterfaceImpl intf = new AuthenticationInterfaceImpl(new ConfigurationProvider(), new AuthenticationParserImpl());
+        AuthenticationInterfaceImpl intf = new AuthenticationInterfaceImpl(new ConfigurationProviderImpl(), new AuthenticationParserImpl());
 
         Peer peer = new Peer(new byte[] {45,45,45,45});
         intf.startSession(peer, new RequestResult() {

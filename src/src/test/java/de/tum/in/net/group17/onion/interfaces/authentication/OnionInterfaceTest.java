@@ -1,6 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.authentication;
 
-import de.tum.in.net.group17.onion.config.ConfigurationProvider;
+import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterfaceImpl;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionToOnionParserImpl;
 import org.junit.Test;
@@ -11,7 +11,7 @@ import org.junit.Test;
 public class OnionInterfaceTest {
     @Test
     public void receiveRawData() throws Exception {
-        OnionInterfaceImpl intf = new OnionInterfaceImpl(new ConfigurationProvider(), new OnionToOnionParserImpl());
+        OnionInterfaceImpl intf = new OnionInterfaceImpl(new ConfigurationProviderImpl(), new OnionToOnionParserImpl());
         System.out.println("Server is listening for test...");
         intf.listen();
     }

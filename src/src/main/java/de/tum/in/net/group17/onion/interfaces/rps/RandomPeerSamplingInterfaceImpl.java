@@ -1,6 +1,8 @@
 package de.tum.in.net.group17.onion.interfaces.rps;
 
+import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
+import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
 import de.tum.in.net.group17.onion.model.results.RawRequestResult;
 import de.tum.in.net.group17.onion.interfaces.TcpClientInterfaceBase;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
@@ -21,6 +23,7 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterfaceBase impl
      * @param config The configuration of the Onion module to read listening ports and other values from.
      * @param parser The parser for packets that are expected to be received from the RPS module.
      */
+    @Inject
     public RandomPeerSamplingInterfaceImpl(ConfigurationProvider config, RandomPeerSamplingParser parser) {
         this.parser = parser;
         this.config = config;

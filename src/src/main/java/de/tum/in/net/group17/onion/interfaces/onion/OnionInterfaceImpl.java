@@ -1,6 +1,8 @@
 package de.tum.in.net.group17.onion.interfaces.onion;
 
+import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
+import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
 import de.tum.in.net.group17.onion.interfaces.UdpClient;
 import de.tum.in.net.group17.onion.interfaces.UdpServer;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionToOnionParser;
@@ -22,6 +24,7 @@ public class OnionInterfaceImpl implements OnionInterface {
     private UdpServer server;
     private UdpClient client;
 
+    @Inject
     public OnionInterfaceImpl(ConfigurationProvider config, OnionToOnionParser parser) {
         this.parser = parser;
         this.config = config;
