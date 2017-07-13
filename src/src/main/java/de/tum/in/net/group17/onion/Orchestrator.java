@@ -17,8 +17,6 @@ public class Orchestrator {
     @Inject
     private RandomPeerSamplingInterface rpsInterface;
     @Inject
-    private AuthenticationInterface authInterface;
-    @Inject
     private OnionApiInterface apiInterface;
     @Inject
     private OnionInterface onionInterface;

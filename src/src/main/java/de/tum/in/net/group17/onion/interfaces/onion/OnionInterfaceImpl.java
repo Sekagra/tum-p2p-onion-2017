@@ -5,6 +5,8 @@ import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
 import de.tum.in.net.group17.onion.interfaces.UdpClient;
 import de.tum.in.net.group17.onion.interfaces.UdpServer;
+import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterface;
+import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionToOnionParser;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -23,14 +25,16 @@ public class OnionInterfaceImpl implements OnionInterface {
     private int port;
     private UdpServer server;
     private UdpClient client;
+    private AuthenticationInterface authInterface;
 
     @Inject
-    public OnionInterfaceImpl(ConfigurationProvider config, OnionToOnionParser parser) {
+    public OnionInterfaceImpl(ConfigurationProvider config, OnionToOnionParser parser, AuthenticationInterface authInterface) {
         this.parser = parser;
         this.config = config;
         this.port = this.config.getOnionPort();
         this.server = new UdpServer();
         this.client = new UdpClient();
+        this.authInterface = authInterface;
     }
 
     /**
