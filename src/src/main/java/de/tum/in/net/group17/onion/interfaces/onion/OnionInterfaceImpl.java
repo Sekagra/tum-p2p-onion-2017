@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
 import de.tum.in.net.group17.onion.interfaces.UdpClient;
+import de.tum.in.net.group17.onion.interfaces.UdpMessageHandler;
 import de.tum.in.net.group17.onion.interfaces.UdpServer;
 import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
@@ -40,49 +41,19 @@ public class OnionInterfaceImpl implements OnionInterface {
     /**
      * Start listening for incoming Onion UDP packets.
      */
+    @Override
     public void listen()
     {
-        this.server.listen(this.port, new SimpleChannelInboundHandler<DatagramPacket>() {
-            @Override
-            public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-                super.channelRegistered(ctx);
-            }
+        this.server.listen(this.port, (ctx, packet) -> {
+            System.out.println ("WAT");
 
-            @Override
-            public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-                super.channelUnregistered(ctx);
-            }
+            System.out.println ("Messaged received on " + new Date() + " from " + packet.sender().toString() + "\r");
+            final ByteBuf bb = packet.content();
+            byte[] buf = new byte[bb.readableBytes()];
 
-            @Override
-            public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                super.channelActive(ctx);
-            }
+            bb.readBytes(buf);
 
-            @Override
-            public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-                super.channelInactive(ctx);
-            }
-
-            @Override
-            public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-                super.channelReadComplete(ctx);
-            }
-
-            @Override
-            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                super.channelRead(ctx, msg);
-            }
-
-            @Override
-            public void channelRead0(ChannelHandlerContext ctx, DatagramPacket packet) throws Exception {
-                System.out.println ("Messaged received on " + new Date() + ":\r");
-                final ByteBuf bb = packet.content();
-                byte[] buf = new byte[bb.readableBytes()];
-
-                bb.readBytes(buf);
-
-                System.out.println("Received [" + new String(buf)+ "]");
-            }
+            System.out.println("Received [" + new String(buf)+ "]");
         });
     }
 }

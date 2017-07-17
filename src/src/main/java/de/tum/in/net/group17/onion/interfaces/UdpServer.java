@@ -1,10 +1,14 @@
 package de.tum.in.net.group17.onion.interfaces;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+
+import java.util.Date;
 
 /**
  * Base class for all interfaces needing a server running via UDP. This is currently only the case for the
@@ -18,10 +22,50 @@ public class UdpServer {
      * Start listening to incoming requests on the specified port for this server interface.
      *
      * @param port The port to be listening on.
-     * @param handler The message handler for the unparsed but delimited message.
+     * @param handler The message handler for the unparsed.
      */
-    public void listen(final int port, final ChannelHandler handler) {
+    public void listen(final int port, final UdpMessageHandler handler) {
         final NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+
+        System.out.println("UDP Server starting to listen.");
+
+        // Setup ChannelInboundHandler
+        SimpleChannelInboundHandler<DatagramPacket> scih = new SimpleChannelInboundHandler<DatagramPacket>() {
+            @Override
+            public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+                super.channelRegistered(ctx);
+            }
+
+            @Override
+            public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+                super.channelUnregistered(ctx);
+            }
+
+            @Override
+            public void channelActive(ChannelHandlerContext ctx) throws Exception {
+                super.channelActive(ctx);
+            }
+
+            @Override
+            public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+                super.channelInactive(ctx);
+            }
+
+            @Override
+            public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+                super.channelReadComplete(ctx);
+            }
+
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                super.channelRead(ctx, msg);
+            }
+
+            @Override
+            public void channelRead0(ChannelHandlerContext ctx, DatagramPacket packet) throws Exception {
+                handler.readDatagram(ctx, packet);
+            }
+        };
 
         try {
             Bootstrap b = new Bootstrap()
@@ -32,7 +76,7 @@ public class UdpServer {
                         @Override
                         public void initChannel(NioDatagramChannel ch) throws Exception {
                             ChannelPipeline p = ch.pipeline();
-                            p.addLast("handler", handler);
+                            p.addLast("handler", scih);
                         }
                     });
             b.bind(port).sync().channel().closeFuture().sync();
