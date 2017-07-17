@@ -18,6 +18,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 public class OnionApiInterfaceImpl extends TcpServerInterfaceBase implements OnionApiInterface {
     private OnionApiParser parser;
     private ConfigurationProvider config;
+    private OnionApiCallback callback;
 
     /**
      * Create a new Onion API interface.
@@ -29,6 +30,12 @@ public class OnionApiInterfaceImpl extends TcpServerInterfaceBase implements Oni
         this.parser = parser;
         this.config = config;
         this.port = this.config.getOnionApiPort();
+    }
+
+    @Override
+    public void listen(OnionApiCallback callback) {
+        this.callback = callback;
+        super.listen();
     }
 
     protected ChannelHandler getHandler() {
@@ -48,6 +55,7 @@ public class OnionApiInterfaceImpl extends TcpServerInterfaceBase implements Oni
             protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf) throws Exception {
                 Channel channel = channelHandlerContext.channel();
                 System.out.println(channel.remoteAddress().toString() + " sent us " + byteBuf.toString());
+                // Use callback after parsing
             }
 
             @Override
@@ -60,13 +68,22 @@ public class OnionApiInterfaceImpl extends TcpServerInterfaceBase implements Oni
             public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
                 super.channelUnregistered(ctx);
                 System.out.println(ctx.channel().remoteAddress().toString() + " has disconnected (Unregister).");
-
             }
         };
     }
 
     @Override
     public void sendIncoming() {
+
+    }
+
+    @Override
+    public void sendReady() {
+
+    }
+
+    @Override
+    public void sendError() {
 
     }
 }

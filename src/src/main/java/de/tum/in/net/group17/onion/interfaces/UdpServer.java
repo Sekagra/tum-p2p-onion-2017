@@ -30,7 +30,7 @@ public class UdpServer {
         System.out.println("UDP Server starting to listen.");
 
         // Setup ChannelInboundHandler
-        SimpleChannelInboundHandler<DatagramPacket> scih = new SimpleChannelInboundHandler<DatagramPacket>() {
+        SimpleChannelInboundHandler<DatagramPacket> inboundHandler = new SimpleChannelInboundHandler<DatagramPacket>() {
             @Override
             public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
                 super.channelRegistered(ctx);
@@ -76,7 +76,7 @@ public class UdpServer {
                         @Override
                         public void initChannel(NioDatagramChannel ch) throws Exception {
                             ChannelPipeline p = ch.pipeline();
-                            p.addLast("handler", scih);
+                            p.addLast("handler", inboundHandler);
                         }
                     });
             b.bind(port).sync().channel().closeFuture().sync();
