@@ -12,4 +12,5 @@ public interface ConfigurationProvider {
     int getOnionPort();
     int getAuthModuleRequestPort();
     InetAddress getAuthModuleHost();
+    int getIntermediateHopCount();
 }

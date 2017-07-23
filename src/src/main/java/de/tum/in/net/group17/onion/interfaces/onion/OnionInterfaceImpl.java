@@ -16,6 +16,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
+import org.apache.log4j.Logger;
 
 import java.util.Date;
 import java.util.List;
@@ -36,8 +37,11 @@ public class OnionInterfaceImpl implements OnionInterface {
     private List<Tunnel> tunnel;
     private Map<Lid, TunnelSegment> segments;
 
+    private Logger logger;
+
     @Inject
     public OnionInterfaceImpl(ConfigurationProvider config, OnionToOnionParser parser, AuthenticationInterface authInterface) {
+        this.logger = Logger.getLogger(OnionInterface.class);
         this.parser = parser;
         this.config = config;
         this.port = this.config.getOnionPort();
@@ -53,15 +57,13 @@ public class OnionInterfaceImpl implements OnionInterface {
     public void listen(OnionCallback callback)
     {
         this.server.listen(this.port, (ctx, packet) -> {
-            System.out.println ("WAT");
-
-            System.out.println ("Messaged received on " + new Date() + " from " + packet.sender().toString() + "\r");
+            logger.debug("Messaged received on " + new Date() + " from " + packet.sender().toString() + "\r");
             final ByteBuf bb = packet.content();
             byte[] buf = new byte[bb.readableBytes()];
 
             bb.readBytes(buf);
 
-            System.out.println("Received [" + new String(buf)+ "]");
+            logger.debug("Received [" + new String(buf)+ "]");
         });
     }
 

@@ -3,18 +3,19 @@ package de.tum.in.net.group17.onion;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionCallback;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiCallback;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingInterface;
-import de.tum.in.net.group17.onion.model.Lid;
-import de.tum.in.net.group17.onion.model.Tunnel;
-import de.tum.in.net.group17.onion.model.TunnelSegment;
+import de.tum.in.net.group17.onion.model.*;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelBuildParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDestroyParsedMessage;
+import de.tum.in.net.group17.onion.parser.rps.RpsPeerParsedMessage;
+import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,8 @@ public class Orchestrator {
     private OnionApiInterface apiInterface;
     @Inject
     private OnionInterface onionInterface;
+    @Inject
+    private ConfigurationProvider configProvider;
 
     /**
      * List of tunnels this peer has started.
@@ -42,8 +45,10 @@ public class Orchestrator {
      */
     private Map<Lid, TunnelSegment> segments;
 
+    private static Logger logger = Logger.getRootLogger();
+
     public static void main(String[] args) {
-        System.out.println("Starting up!");
+        logger.info("Starting up!");
 
         // Setup the dependency injection with Guice
         Injector injector = Guice.createInjector(new ProductionInjector());
@@ -51,11 +56,15 @@ public class Orchestrator {
         orchestrator.start();
     }
 
+    /**
+     * Starting to connect to all other interfaces and initiate the first Onion round
+     */
     public void start() {
         // Test if injection worked and it is not null
-        System.out.println(rpsInterface.toString());
-        System.out.println(apiInterface.toString());
-        System.out.println(onionInterface.toString());
+        assert rpsInterface != null;
+        assert apiInterface != null;
+        assert onionInterface != null;
+        assert configProvider != null;
 
         // Listen for Onion connections and on the API
         this.onionInterface.setTunnel(tunnel);
@@ -75,17 +84,17 @@ public class Orchestrator {
         return new OnionCallback() {
             @Override
             public void tunnelAccepted(int tunnelId) {
-                // Notify the CM via "ONION TUNNEL READY"
+                // todo: Notify the CM via "ONION TUNNEL READY"
             }
 
             @Override
             public void error() {
-                // Notify the CM via "ONION ERROR"
+                // todo: Notify the CM via "ONION ERROR"
             }
 
             @Override
             public void tunnelData(int tunnelId, OnionTunnelDataParsedMessage msg) {
-                // Notify the CM via "ONION TUNNEL DATA"
+                // todo: Notify the CM via "ONION TUNNEL DATA"
             }
         };
     }
@@ -94,24 +103,54 @@ public class Orchestrator {
         return new OnionApiCallback() {
             @Override
             public void receivedTunnelBuild(OnionTunnelBuildParsedMessage msg) {
-                // Start a new tunnel building sequence with the Onion module.
+                // todo: Start a new tunnel building sequence with the Onion module.
+                // The tunnel is only supposed to be used in the next round
+                buildTunnel(tunnel.size(), Peer.fromOnionBuild(msg));
             }
 
             @Override
             public void receivedCoverData(OnionCoverParsedMessage msg) {
-                // Data to forward over a tunnel.
+                // todo: Data to forward over a tunnel.
             }
 
             @Override
             public void receivedVoiceData(OnionTunnelDataParsedMessage msg) {
-                // Cover traffic instruction
+                // todo: Cover traffic instruction
             }
 
             @Override
             public void receviedDestroy(OnionTunnelDestroyParsedMessage msg) {
-                // Start a destruction sequence for a tunnel.
+                // todo: Start a destruction sequence for a tunnel.
             }
         };
+    }
+
+    private void buildTunnel() {
+        // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
+        this.rpsInterface.queryRandomPeer(result -> {
+            Peer peer = Peer.fromRpsReponse((RpsPeerParsedMessage) result);
+            buildTunnel(tunnel.size(), peer);
+        });
+    }
+
+    private void buildTunnel(int id, Peer destination) {
+        Tunnel t = new Tunnel(id);
+
+        // get random intermediate hops to destination
+        for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
+            // sync/async?
+            this.rpsInterface.queryRandomPeer(result -> {
+                Peer peer = Peer.fromRpsReponse((RpsPeerParsedMessage) result);
+                // key missing for onion module
+                t.addSegment(new TunnelSegment(LidImpl.createRandomLid(), peer.getIpAddress(), peer.getPort(), Direction.FORWARD));
+            });
+        }
+
+        // add segment to destination
+        t.addSegment(new TunnelSegment(LidImpl.createRandomLid(), destination.getIpAddress(), destination.getPort(), Direction.FORWARD));
+
+        // issue build
+        this.onionInterface.buildTunnel(t);
     }
 
 }

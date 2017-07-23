@@ -1,5 +1,7 @@
 package de.tum.in.net.group17.onion.config;
 
+import org.apache.log4j.Logger;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -9,6 +11,12 @@ import java.net.UnknownHostException;
  * Created by Christoph Rudolf on 27.05.17.
  */
 public class ConfigurationProviderImpl implements ConfigurationProvider {
+    private Logger logger;
+
+    public ConfigurationProviderImpl() {
+        this.logger = Logger.getLogger(ConfigurationProvider.class);
+    }
+
     public int getOnionApiPort() {
         return 9002;
     }
@@ -28,5 +36,10 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public int getIntermediateHopCount() {
+        return 2;
     }
 }

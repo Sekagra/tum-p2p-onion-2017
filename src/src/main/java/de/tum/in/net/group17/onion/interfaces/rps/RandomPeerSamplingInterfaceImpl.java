@@ -8,6 +8,7 @@ import de.tum.in.net.group17.onion.interfaces.TcpClientInterfaceBase;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParser;
+import org.apache.log4j.Logger;
 
 
 /**
@@ -17,6 +18,7 @@ import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParser;
 public class RandomPeerSamplingInterfaceImpl extends TcpClientInterfaceBase implements RandomPeerSamplingInterface {
     private RandomPeerSamplingParser parser;
     private ConfigurationProvider config;
+    private Logger logger;
 
     /**
      * Create a new RPS interface.
@@ -25,6 +27,7 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterfaceBase impl
      */
     @Inject
     public RandomPeerSamplingInterfaceImpl(ConfigurationProvider config, RandomPeerSamplingParser parser) {
+        this.logger = Logger.getLogger(RandomPeerSamplingInterface.class);
         this.parser = parser;
         this.config = config;
         this.host = this.config.getAuthModuleHost();
@@ -35,10 +38,6 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterfaceBase impl
         // Build the query message
         ParsedMessage packet = this.parser.buildRpsQueryMsg();
 
-        sendMessage(packet.serialize(), new RawRequestResult() {
-            public void respond(byte[] result) {
-                callback.respond(parser.parseMsg(result));
-            }
-        });
+        sendMessage(packet.serialize(), result -> callback.respond(parser.parseMsg(result)));
     }
 }

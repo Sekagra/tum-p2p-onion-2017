@@ -10,6 +10,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import org.apache.log4j.Logger;
 
 /**
  * Implementation of the Onion API interface offering services to the UI/CM.
@@ -19,6 +20,7 @@ public class OnionApiInterfaceImpl extends TcpServerInterfaceBase implements Oni
     private OnionApiParser parser;
     private ConfigurationProvider config;
     private OnionApiCallback callback;
+    private Logger logger;
 
     /**
      * Create a new Onion API interface.
@@ -27,6 +29,7 @@ public class OnionApiInterfaceImpl extends TcpServerInterfaceBase implements Oni
      */
     @Inject
     public OnionApiInterfaceImpl(ConfigurationProvider config, OnionApiParser parser) {
+        this.logger = Logger.getLogger(OnionApiInterface.class);
         this.parser = parser;
         this.config = config;
         this.port = this.config.getOnionApiPort();

@@ -14,7 +14,7 @@ public class TunnelSegment {
     private short sessionId;
     private Direction direction;
 
-    public TunnelSegment(de.tum.in.net.group17.onion.model.Lid lid, InetAddress nextAddress, short nextPort, Direction direction) {
+    public TunnelSegment(Lid lid, InetAddress nextAddress, short nextPort, Direction direction) {
         Lid = lid;
         this.nextAddress = nextAddress;
         this.nextPort = nextPort;

@@ -1,6 +1,8 @@
 package de.tum.in.net.group17.onion.model;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 24.06.17.
@@ -52,5 +54,17 @@ public class LidImpl implements Lid {
         if(!(other instanceof LidImpl))
             return false;
         return Arrays.equals(this.data, ((LidImpl)other).data);
+    }
+
+    /**
+     * Creates a new random LID to be used for identifying a new TunnelSegment.
+     * @return A new random LID.
+     */
+    public static Lid createRandomLid() {
+        UUID uuid = UUID.randomUUID();
+        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+        return new LidImpl(bb.array());
     }
 }

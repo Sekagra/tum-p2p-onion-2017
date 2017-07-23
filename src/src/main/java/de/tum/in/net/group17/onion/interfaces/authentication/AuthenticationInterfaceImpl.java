@@ -10,7 +10,9 @@ import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParser;
+import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -21,6 +23,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterfaceBase implemen
     private AuthenticationParser parser;
     private ConfigurationProvider config;
     private final AtomicInteger requestCounter;
+    private Logger logger;
 
     /**
      * Create a new authentication interface.
@@ -29,6 +32,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterfaceBase implemen
      */
     @Inject
     public AuthenticationInterfaceImpl(ConfigurationProvider config, AuthenticationParser parser) {
+        this.logger = Logger.getLogger(AuthenticationInterface.class);
         this.parser = parser;
         this.config = config;
         this.requestCounter = new AtomicInteger();
@@ -40,14 +44,11 @@ public class AuthenticationInterfaceImpl extends TcpClientInterfaceBase implemen
     public void startSession(Peer peer, final RequestResult callback) {
         // Build session start packet
         int requestId = this.requestCounter.getAndAdd(1);
-        ParsedMessage packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
+        ParsedMessage packet = null;
+        packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
 
         // Send the message and parse the retrieved result before passing it back to the callback given
-        sendMessage(packet.serialize(), new RawRequestResult() {
-            public void respond(byte[] result) {
-                callback.respond(parser.parse(result));
-            }
-        });
+        sendMessage(packet.serialize(), result -> callback.respond(parser.parse(result)));
     }
 
     public void forwardIncomingHandshake1(Peer peer, ParsedMessage hs1, RequestResult callback) {
