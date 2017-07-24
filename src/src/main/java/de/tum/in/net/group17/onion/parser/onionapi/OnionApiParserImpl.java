@@ -160,7 +160,6 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
         short port = buffer.getShort(6);
         try {
-            // TODO: We simply assume that the bit is available here to -> Ask Tree
             if ((buffer.getShort(4) & (short)0x0001) != 0) {
                 buffer.position(4);
                 addrRaw = new byte[4];
