@@ -4,6 +4,7 @@ import de.tum.in.net.group17.onion.model.Lid;
 import de.tum.in.net.group17.onion.parser.MessageType;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 25.06.17.
@@ -12,16 +13,21 @@ import java.nio.ByteBuffer;
  * Objects of this class may only be created by a OnionToOnionParser after checking all parameters.
  */
 public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage {
-    private final byte[] data;
+    public static final byte[] MAGIC = "PtoP".getBytes();
+
+    private final byte[] data; // Inner packet without padding
+    private final byte[] magic; // The (possibly encrypted) magic word
 
     /**
      * Create a new ONION_TUNNEL_TRANSPORT message after checking all parameters.
      * This object may only be created by a OnionToOnionParser.
-     * @param incoming_lid
-     * @param data
+     * @param incoming_lid The LID contained in this packet.
+     * @param magic The (possibly encrypted) magic word
+     * @param data The data transported using this message
      */
-    OnionTunnelTransportParsedMessage(Lid incoming_lid, byte[] data) {
+    OnionTunnelTransportParsedMessage(Lid incoming_lid, byte[] magic, byte[] data) {
         super(incoming_lid);
+        this.magic = magic;
         this.data = data;
     }
 
@@ -36,11 +42,22 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
     }
 
     /**
+     * Determine if this packet has to be processed by this peer. (Packet contains the PtoP magic)
+     *
+     * @return true if this peer has to process this message
+     */
+    public boolean forMe()
+    {
+        return Arrays.equals(MAGIC, this.magic);
+    }
+
+    /**
      * @inheritDoc
      */
     public byte[] serialize() {
         ByteBuffer buffer = ByteBuffer.wrap(super.serializeBase());
 
+        buffer.put(magic);
         buffer.put(data);
 
         return buffer.array();

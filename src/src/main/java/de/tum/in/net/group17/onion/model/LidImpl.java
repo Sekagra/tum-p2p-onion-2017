@@ -9,7 +9,7 @@ import java.util.Arrays;
  * in the first version of the application.
  */
 public class LidImpl implements Lid {
-    private static final short lidLen = 16;
+    public static final short LENGTH = 32;
     private byte[] data;
 
     private LidImpl(byte[] data) {
@@ -29,7 +29,7 @@ public class LidImpl implements Lid {
      * @param rawLid A new Lid object containing the data from the raw byte[].
      */
     public static Lid deserialize(byte[] rawLid) {
-        if(rawLid == null || rawLid.length != (int)lidLen)
+        if(rawLid == null || rawLid.length != (int) LENGTH)
             throw new IllegalArgumentException("Illegal raw lid. Cannot deserialize!");
         return new LidImpl(rawLid);
     }
@@ -38,7 +38,7 @@ public class LidImpl implements Lid {
      * @inheritDoc
      */
     public short getSize() {
-        return lidLen;
+        return LENGTH;
     }
 
     /**

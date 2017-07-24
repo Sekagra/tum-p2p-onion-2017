@@ -6,7 +6,10 @@ import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.VoidphoneParser;
+import sun.net.www.content.text.Generic;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -20,65 +23,7 @@ import java.util.Arrays;
  * Implements the OnionToOnionParser interface for the first version of the protocol.
  */
 public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOnionParser {
-    private final short lidLen = 16;
-
-    /**
-     * @inheritDoc
-     *
-     * This implementation throws a ParsingError on every error!
-     */
-    @Override
-    public void setEncryptedRelayData(OnionTunnelRelayParsedMessage msg, byte[] data) {
-        if(data == null || data.length < 1)
-            throw new ParsingException("Encrypted data is too short!");
-        msg.setEncryptedData(data);
-    }
-
-    /**
-     * @inheritDoc
-     *
-     * This implementation throws a ParsingError on every error!
-     */
-    @Override
-    public void setUnencryptedRelayData(OnionTunnelRelayParsedMessage msg, byte[] data) {
-        ByteBuffer buffer;
-        byte[] outgoingLidRaw, addressRaw, relayPayload;
-        short port;
-        boolean isIpv4;
-        InetAddress address;
-
-        // 9 = port, 1 Bit IP indicator, 7 Bit reserved, 4 Byte min addr len and 1 Byte minimal data
-        if(data == null || data.length < lidLen + 9)
-            throw new ParsingException("Data is too short to contain all necessary information");
-        buffer = ByteBuffer.wrap(data);
-
-        outgoingLidRaw = new byte[lidLen];
-        buffer.get(outgoingLidRaw);
-        Lid outgoingLid = checkFormatLid(outgoingLidRaw);
-
-        port = buffer.getShort(lidLen);
-        isIpv4 = (buffer.getShort(lidLen + 2) & (short)(1 << Short.SIZE - 1)) == 0;
-
-        // Is data long enough to contain all data and a address of the given type?
-        // 5 == 1 Byte data and 4 Byte reserved, IP Bit and port
-        if(data.length < lidLen + 5 + (isIpv4 ? 4 : 16))
-            throw new ParsingException("Data is too short to contain all necessary information");
-
-        addressRaw = new byte[isIpv4 ? 4 : 16];
-        buffer.position(lidLen + 4);
-        buffer.get(addressRaw);
-        try {
-            address = InetAddress.getByAddress(addressRaw);
-        } catch (UnknownHostException e) {
-            throw new ParsingException("Data contains an invalid address!");
-        }
-
-        relayPayload = new byte[data.length - (lidLen + 4 + (isIpv4 ? 4 : 16))];
-        buffer.position(lidLen + 4 + (isIpv4 ? 4 : 16));
-        buffer.get(relayPayload);
-
-        msg.setUnencryptedData(outgoingLid, address, port, data);
-    }
+    private final int lidLen = LidImpl.LENGTH;
 
     /**
      * @inheritDoc
@@ -91,7 +36,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         if(handshakePayload == null || handshakePayload.length < 1)
             throw new ParsingException("Handshake data is too short");
 
-        return new OnionTunnelInitParsedMessage(checkFormatLid(incomingLidRaw), handshakePayload);
+        return new OnionTunnelInitParsedMessage(LidImpl.deserialize(incomingLidRaw), handshakePayload);
     }
 
     /**
@@ -105,7 +50,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         if(handshakePayload == null || handshakePayload.length < 1)
             throw new ParsingException("Handshake data is too short");
 
-        return new OnionTunnelAcceptParsedMessage(checkFormatLid(incomingLidRaw), handshakePayload);
+        return new OnionTunnelAcceptParsedMessage(LidImpl.deserialize(incomingLidRaw), handshakePayload);
     }
 
     /**
@@ -119,8 +64,8 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         if(data == null || data.length < 1)
             throw new ParsingException("Relay data is too short");
 
-        Lid incomingLid = checkFormatLid(incomingLidRaw); // Incoming on receiver side
-        Lid outgoingLid = checkFormatLid(outgoingLidRaw); // New tunnel on reiceiver side
+        Lid incomingLid = LidImpl.deserialize(incomingLidRaw); // Incoming on receiver side
+        Lid outgoingLid = LidImpl.deserialize(outgoingLidRaw); // New tunnel on reiceiver side
 
         try {
             InetAddress address = InetAddress.getByAddress(addressRaw);
@@ -140,7 +85,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         if(data == null || data.length < 1)
             throw new ParsingException("Data contained in ONION_TUNNEL_TRANSFER message is too short!");
 
-        return new OnionTunnelTransportParsedMessage(checkFormatLid(incominLidRaw), data);
+        return new OnionTunnelTransportParsedMessage(LidImpl.deserialize(incominLidRaw), "PtoP".getBytes(), data);
     }
 
     /**
@@ -153,7 +98,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         if(timestampBlob == null || timestampBlob.length < 1)
             throw new ParsingException("Timestamp data is too short!");
 
-        return new OnionTunnelTeardownParsedMessage(checkFormatLid(incomingLidRaw), timestampBlob);
+        return new OnionTunnelTeardownParsedMessage(LidImpl.deserialize(incomingLidRaw), timestampBlob);
     }
 
     /**
@@ -174,11 +119,9 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
                 content = parseIncomingOnionMessage(data, 1, MessageType.ONION_TUNNEL_ACCEPT);
                 return new OnionTunnelAcceptParsedMessage(content.lid, content.data);
             case ONION_TUNNEL_RELAY:
-                content = parseIncomingOnionMessage(data, 1, MessageType.ONION_TUNNEL_RELAY);
-                return new OnionTunnelRelayParsedMessage(content.lid, content.data);
+                return parseIncomingRelayMessage(data);
             case ONION_TUNNEL_TRANSPORT:
-                content = parseIncomingOnionMessage(data, 1, MessageType.ONION_TUNNEL_TRANSPORT);
-                return new OnionTunnelTransportParsedMessage(content.lid, content.data);
+                return parseIncomingTransportMessage(data);
             case ONION_TUNNEL_TEARDOWN:
                 content = parseIncomingOnionMessage(data, 1, MessageType.ONION_TUNNEL_TEARDOWN);
                 return new OnionTunnelTeardownParsedMessage(content.lid, content.data);
@@ -187,24 +130,90 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         }
     }
 
+
     /**
-     * Check the given Lid in Raw format for validity.
-     * This implementation throws a ParsingException on every error.
+     * Parse a ONION TUNNEL RELAY message.
+     * The method throws a ParsingException on every parsing error!
      *
-     * @param incomingLidRaw The LID of the tunnel to the receiver of the message.
-     * @return The parsed Lid if all parameters are valid;
+     * @param message Array containing the packet to parse.
+     * @return OnionToOnionParseMessage of type ONION_TUNNEL_RELAY if the packet is a valid ONION TUNNEL RELAY message.
      */
-    private Lid checkFormatLid(byte[] incomingLidRaw) {
-        if(incomingLidRaw == null || incomingLidRaw.length < lidLen)
-            throw new ParsingException("Lid too short!");
+    private OnionToOnionParsedMessage parseIncomingRelayMessage(byte[] message) {
+        GenericMsgContent genericHeader;
+        byte[] lidRaw;
+        short port;
+        boolean isIpv4;
+        InetAddress ipAddress;
+        byte[] addr;
+        int addrLen;
 
         try {
-           return LidImpl.deserialize(incomingLidRaw);
-        } catch(IllegalStateException e) {
-            throw new ParsingException("Invalid LID!");
+            genericHeader = parseIncomingOnionMessage(message,
+                    4 + 4 + lidLen + 1, // port, res, IP, LID, data
+                    MessageType.ONION_TUNNEL_RELAY);
+        } catch(ParsingException e) {
+            throw new ParsingException("Could not parse incoming ONION TUNNEL RELAY message. " + e.getMessage());
+        }
+        ByteBuffer buffer = ByteBuffer.wrap(message);
+
+        port = buffer.getShort(4 + lidLen);
+        isIpv4 = (buffer.getShort(6 + lidLen) & (short)(1 << 15)) == 0;
+        addrLen = isIpv4 ? 4 : 16;
+
+        try {
+            if (isIpv4) {
+                buffer.position(4);
+                addr = new byte[4];
+                buffer.get(addr, 0, 4);
+                ipAddress = Inet4Address.getByAddress(addr);
+            } else {
+                buffer.position(4);
+                addr = new byte[16];
+                buffer.get(addr, 0, 16);
+                ipAddress = Inet6Address.getByAddress(addr);
+            }
+        } catch(UnknownHostException e) {
+            //Can not happen, but throw exception to avoid compiler warnings
+            throw new ParsingException("Invalid IP in ONION TUNNEL RELAY message!");
         }
 
+        lidRaw = new byte[lidLen];
+        buffer.position(4 + lidLen + 4 + addrLen);
+        buffer.get(lidRaw);
+
+        return new OnionTunnelRelayParsedMessage(genericHeader.lid,
+                LidImpl.deserialize(lidRaw),
+                ipAddress,
+                port,
+                Arrays.copyOfRange(message, 2 * lidLen + 4 + addrLen, message.length));
     }
+
+
+    /**
+     * Parse a ONION TUNNEL TRANSPORT message.
+     * The method throws a ParsingException on every parsing error!
+     *
+     * @param message Array containing the packet to parse.
+     * @return OnionToOnionParseMessage of type ONION_TUNNEL_TRANSPORT if the packet is a valid ONION TUNNEL TRANSPORT message.
+     */
+    private OnionToOnionParsedMessage parseIncomingTransportMessage(byte[] message)
+    {
+        GenericMsgContent genericHeader;
+
+        try {
+            genericHeader = parseIncomingOnionMessage(message,
+                    4 + 1, // MAGIC + data
+                    MessageType.ONION_TUNNEL_TRANSPORT);
+        } catch(ParsingException e) {
+            throw new ParsingException("Could not parse incoming ONION TUNNEL TRANSPORT message. " + e.getMessage());
+        }
+
+        // Just extract the magic from the data, as the rest is a BLOB for us
+        return new OnionTunnelTransportParsedMessage(genericHeader.lid,
+                Arrays.copyOfRange(genericHeader.data, 0, 4),
+                Arrays.copyOfRange(genericHeader.data, 4, genericHeader.data.length));
+    }
+
 
     /**
      * Parse all messages retrieved by the Onion module with respect to a given type, minimalDataLen, and a MessageType.

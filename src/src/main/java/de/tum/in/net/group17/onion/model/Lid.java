@@ -14,7 +14,7 @@ public interface Lid {
     byte[] serialize();
 
     /**
-     * Get the size of this Lid object if converted to a= byte[].
+     * Get the size of this Lid object if converted to a byte[].
      *
      * @return The size if converte to a byte[].
      */

@@ -10,25 +10,6 @@ import de.tum.in.net.group17.onion.parser.ParsingException;
  */
 public interface OnionToOnionParser {
     /**
-     * Set the given relay message into 'encrypted' state by providing the encrypted data.
-     * This message throws a ParsingException on every error.
-     *
-     * @param msg The ONTION_TUNNEL_RELAY message we encrypted.
-     * @param data The BLOB containing the encrypted information.
-     */
-    public void setEncryptedRelayData(OnionTunnelRelayParsedMessage msg, byte[] data);
-
-    /**
-     * Set the given ONION_TUNNEL_RELAY message in the 'unencrypted' state.
-     * We set the information contained in the data parameter which shall be decrypted data blob contained in the
-     * encrypted ONION_TUNNEL_RELAY message.
-     *
-     * @param msg The Onion message we want to set to 'unencrypted' state.
-     * @param data The unencrypted data.
-     */
-    public void setUnencryptedRelayData(OnionTunnelRelayParsedMessage msg, byte[] data);
-
-    /**
      * Create a new ONION_TUNNEL_INIT message.
      * This implementation throws a ParsingException on every error.
      *
