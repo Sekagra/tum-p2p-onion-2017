@@ -47,7 +47,11 @@ public enum MessageType {
     AUTH_LAYER_DECRYPT((short)607),
     AUTH_LAYER_DECRYPT_RESP((short)608),
     AUTH_SESSION_CLOSE((short)609),
-    AUTH_ERROR((short)610);
+    AUTH_ERROR((short)610),
+    AUTH_CIPHER_ENCRYPT((short)611),
+    AUTH_CIPHER_ENCRYPT_RESP((short)612),
+    AUTH_CIPHER_DECRYPT((short)613),
+    AUTH_CIPHER_DECRYPT_RESP((short)614);
 
     private final short value;
     private static Map<Integer, MessageType> map = new HashMap<Integer, MessageType>();

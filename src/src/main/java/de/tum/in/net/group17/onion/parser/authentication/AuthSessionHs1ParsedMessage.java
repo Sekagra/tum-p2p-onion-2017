@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by Marko Dorfhuber(PraMiD) on 06.06.17.
  */
-public class AuthSessionHs1ParsedMessage extends ParsedMessage{
+public class AuthSessionHs1ParsedMessage extends ParsedMessage {
     private short sessId;
     private int requestId;
     private byte[] payload;

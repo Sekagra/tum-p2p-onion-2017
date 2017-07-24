@@ -10,10 +10,11 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 /**
  * Created by Christoph Rudolf on 25.05.17.
+ *
+ * Marko Dorfhuber (PraMiD) 24.07.2017: Added Cipher Messages
  */
 public class AuthenticationParserImpl extends VoidphoneParser implements AuthenticationParser {
     /**
@@ -73,22 +74,53 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         return new AuthLayerDecryptParsedMessage(requestId, sessionIds, payload);
     }
 
-    private void checkSizeCryptMessage(int requestId, short[] sessionIds, byte[] payload) {
-        int size;
-
-        if(sessionIds == null || sessionIds.length > 255 || sessionIds.length < 1)
-            throw new ParsingException("Invalid number of session IDs!");
-
-        size = 12 + 2 * sessionIds.length + payload.length;
-        if(size > 65535)
-            throw new ParsingException("Message too large!");
-    }
-
     /**
      * @inheritDoc
      */
     public ParsedMessage buildSessionClose(short sessionId) {
         return new AuthSessionCloseParsedMessage(sessionId);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, byte[] payload) {
+        return buildCipherCryptMessage(MessageType.AUTH_CIPHER_ENCRYPT, stillEncrypted, requestId, payload);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, byte[] payload) {
+        return buildCipherCryptMessage(MessageType.AUTH_CIPHER_DECRYPT, stillEncrypted, requestId, payload);
+    }
+
+    /**
+     * Create a new AUTH_CIPHER_EN-/DECRYPT message with the given parameters.
+     * This method throws a ParsingException if an error occurs.
+     *
+     * @param type Either an AUTH_CIPHER_ENCRYPT or an AUTH_CIPHER_DECRYPT message.
+     * @param stillEncrypted Flag that indicates if the message is encrypted the first time (encryption mode)
+     *                       or is still encrypted after removing the last layer of encryption (decryption mode)
+     * @param requestId The request ID that shall be used.
+     * @param payload The payload that shall be en-/decrypted.
+     *
+     * @return Either an AuthCipherEncryptParsedMessage or an AuthCipherDecryptParsedMessage after checking
+     *          all parameters.
+     */
+    private ParsedMessage buildCipherCryptMessage(MessageType type, boolean stillEncrypted, int requestId, byte[] payload)
+    {
+        if(payload == null || payload.length < 1)
+            throw new ParsingException("Illegal payload for encryption/decryption!");
+
+        // TODO: Change the size in all classes to match the ONION message size
+        if(12 + payload.length > 65536)
+            throw new ParsingException("Payload too long to build an AUTH CIPHER message!");
+
+        if(type == MessageType.AUTH_CIPHER_ENCRYPT)
+            return new AuthCipherEncryptParsedMessage(stillEncrypted, requestId, payload);
+        else // Private message -> Do not check if type is invalid
+            return new AuthCipherDecryptParsedMessage(stillEncrypted, requestId, payload);
     }
 
     /**
@@ -143,26 +175,6 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     }
 
     /**
-     * Confirm the size and type matching the specification of the AUTH_LAYER_ENCRYPT_RESP message.
-     *
-     * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violation.
-     */
-    private ParsedMessage parseLayerEncryptResponse(byte[] message) {
-        return parseLayerCryptResponse(MessageType.AUTH_LAYER_ENCRYPT_RESP, message);
-    }
-
-    /**
-     * Confirm the size and type matching the specification of the AUTH_LAYER_DECRYPT_RESP message.
-     *
-     * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violation.
-     */
-    private ParsedMessage parseLayerDecryptResponse(byte[] message) {
-        return parseLayerCryptResponse(MessageType.AUTH_LAYER_DECRYPT_RESP, message);
-    }
-
-    /**
      * Parse a AUTH_LAYER_EN-/DECRYPT_RESP message.
      *
      * @param type Is this a decrypt/encrypt message?
@@ -214,13 +226,28 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
             case AUTH_SESSION_HS2:
                 return parseSessionHandshake2(message);
             case AUTH_LAYER_ENCRYPT_RESP:
-                return parseLayerEncryptResponse(message);
+                return parseLayerCryptResponse(MessageType.AUTH_LAYER_ENCRYPT_RESP, message);
             case AUTH_LAYER_DECRYPT_RESP:
-                 return parseLayerDecryptResponse(message);
+                return parseLayerCryptResponse(MessageType.AUTH_LAYER_DECRYPT_RESP, message);
+            case AUTH_CIPHER_ENCRYPT_RESP:
+                return parseLayerCryptResponse(MessageType.AUTH_CIPHER_ENCRYPT_RESP, message);
+            case AUTH_CIPHER_DECRYPT_RESP:
+                return parseLayerCryptResponse(MessageType.AUTH_CIPHER_DECRYPT_RESP, message);
             case AUTH_ERROR:
                 return parseAuthErrorRespone(message);
             default:
                 throw new ParsingException("Not able to parse message. Type: " + extractType(message).getValue() + "!");
         }
+    }
+
+    private void checkSizeCryptMessage(int requestId, short[] sessionIds, byte[] payload) {
+        int size;
+
+        if(sessionIds == null || sessionIds.length > 255 || sessionIds.length < 1)
+            throw new ParsingException("Invalid number of session IDs!");
+
+        size = 12 + 2 * sessionIds.length + payload.length;
+        if(size > 65535)
+            throw new ParsingException("Message too large!");
     }
 }

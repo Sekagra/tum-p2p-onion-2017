@@ -4,6 +4,8 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 
 /**
  * Created by Christoph Rudolf on 24.05.17.
+ *
+ * Marko Dorfhuber (PraMiD) 24.07.2017: Added Cipher Messages
  */
 public interface AuthenticationParser {
     /**
@@ -50,6 +52,29 @@ public interface AuthenticationParser {
      * @return The AUTH_LAYER_DECRYPT message conform to the specification.
      */
     ParsedMessage buildLayerDecrypt(int requestId, short[] sessionIds, byte[] payload);
+
+    /**
+     * Create a new AUTH_CIPHER_ENCRYPT message with the given parameters.
+     *
+     * @param stillEncrypted Flag that indicates if the message is encrypted the first time.
+     * @param requestId The request ID that shall be used.
+     * @param payload The payload that shall be encrypted.
+     *
+     * @return An AuthCipherEncryptParsedMessage that is conform to the specification.
+     */
+    ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, byte[] payload);
+
+    /**
+     * Create a new AUTH_CIPHER_DECRYPT message with the given parameters.
+     *
+     * @param stillEncrypted Flag that indicates if the message is still encrypted after removing
+     *                       the last layer of encryption.
+     * @param requestId The request ID that shall be used.
+     * @param payload The payload that shall be decrypted.
+     *
+     * @return An AuthCipherDecryptParsedMessage that is conform to the specification.
+     */
+    ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, byte[] payload);
 
     /**
      * Build the message to close a session held by the authentication module.
