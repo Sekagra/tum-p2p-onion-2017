@@ -18,11 +18,10 @@ public interface AuthenticationParser {
      * Build the forwarding message to hand over an incoming first handshake message from another
      * Onion module to the own Onion Auth.
      * @param requestId A unique identifier used to track possible answers to this request.
-     * @param hostkey Key of the source host of this incoming handshake message.
      * @param payload The payload of the first Onion Auth handshake message.
      * @return The AUTH_SESSION_INCOMING_HS1 message conform to the specification.
      */
-    ParsedMessage buildSessionIncoming1(int requestId, byte[] hostkey, byte[] payload);
+    ParsedMessage buildSessionIncoming1(int requestId, byte[] payload);
 
     /**
      * Build the forwarding message to hand over an incoming second handshake message from another

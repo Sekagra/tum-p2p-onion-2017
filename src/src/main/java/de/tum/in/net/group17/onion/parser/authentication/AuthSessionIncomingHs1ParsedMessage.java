@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
  */
 public class AuthSessionIncomingHs1ParsedMessage extends ParsedMessage {
     private int requestId;
-    private ASN1Primitive key;
     private byte[] payload;
 
     /**
@@ -20,12 +19,10 @@ public class AuthSessionIncomingHs1ParsedMessage extends ParsedMessage {
      * This message may only be created by an AuthenticationParser after checking all parameters.
      *
      * @param requestId The request ID of this message.
-     * @param key The host key used in this session.
      * @param payload The payload sent to the ONION AUTH module
      */
-    protected AuthSessionIncomingHs1ParsedMessage(int requestId, ASN1Primitive key, byte[] payload) {
+    protected AuthSessionIncomingHs1ParsedMessage(int requestId, byte[] payload) {
         this.requestId = requestId;
-        this.key = key;
         this.payload = payload;
     }
 
@@ -34,12 +31,9 @@ public class AuthSessionIncomingHs1ParsedMessage extends ParsedMessage {
      */
     public byte[] serialize() {
         ByteBuffer buffer = buildHeader();
-        byte[] rawKey = getRawKey();
 
         buffer.putInt(0);
         buffer.putInt(requestId);
-        buffer.putShort((short)rawKey.length);
-        buffer.put(rawKey);
         buffer.put(payload);
 
         return buffer.array();
@@ -49,7 +43,7 @@ public class AuthSessionIncomingHs1ParsedMessage extends ParsedMessage {
      * @inheritDoc
      */
     public short getSize() {
-        return (short)(14 + getRawKey().length + payload.length);
+        return (short)(14 + payload.length);
     }
 
     /**
@@ -60,35 +54,12 @@ public class AuthSessionIncomingHs1ParsedMessage extends ParsedMessage {
     }
 
     /**
-     * Get the encoded host key.
-     *
-     * @return A byte[] containing the encoded key.
-     */
-    private byte[] getRawKey() {
-        try {
-            return key.getEncoded();
-        } catch(IOException e) {
-            // Should be checked beforehand!
-            throw new Error("Invalid host key!");
-        }
-    }
-
-    /**
      * Get the request ID of this message.
      *
      * @return The used request ID.
      */
     public int getRequestId() {
         return requestId;
-    }
-
-    /**
-     * Get the used host key.
-     *
-     * @return ASN1Primitive containing the used host key.
-     */
-    public ASN1Primitive getKey() {
-        return key;
     }
 
     /**

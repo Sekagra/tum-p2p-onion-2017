@@ -37,20 +37,11 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildSessionIncoming1(int requestId, byte[] hostkey, byte[] payload) {
-        int size = 14 + hostkey.length + payload.length;
-        ASN1Primitive key;
-
-        if(size > 65535)
+    public ParsedMessage buildSessionIncoming1(int requestId, byte[] payload) {
+        if(14 + payload.length > 65536)
             throw new ParsingException("Message too large!");
 
-        try {
-            key = new ASN1InputStream(new ByteArrayInputStream(hostkey)).readObject().toASN1Primitive();
-            return new AuthSessionIncomingHs1ParsedMessage(requestId, key, payload);
-        } catch(IOException e) {
-            throw new ParsingException("Invalid host key!");
-        }
-
+        return new AuthSessionIncomingHs1ParsedMessage(requestId, payload);
     }
 
     /**
