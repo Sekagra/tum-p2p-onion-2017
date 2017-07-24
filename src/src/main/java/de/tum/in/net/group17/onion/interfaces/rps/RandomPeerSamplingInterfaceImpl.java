@@ -2,9 +2,7 @@ package de.tum.in.net.group17.onion.interfaces.rps;
 
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
-import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
-import de.tum.in.net.group17.onion.model.results.RawRequestResult;
-import de.tum.in.net.group17.onion.interfaces.TcpClientInterfaceBase;
+import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParser;
@@ -15,7 +13,7 @@ import org.apache.log4j.Logger;
  * Implementation of the RandomPeerSamplingInterface using Netty.
  * Created by Christoph Rudolf on 06.06.17.
  */
-public class RandomPeerSamplingInterfaceImpl extends TcpClientInterfaceBase implements RandomPeerSamplingInterface {
+public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implements RandomPeerSamplingInterface {
     private RandomPeerSamplingParser parser;
     private ConfigurationProvider config;
     private Logger logger;
@@ -27,11 +25,10 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterfaceBase impl
      */
     @Inject
     public RandomPeerSamplingInterfaceImpl(ConfigurationProvider config, RandomPeerSamplingParser parser) {
+        super(config.getAuthModuleHost(), config.getAuthModuleRequestPort());
         this.logger = Logger.getLogger(RandomPeerSamplingInterface.class);
         this.parser = parser;
         this.config = config;
-        this.host = this.config.getAuthModuleHost();
-        this.port = this.config.getAuthModuleRequestPort();
     }
 
     public void queryRandomPeer(final RequestResult callback) {

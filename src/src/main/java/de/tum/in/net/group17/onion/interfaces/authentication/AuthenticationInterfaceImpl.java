@@ -2,9 +2,7 @@ package de.tum.in.net.group17.onion.interfaces.authentication;
 
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
-import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
-import de.tum.in.net.group17.onion.interfaces.TcpClientInterfaceBase;
-import de.tum.in.net.group17.onion.model.results.RawRequestResult;
+import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
@@ -12,14 +10,13 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParser;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Implementation of an interface to the Onion Authentication module.
  * Created by Christoph Rudolf on 06.06.17.
  */
-public class AuthenticationInterfaceImpl extends TcpClientInterfaceBase implements AuthenticationInterface {
+public class AuthenticationInterfaceImpl extends TcpClientInterface implements AuthenticationInterface {
     private AuthenticationParser parser;
     private ConfigurationProvider config;
     private final AtomicInteger requestCounter;
@@ -32,13 +29,12 @@ public class AuthenticationInterfaceImpl extends TcpClientInterfaceBase implemen
      */
     @Inject
     public AuthenticationInterfaceImpl(ConfigurationProvider config, AuthenticationParser parser) {
+        super(config.getAuthModuleHost(), config.getAuthModuleRequestPort());
         this.logger = Logger.getLogger(AuthenticationInterface.class);
         this.parser = parser;
         this.config = config;
         this.requestCounter = new AtomicInteger();
         this.requestCounter.set(0);
-        this.host = this.config.getAuthModuleHost();
-        this.port = this.config.getAuthModuleRequestPort();
     }
 
     public void startSession(Peer peer, final RequestResult callback) {

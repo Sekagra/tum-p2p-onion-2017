@@ -21,6 +21,7 @@ public class LidImpl implements Lid {
     /**
      * @inheritDoc
      */
+    @Override
     public byte[] serialize() {
         return data;
     }
@@ -39,6 +40,7 @@ public class LidImpl implements Lid {
     /**
      * @inheritDoc
      */
+    @Override
     public short getSize() {
         return LENGTH;
     }

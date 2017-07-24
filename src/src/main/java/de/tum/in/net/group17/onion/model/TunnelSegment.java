@@ -8,7 +8,7 @@ import java.net.InetAddress;
  */
 public class TunnelSegment {
     private Lid Lid;
-    private TunnelSegment other;
+    private TunnelSegment other;    // the next TunnelSegment holding information for forwarding
     private InetAddress nextAddress;
     private short nextPort;
     private short sessionId;

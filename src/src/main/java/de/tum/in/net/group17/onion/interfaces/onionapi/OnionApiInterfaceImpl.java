@@ -2,25 +2,26 @@ package de.tum.in.net.group17.onion.interfaces.onionapi;
 
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
-import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
-import de.tum.in.net.group17.onion.interfaces.TcpServerInterfaceBase;
-import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParser;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
+import de.tum.in.net.group17.onion.interfaces.TcpServerInterface;
+import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.onionapi.*;
 import org.apache.log4j.Logger;
+
+import java.net.InetAddress;
 
 /**
  * Implementation of the Onion API interface offering services to the UI/CM.
  * Created by Christoph Rudolf on 11.06.17.
  */
-public class OnionApiInterfaceImpl extends TcpServerInterfaceBase implements OnionApiInterface {
+public class OnionApiInterfaceImpl implements OnionApiInterface {
     private OnionApiParser parser;
     private ConfigurationProvider config;
     private OnionApiCallback callback;
     private Logger logger;
+
+    private TcpClientInterface client;
+    private TcpServerInterface server;
 
     /**
      * Create a new Onion API interface.
@@ -32,47 +33,39 @@ public class OnionApiInterfaceImpl extends TcpServerInterfaceBase implements Oni
         this.logger = Logger.getLogger(OnionApiInterface.class);
         this.parser = parser;
         this.config = config;
-        this.port = this.config.getOnionApiPort();
+
+
+        this.client = new TcpClientInterface(InetAddress.getLoopbackAddress(), this.config.getOnionApiPort());
+        this.server = new TcpServerInterface() {
+            @Override
+            protected void readIncoming(byte[] msg) {
+                readIncoming(msg);
+            }
+        };
     }
 
     @Override
     public void listen(OnionApiCallback callback) {
         this.callback = callback;
-        super.listen();
+        this.server.listen(this.config.getOnionApiPort());
     }
 
-    protected ChannelHandler getHandler() {
-        return new SimpleChannelInboundHandler<ByteBuf>() {
-            @Override
-            public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                super.channelActive(ctx);
-                System.out.println(ctx.channel().remoteAddress().toString() + " has connected (Active).");
-            }
-
-            @Override
-            public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-                super.channelRegistered(ctx);
-                System.out.println(ctx.channel().remoteAddress().toString() + " has connected (Register).");
-            }
-
-            protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf) throws Exception {
-                Channel channel = channelHandlerContext.channel();
-                System.out.println(channel.remoteAddress().toString() + " sent us " + byteBuf.toString());
-                // Use callback after parsing
-            }
-
-            @Override
-            public void channelReadComplete(ChannelHandlerContext ctx) throws Exception{
-                System.out.println( "channelReadComplete ++++");
-                ctx.fireChannelReadComplete();
-            }
-
-            @Override
-            public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-                super.channelUnregistered(ctx);
-                System.out.println(ctx.channel().remoteAddress().toString() + " has disconnected (Unregister).");
-            }
-        };
+    /**
+     * Read a plain unparsed message from the TCP channel.
+     * @param msg The data to be read via TCP.
+     */
+    protected void readIncoming(byte[] msg) {
+        ParsedMessage parsedMsg = parser.parseMsg(msg);
+        switch(parsedMsg.getType()) {
+            case ONION_TUNNEL_BUILD:
+                this.callback.receivedTunnelBuild((OnionTunnelBuildParsedMessage) parsedMsg);
+            case ONION_TUNNEL_DESTROY:
+                this.callback.receviedDestroy((OnionTunnelDestroyParsedMessage) parsedMsg);
+            case ONION_TUNNEL_DATA:
+                this.callback.receivedVoiceData((OnionTunnelDataParsedMessage) parsedMsg);
+            case ONION_COVER:
+                this.callback.receivedCoverData((OnionCoverParsedMessage) parsedMsg);
+        }
     }
 
     @Override

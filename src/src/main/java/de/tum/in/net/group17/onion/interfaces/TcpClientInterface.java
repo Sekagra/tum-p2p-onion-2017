@@ -16,10 +16,15 @@ import java.net.InetAddress;
  * Provides a wrapping and basic handling of netty.
  * Created by Christoph Rudolf on 05.06.17.
  */
-public abstract class TcpClientInterfaceBase {
+public class TcpClientInterface {
     private Channel channel;
     protected InetAddress host;
     protected int port;
+
+    public TcpClientInterface(InetAddress host, int port) {
+        this.host = host;
+        this.port = port;
+    }
 
     protected Channel getChannel(SimpleChannelInboundHandler handler, InetAddress host, int port) throws InterruptedException {
         if(this.channel != null && this.channel.isOpen() && this.channel.isWritable()) {
@@ -42,8 +47,7 @@ public abstract class TcpClientInterfaceBase {
         }
     }
 
-
-    protected  void sendMessage(byte[] data, final RawRequestResult callback) {
+    protected void sendMessage(byte[] data, final RawRequestResult callback) {
         // Get channel with the correct response handler
         Channel channel = null;
         try {

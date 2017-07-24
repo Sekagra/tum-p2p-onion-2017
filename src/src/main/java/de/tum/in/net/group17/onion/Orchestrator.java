@@ -35,6 +35,8 @@ public class Orchestrator {
     @Inject
     private ConfigurationProvider configProvider;
 
+    private Runnable nextTunnelBuild;
+
     /**
      * List of tunnels this peer has started.
      */
@@ -73,12 +75,15 @@ public class Orchestrator {
 
         // Listen for requests from the Calling Module
         this.apiInterface.listen(getOnionApiCallback());
+
+        // Start with a delegate issuing the build of a random tunnel
+        nextTunnelBuild = () -> buildTunnel();
     }
 
     /**
      * Retrieves a callback to handle messages arriving at the onion module that
-     * have to been given to other modules.
-     * @return A OnionCallback instance with the methods for reacting to implemented.
+     * have to be given or reacted to by any other module.
+     * @return A OnionCallback instance with the methods for reacting to the specific events.
      */
     private OnionCallback getOnionCallback() {
         return new OnionCallback() {
@@ -99,13 +104,17 @@ public class Orchestrator {
         };
     }
 
+    /**
+     * Retrieves a callback to handle messages arriving at the Onion API that
+     * have to be given or reacted to by any other module.
+     * @return A OnionApiCallback instance with methods for reacting to the specific events.
+     */
     private OnionApiCallback getOnionApiCallback() {
         return new OnionApiCallback() {
             @Override
             public void receivedTunnelBuild(OnionTunnelBuildParsedMessage msg) {
-                // todo: Start a new tunnel building sequence with the Onion module.
-                // The tunnel is only supposed to be used in the next round
-                buildTunnel(tunnel.size(), Peer.fromOnionBuild(msg));
+                // Register a tunnel build to the given destination in the next round
+                nextTunnelBuild = () -> buildTunnel(Peer.fromOnionBuild(msg));
             }
 
             @Override
@@ -125,28 +134,37 @@ public class Orchestrator {
         };
     }
 
+    /**
+     * Build a tunnel over several intermediate hops to a random destination.
+     */
     private void buildTunnel() {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
         this.rpsInterface.queryRandomPeer(result -> {
             Peer peer = Peer.fromRpsReponse((RpsPeerParsedMessage) result);
-            buildTunnel(tunnel.size(), peer);
+            buildTunnel(peer);
         });
     }
 
-    private void buildTunnel(int id, Peer destination) {
-        Tunnel t = new Tunnel(id);
+    /**
+     * Build a tunnel over several intermediate hops to the given destination.
+     * @param destination The peer that acts as a destination for the new tunnel.
+     */
+    private void buildTunnel(Peer destination) {
+        Tunnel t = new Tunnel(this.tunnel.size());
 
         // get random intermediate hops to destination
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
-            // sync/async?
+            // sync/async (order should be maintained on an open connection)?
             this.rpsInterface.queryRandomPeer(result -> {
                 Peer peer = Peer.fromRpsReponse((RpsPeerParsedMessage) result);
-                // key missing for onion module
+                // add new segment and the peer instance as a reference to the hostkey is needed during the building phase
+                t.addPeer(peer);
                 t.addSegment(new TunnelSegment(LidImpl.createRandomLid(), peer.getIpAddress(), peer.getPort(), Direction.FORWARD));
             });
         }
 
-        // add segment to destination
+        // add segment to segments list
+        t.addPeer(destination);
         t.addSegment(new TunnelSegment(LidImpl.createRandomLid(), destination.getIpAddress(), destination.getPort(), Direction.FORWARD));
 
         // issue build
