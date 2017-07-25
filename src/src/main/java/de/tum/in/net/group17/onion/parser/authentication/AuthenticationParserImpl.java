@@ -84,7 +84,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, byte[] payload) {
+    public ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException {
         return buildCipherCryptMessage(MessageType.AUTH_CIPHER_ENCRYPT, stillEncrypted, requestId, payload);
     }
 
@@ -108,7 +108,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      * @return Either an AuthCipherEncryptParsedMessage or an AuthCipherDecryptParsedMessage after checking
      *          all parameters.
      */
-    private ParsedMessage buildCipherCryptMessage(MessageType type, boolean stillEncrypted, int requestId, byte[] payload)
+    private ParsedMessage buildCipherCryptMessage(MessageType type, boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException
     {
         if(payload == null || payload.length < 1)
             throw new ParsingException("Illegal payload for encryption/decryption!");
@@ -241,7 +241,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         }
     }
 
-    private void checkSizeCryptMessage(int requestId, short[] sessionIds, byte[] payload) {
+    private void checkSizeCryptMessage(int requestId, short[] sessionIds, byte[] payload) throws ParsingException {
         int size;
 
         if(sessionIds == null || sessionIds.length > 255 || sessionIds.length < 1)

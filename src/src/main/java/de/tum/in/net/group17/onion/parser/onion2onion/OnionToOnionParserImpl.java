@@ -138,7 +138,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * @param message Array containing the packet to parse.
      * @return OnionToOnionParseMessage of type ONION_TUNNEL_RELAY if the packet is a valid ONION TUNNEL RELAY message.
      */
-    private OnionToOnionParsedMessage parseIncomingRelayMessage(byte[] message) {
+    private OnionToOnionParsedMessage parseIncomingRelayMessage(byte[] message) throws ParsingException {
         GenericMsgContent genericHeader;
         byte[] lidRaw;
         short port;

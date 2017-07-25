@@ -64,7 +64,7 @@ public interface AuthenticationParser extends Parser {
      *
      * @return An AuthCipherEncryptParsedMessage that is conform to the specification.
      */
-    ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, byte[] payload);
+    ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException;
 
     /**
      * Create a new AUTH_CIPHER_DECRYPT message with the given parameters.
@@ -76,7 +76,7 @@ public interface AuthenticationParser extends Parser {
      *
      * @return An AuthCipherDecryptParsedMessage that is conform to the specification.
      */
-    ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, byte[] payload);
+    ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException;
 
     /**
      * Build the message to close a session held by the authentication module.
