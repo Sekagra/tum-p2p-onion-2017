@@ -1,6 +1,7 @@
 package de.tum.in.net.group17.onion.parser.onion2onion;
 
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.Parser;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 
 /**
@@ -8,7 +9,7 @@ import de.tum.in.net.group17.onion.parser.ParsingException;
  *
  * Provides methods to create and parse Onion2Onion API messages.
  */
-public interface OnionToOnionParser {
+public interface OnionToOnionParser extends Parser {
     /**
      * Create a new ONION_TUNNEL_INIT message.
      * This implementation throws a ParsingException on every error.
@@ -17,7 +18,7 @@ public interface OnionToOnionParser {
      * @param handshakePayload The handshake payload build by the Onion Auth module.
      * @return A OnionTunnelInitParsedMessage containing all parameters.
      */
-    public ParsedMessage buildOnionTunnelInitMsg(byte[] incomingLidRaw, byte[] handshakePayload);
+    public ParsedMessage buildOnionTunnelInitMsg(byte[] incomingLidRaw, byte[] handshakePayload) throws ParsingException;
 
     /**
      * Create a new ONION_TUNNEL_ACCEPT message.
@@ -27,7 +28,7 @@ public interface OnionToOnionParser {
      * @param handshakePayload The handshake payload build by the Onion Auth module.
      * @return A OnionTunnelInitParsedMessage containing all parameters.
      */
-    public ParsedMessage buildOnionTunnelAcceptMsg(byte[] incomingLidRaw, byte[] handshakePayload);
+    public ParsedMessage buildOnionTunnelAcceptMsg(byte[] incomingLidRaw, byte[] handshakePayload) throws ParsingException;
 
     /**
      * Create a new unencrypted ONION_TUNNE_RELAY message.
@@ -41,7 +42,7 @@ public interface OnionToOnionParser {
      * @return A OnionTunnelRelayParsedMessage containing all parameters.
      */
     public ParsedMessage buildOnionTunnelRelayMsg(byte[] incomingLidRaw, byte[] outgoingLidRaw,
-                                                  byte[] addressRaw, short port, byte[] data);
+                                                  byte[] addressRaw, short port, byte[] data) throws ParsingException;
 
     /**
      * Create a ONION_TUNNEL_TRANSPORT message with the given parameters.
@@ -51,7 +52,7 @@ public interface OnionToOnionParser {
      * @param data The data contained in the message.
      * @return A OnionTunnelTransferParsedMessage containing the given parameters.
      */
-    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, byte[] data);
+    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, byte[] data) throws ParsingException;
 
     /**
      * Build a new ONION_TUNNEL_TEARDOWN message containing the given parameters.
@@ -61,12 +62,5 @@ public interface OnionToOnionParser {
      * @param timestampBlob The encrypted and integrity protected timestamp contained in the message.
      * @return A OnionTunnelTeardownParsedMessage containing the given parameters.
      */
-    public ParsedMessage buildOnionTunnelTeardownMsg(byte[] incomingLidRaw, byte[] timestampBlob);
-
-    /**
-     * @inheritDoc
-     *
-     * This implementation throws a ParsingException on every error.
-     */
-    public ParsedMessage parseMsg(byte[] data);
+    public ParsedMessage buildOnionTunnelTeardownMsg(byte[] incomingLidRaw, byte[] timestampBlob) throws ParsingException;
 }

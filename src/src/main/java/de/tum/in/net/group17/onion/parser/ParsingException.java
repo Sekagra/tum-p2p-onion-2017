@@ -6,7 +6,7 @@ package de.tum.in.net.group17.onion.parser;
  *
  * Created by Marko Dorfhuber(PraMiD) on 27.05.17.
  */
-public class ParsingException extends RuntimeException {
+public class ParsingException extends Exception {
     private final String message;
 
     public ParsingException(String msg) {

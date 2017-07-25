@@ -3,10 +3,20 @@ package de.tum.in.net.group17.onion.interfaces.rps;
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
+import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParser;
+import de.tum.in.net.group17.onion.parser.rps.RpsPeerParsedMessage;
 import org.apache.log4j.Logger;
+import sun.nio.ch.sctp.PeerAddrChange;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -17,6 +27,7 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
     private RandomPeerSamplingParser parser;
     private ConfigurationProvider config;
     private Logger logger;
+    private List<Peer> peers;
 
     /**
      * Create a new RPS interface.
@@ -29,12 +40,43 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
         this.logger = Logger.getLogger(RandomPeerSamplingInterface.class);
         this.parser = parser;
         this.config = config;
+        this.peers = Collections.synchronizedList(new ArrayList<Peer>());
+        setCallback(result -> randomPeerResult(result));
     }
 
-    public void queryRandomPeer(final RequestResult callback) {
-        // Build the query message
-        ParsedMessage packet = this.parser.buildRpsQueryMsg();
+    private void randomPeerResult(byte[] data) {
+        try {
+            peers.add(Peer.fromRpsReponse((RpsPeerParsedMessage) parser.parseMsg(data)));
+            peers.notify(); //Notify one consumer to be allowed to take a peer
+        } catch (ParsingException e) {
+            logger.error("Parsing error for response: " + e.getMessage());
+        }
+    }
 
-        sendMessage(packet.serialize(), result -> callback.respond(parser.parseMsg(result)));
+    /**
+     * @inheritDoc
+     */
+    public Peer queryRandomPeer() throws RandomPeerSamplingException {
+        // Build the query message
+        ParsedMessage packet = null;
+        try {
+            packet = this.parser.buildRpsQueryMsg();
+        } catch (ParsingException e) {
+            throw new RandomPeerSamplingException("Parsing error during build: " + e.getMessage());
+        }
+
+        sendMessage(packet.serialize());
+
+        try {
+            peers.wait(5000);
+        } catch (InterruptedException e) {
+            throw new RandomPeerSamplingException("Interrupted during RPS fetch: " + e.getMessage());
+        }
+
+        if(!this.peers.isEmpty()) {
+            return this.peers.get(0);
+        } else {
+            throw new RandomPeerSamplingException("No peer found despite of being notified of a peer.");
+        }
     }
 }

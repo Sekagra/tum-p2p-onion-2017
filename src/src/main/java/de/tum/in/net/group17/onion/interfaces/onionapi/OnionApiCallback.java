@@ -14,5 +14,5 @@ public interface OnionApiCallback {
     void receivedTunnelBuild(OnionTunnelBuildParsedMessage msg);
     void receivedCoverData(OnionCoverParsedMessage msg);
     void receivedVoiceData(OnionTunnelDataParsedMessage msg);
-    void receviedDestroy(OnionTunnelDestroyParsedMessage msg);
+    void receivedDestroy(OnionTunnelDestroyParsedMessage msg);
 }

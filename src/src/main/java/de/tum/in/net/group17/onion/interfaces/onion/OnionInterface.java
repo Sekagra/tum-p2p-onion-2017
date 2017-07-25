@@ -1,6 +1,7 @@
 package de.tum.in.net.group17.onion.interfaces.onion;
 
 import de.tum.in.net.group17.onion.model.Lid;
+import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.model.TunnelSegment;
 
@@ -18,5 +19,5 @@ public interface OnionInterface {
     void setTunnel(List<Tunnel> tunnel);
     void setSegments(Map<Lid, TunnelSegment> segments);
 
-    void buildTunnel(Tunnel tunnel);
+    void extendTunnel(Tunnel tunnel, Peer peer);
 }

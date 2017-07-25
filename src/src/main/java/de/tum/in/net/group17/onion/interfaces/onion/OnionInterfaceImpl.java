@@ -8,9 +8,7 @@ import de.tum.in.net.group17.onion.interfaces.UdpMessageHandler;
 import de.tum.in.net.group17.onion.interfaces.UdpServer;
 import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
-import de.tum.in.net.group17.onion.model.Lid;
-import de.tum.in.net.group17.onion.model.Tunnel;
-import de.tum.in.net.group17.onion.model.TunnelSegment;
+import de.tum.in.net.group17.onion.model.*;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionToOnionParser;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -78,7 +76,12 @@ public class OnionInterfaceImpl implements OnionInterface {
     }
 
     @Override
-    public void buildTunnel(Tunnel tunnel) {
+    public void extendTunnel(Tunnel tunnel, Peer peer) {
+        tunnel.addSegment(new TunnelSegment(LidImpl.createRandomLid(), peer.getIpAddress(), peer.getPort(), Direction.FORWARD));
+
+        // add segment to segments list
+        //t.addPeer(destination);
+        //t.addSegment(new TunnelSegment(LidImpl.createRandomLid(), destination.getIpAddress(), destination.getPort(), Direction.FORWARD));
 
     }
 }

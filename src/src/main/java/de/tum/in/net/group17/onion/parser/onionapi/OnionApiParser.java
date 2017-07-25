@@ -2,6 +2,8 @@ package de.tum.in.net.group17.onion.parser.onionapi;
 
 import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.Parser;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
@@ -10,7 +12,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
  *
  * Provides an interface to handle Onion API messages.
  */
-public interface OnionApiParser {
+public interface OnionApiParser extends Parser {
 
     /**
      * Create an ONION ERROR message. Nothing can go wrong here.
@@ -19,7 +21,7 @@ public interface OnionApiParser {
      * @param tunnelID The ID of the tunnel where the error occured.
      * @return An ParsedMessage containing the ONION ERROR message.
      */
-    ParsedMessage buildOnionErrorMsg(MessageType requestType, int tunnelID);
+    ParsedMessage buildOnionErrorMsg(MessageType requestType, int tunnelID) throws ParsingException;
 
     /**
      * Create a OnionTunnelIncoming message containing the given parameters.
@@ -28,7 +30,7 @@ public interface OnionApiParser {
      * @param sourceKey Key of the source host.
      * @return A ParsedMessage of creation was successful.
      */
-    ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey);
+    ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey) throws ParsingException;
 
     /**
      * Create a OnionParseObject containing a ONION TUNNEL READY message with the given parameters.
@@ -37,13 +39,5 @@ public interface OnionApiParser {
      * @param destinationKey The destination host's key.
      * @return A ParsedMessage containing the message on success.
      */
-    ParsedMessage buildOnionTunnelReadyMsg(int id, byte[] destinationKey);
-
-    /**
-     * Parse an incomning message to the Onion module.
-     *
-     * @param data The actual packet.
-     * @return A ParsedMessage containing the message type and the data if parsing was successful.
-     */
-    ParsedMessage parseMsg(byte[] data);
+    ParsedMessage buildOnionTunnelReadyMsg(int id, byte[] destinationKey) throws ParsingException;
 }

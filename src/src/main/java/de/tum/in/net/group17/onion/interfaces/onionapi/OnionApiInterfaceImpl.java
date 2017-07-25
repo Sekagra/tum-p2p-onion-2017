@@ -5,6 +5,7 @@ import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
 import de.tum.in.net.group17.onion.interfaces.TcpServerInterface;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.onionapi.*;
 import org.apache.log4j.Logger;
 
@@ -34,7 +35,6 @@ public class OnionApiInterfaceImpl implements OnionApiInterface {
         this.parser = parser;
         this.config = config;
 
-
         this.client = new TcpClientInterface(InetAddress.getLoopbackAddress(), this.config.getOnionApiPort());
         this.server = new TcpServerInterface() {
             @Override
@@ -44,7 +44,6 @@ public class OnionApiInterfaceImpl implements OnionApiInterface {
         };
     }
 
-    @Override
     public void listen(OnionApiCallback callback) {
         this.callback = callback;
         this.server.listen(this.config.getOnionApiPort());
@@ -55,30 +54,32 @@ public class OnionApiInterfaceImpl implements OnionApiInterface {
      * @param msg The data to be read via TCP.
      */
     protected void readIncoming(byte[] msg) {
-        ParsedMessage parsedMsg = parser.parseMsg(msg);
-        switch(parsedMsg.getType()) {
-            case ONION_TUNNEL_BUILD:
-                this.callback.receivedTunnelBuild((OnionTunnelBuildParsedMessage) parsedMsg);
-            case ONION_TUNNEL_DESTROY:
-                this.callback.receviedDestroy((OnionTunnelDestroyParsedMessage) parsedMsg);
-            case ONION_TUNNEL_DATA:
-                this.callback.receivedVoiceData((OnionTunnelDataParsedMessage) parsedMsg);
-            case ONION_COVER:
-                this.callback.receivedCoverData((OnionCoverParsedMessage) parsedMsg);
+        ParsedMessage parsedMsg = null;
+        try {
+            parsedMsg = parser.parseMsg(msg);
+            switch(parsedMsg.getType()) {
+                case ONION_TUNNEL_BUILD:
+                    this.callback.receivedTunnelBuild((OnionTunnelBuildParsedMessage) parsedMsg);
+                case ONION_TUNNEL_DESTROY:
+                    this.callback.receivedDestroy((OnionTunnelDestroyParsedMessage) parsedMsg);
+                case ONION_TUNNEL_DATA:
+                    this.callback.receivedVoiceData((OnionTunnelDataParsedMessage) parsedMsg);
+                case ONION_COVER:
+                    this.callback.receivedCoverData((OnionCoverParsedMessage) parsedMsg);
+            }
+        } catch (ParsingException e) {
+            logger.error("Received invalid packet: " + e.getMessage());
         }
     }
 
-    @Override
     public void sendIncoming() {
 
     }
 
-    @Override
     public void sendReady() {
 
     }
 
-    @Override
     public void sendError() {
 
     }

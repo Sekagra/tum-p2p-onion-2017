@@ -1,20 +1,22 @@
 package de.tum.in.net.group17.onion.parser.authentication;
 
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.Parser;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 
 /**
  * Created by Christoph Rudolf on 24.05.17.
  *
  * Marko Dorfhuber (PraMiD) 24.07.2017: Added Cipher Messages
  */
-public interface AuthenticationParser {
+public interface AuthenticationParser extends Parser {
     /**
      * Build the message used to issue the start of a a new session to the Onion Auth module.
      * @param requestId A unique identifier used to track possible answers to this request.
      * @param hostkey The host key of the hop which is chosen as communication partner for this session.
      * @return The AUTH_SESSION_START message conform to the specification.
      */
-    ParsedMessage buildSessionStart(int requestId, byte[] hostkey);
+    ParsedMessage buildSessionStart(int requestId, byte[] hostkey) throws ParsingException;
 
     /**
      * Build the forwarding message to hand over an incoming first handshake message from another
@@ -23,7 +25,7 @@ public interface AuthenticationParser {
      * @param payload The payload of the first Onion Auth handshake message.
      * @return The AUTH_SESSION_INCOMING_HS1 message conform to the specification.
      */
-    ParsedMessage buildSessionIncoming1(int requestId, byte[] payload);
+    ParsedMessage buildSessionIncoming1(int requestId, byte[] payload) throws ParsingException;
 
     /**
      * Build the forwarding message to hand over an incoming second handshake message from another
@@ -33,7 +35,7 @@ public interface AuthenticationParser {
      * @param payload The payload of the first Onion Auth handshake message.
      * @return The AUTH_SESSION_INCOMING_HS2 message conform to the specification.
      */
-    ParsedMessage buildSessionIncoming2(int requestId, short sessionId, byte[] payload);
+    ParsedMessage buildSessionIncoming2(int requestId, short sessionId, byte[] payload) throws ParsingException;
 
     /**
      * Build the message to issue the encryption of data for a certain tunnel which uses a list of sessions.
@@ -42,7 +44,7 @@ public interface AuthenticationParser {
      * @param payload The payload to encrypt.
      * @return The AUTH_LAYER_ENCRYPT message conform to the specification.
      */
-    ParsedMessage buildLayerEncrypt(int requestId, short[] sessionIds, byte[] payload);
+    ParsedMessage buildLayerEncrypt(int requestId, short[] sessionIds, byte[] payload) throws ParsingException;
 
     /**
      * Build the message to issue the decryption of data for a certain tunnel which uses a list of sessions.
@@ -51,7 +53,7 @@ public interface AuthenticationParser {
      * @param payload The payload to decrypt.
      * @return The AUTH_LAYER_DECRYPT message conform to the specification.
      */
-    ParsedMessage buildLayerDecrypt(int requestId, short[] sessionIds, byte[] payload);
+    ParsedMessage buildLayerDecrypt(int requestId, short[] sessionIds, byte[] payload) throws ParsingException;
 
     /**
      * Create a new AUTH_CIPHER_ENCRYPT message with the given parameters.
@@ -81,12 +83,5 @@ public interface AuthenticationParser {
      * @param sessionId The ID of the session to terminate.
      * @return The AUTH_SESSION_CLOSE message conform to the specification.
      */
-    ParsedMessage buildSessionClose(short sessionId);
-
-    /**
-     * Parse messages incoming to the authentication interface.
-     * @param data The raw message data.
-     * @return Return the parsed message with type and data.
-     */
-    ParsedMessage parse(byte[] data);
+    ParsedMessage buildSessionClose(short sessionId) throws ParsingException;
 }

@@ -29,7 +29,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      *
      * This implementation throws a ParsingException on every error.
      */
-    public ParsedMessage buildOnionErrorMsg(MessageType requestType, int tunnelId) {
+    public ParsedMessage buildOnionErrorMsg(MessageType requestType, int tunnelId) throws ParsingException {
         if (requestType != MessageType.ONION_TUNNEL_BUILD
                 && requestType != MessageType.ONION_TUNNEL_DESTROY
                 && requestType != MessageType.ONION_TUNNEL_DATA
@@ -45,7 +45,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * The host key is checked for validity.
      * This implementation throws a ParsingException on every error.
      */
-    public ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey) {
+    public ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey) throws ParsingException {
         ASN1Primitive key;
 
         try {
@@ -73,7 +73,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * We check the destination key for validity.
      * This implementation throws a ParsingException on every error.
      */
-    public ParsedMessage buildOnionTunnelReadyMsg(int id, byte[] destinationKey) {
+    public ParsedMessage buildOnionTunnelReadyMsg(int id, byte[] destinationKey) throws ParsingException {
         ASN1Primitive key;
 
         try {
@@ -100,7 +100,8 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      *
      * This implementation throws a ParsingException on every error.
      */
-    public ParsedMessage parseMsg(byte[] data) {
+    @Override
+    public ParsedMessage parseMsg(byte[] data) throws ParsingException {
         checkSize(data); // Throws an exception on all errors
 
         switch(extractType(data)) {
@@ -125,7 +126,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @param data The actual packet.
      * @return A ParsedMessage on success.
      */
-    private ParsedMessage parseOnionCoverMsg(byte[] data) {
+    private ParsedMessage parseOnionCoverMsg(byte[] data) throws ParsingException {
         ByteBuffer buffer;
 
         if(data.length != 8)
@@ -147,7 +148,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @param data The packet.
      * @return An ParsedMessage if parsing was successful.
      */
-    private ParsedMessage parseOnionTunnelBuildMsg(byte[] data) {
+    private ParsedMessage parseOnionTunnelBuildMsg(byte[] data) throws ParsingException {
         ByteBuffer buffer;
         InetAddress address;
         byte[] addrRaw;
@@ -197,7 +198,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @param data The actual packet.
      * @return A ParsedMessage if the packet is valid.
      */
-    private ParsedMessage parseOnionTunnelDestroyMsg(byte[] data) {
+    private ParsedMessage parseOnionTunnelDestroyMsg(byte[] data) throws ParsingException {
         ByteBuffer buffer;
         if(data.length != 8)
             throw new ParsingException("A ONION TUNNEL DESTROY message must have exactly 8 bytes!");
@@ -218,7 +219,7 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * @param data The actual packet
      * @return A ParsedMessage if the ONION TUNNEL DATA packet is valid.
      */
-    private ParsedMessage parseOnionTunnelDataMsg(byte[] data) {
+    private ParsedMessage parseOnionTunnelDataMsg(byte[] data) throws ParsingException {
         ByteBuffer buffer;
 
         if(data.length < 9)

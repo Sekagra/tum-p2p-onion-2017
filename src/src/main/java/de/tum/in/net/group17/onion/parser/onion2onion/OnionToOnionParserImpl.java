@@ -31,7 +31,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage buildOnionTunnelInitMsg(byte[] incomingLidRaw, byte[] handshakePayload)
+    public ParsedMessage buildOnionTunnelInitMsg(byte[] incomingLidRaw, byte[] handshakePayload) throws ParsingException
     {
         if(handshakePayload == null || handshakePayload.length < 1)
             throw new ParsingException("Handshake data is too short");
@@ -45,7 +45,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage buildOnionTunnelAcceptMsg(byte[] incomingLidRaw, byte[] handshakePayload)
+    public ParsedMessage buildOnionTunnelAcceptMsg(byte[] incomingLidRaw, byte[] handshakePayload) throws ParsingException
     {
         if(handshakePayload == null || handshakePayload.length < 1)
             throw new ParsingException("Handshake data is too short");
@@ -60,7 +60,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      */
     @Override
     public ParsedMessage buildOnionTunnelRelayMsg(byte[] incomingLidRaw, byte[] outgoingLidRaw,
-                                                  byte[] addressRaw, short port, byte[] data) {
+                                                  byte[] addressRaw, short port, byte[] data) throws ParsingException {
         if(data == null || data.length < 1)
             throw new ParsingException("Relay data is too short");
 
@@ -81,7 +81,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, byte[] data) {
+    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, byte[] data) throws ParsingException {
         if(data == null || data.length < 1)
             throw new ParsingException("Data contained in ONION_TUNNEL_TRANSFER message is too short!");
 
@@ -94,7 +94,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage buildOnionTunnelTeardownMsg(byte[] incomingLidRaw, byte[] timestampBlob) {
+    public ParsedMessage buildOnionTunnelTeardownMsg(byte[] incomingLidRaw, byte[] timestampBlob) throws ParsingException {
         if(timestampBlob == null || timestampBlob.length < 1)
             throw new ParsingException("Timestamp data is too short!");
 
@@ -107,7 +107,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage parseMsg(byte[] data) {
+    public ParsedMessage parseMsg(byte[] data) throws ParsingException {
         checkSize(data); // Throws an exception on all errors
         GenericMsgContent content;
 
@@ -196,7 +196,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * @param message Array containing the packet to parse.
      * @return OnionToOnionParseMessage of type ONION_TUNNEL_TRANSPORT if the packet is a valid ONION TUNNEL TRANSPORT message.
      */
-    private OnionToOnionParsedMessage parseIncomingTransportMessage(byte[] message)
+    private OnionToOnionParsedMessage parseIncomingTransportMessage(byte[] message) throws ParsingException
     {
         GenericMsgContent genericHeader;
 
@@ -224,7 +224,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * @param type The Type this message must have.
      * @return A GenericMsgContent containing the data and LID of the received message.
      */
-    private GenericMsgContent parseIncomingOnionMessage(byte[] message, int minDataLen, MessageType type) {
+    private GenericMsgContent parseIncomingOnionMessage(byte[] message, int minDataLen, MessageType type) throws ParsingException {
         byte[] lidRaw;
 
         if(message.length < 4 + minDataLen + lidLen)

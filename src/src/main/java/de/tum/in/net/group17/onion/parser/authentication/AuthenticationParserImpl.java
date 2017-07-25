@@ -20,7 +20,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildSessionStart(int requestId, byte[] hostkey) {
+    public ParsedMessage buildSessionStart(int requestId, byte[] hostkey) throws ParsingException {
         int size = 12 + hostkey.length;
         ASN1Primitive key;
 
@@ -38,7 +38,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildSessionIncoming1(int requestId, byte[] payload) {
+    public ParsedMessage buildSessionIncoming1(int requestId, byte[] payload) throws ParsingException {
         if(14 + payload.length > 65536)
             throw new ParsingException("Message too large!");
 
@@ -48,7 +48,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildSessionIncoming2(int requestId, short sessionId, byte[] payload) {
+    public ParsedMessage buildSessionIncoming2(int requestId, short sessionId, byte[] payload) throws ParsingException {
         int size = 12 + payload.length;
         if(size > 65535)
             throw new ParsingException("Message too large!");
@@ -59,7 +59,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildLayerEncrypt(int requestId, short[] sessionIds, byte[] payload) {
+    public ParsedMessage buildLayerEncrypt(int requestId, short[] sessionIds, byte[] payload) throws ParsingException {
         checkSizeCryptMessage(requestId, sessionIds, payload);
 
         return new AuthLayerEncryptParsedMessage(requestId, sessionIds, payload);
@@ -68,7 +68,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildLayerDecrypt(int requestId, short[] sessionIds, byte[] payload) {
+    public ParsedMessage buildLayerDecrypt(int requestId, short[] sessionIds, byte[] payload) throws ParsingException {
         checkSizeCryptMessage(requestId, sessionIds, payload);
 
         return new AuthLayerDecryptParsedMessage(requestId, sessionIds, payload);
@@ -77,7 +77,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildSessionClose(short sessionId) {
+    public ParsedMessage buildSessionClose(short sessionId) throws ParsingException {
         return new AuthSessionCloseParsedMessage(sessionId);
     }
 
@@ -91,7 +91,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, byte[] payload) {
+    public ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException {
         return buildCipherCryptMessage(MessageType.AUTH_CIPHER_DECRYPT, stillEncrypted, requestId, payload);
     }
 
@@ -129,7 +129,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      * @param message The raw message as byte[].
      * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violations.
      */
-    private ParsedMessage parseSessionHandshake1(byte[] message) {
+    private ParsedMessage parseSessionHandshake1(byte[] message) throws ParsingException {
         ByteBuffer buffer;
         byte[] payload = new byte[message.length - 12];
         int requestId;
@@ -155,7 +155,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      * @param message The raw message as byte[].
      * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violation.
      */
-    private ParsedMessage parseSessionHandshake2(byte[] message) {
+    private ParsedMessage parseSessionHandshake2(byte[] message) throws ParsingException {
         ByteBuffer buffer;
         byte[] payload = new byte[message.length - 12];
         int requestId;
@@ -181,7 +181,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      * @param message The received message.
      * @return The parsed message to confirm its validity; This method throws a ParsingException on every format violation.
      */
-    private ParsedMessage parseLayerCryptResponse(MessageType type, byte[] message) {
+    private ParsedMessage parseLayerCryptResponse(MessageType type, byte[] message) throws ParsingException {
         ByteBuffer buffer;
         byte[] payload;
         int requestId;
@@ -205,7 +205,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      * @param message The message sent by the Onion Auth module.
      * @return A ParsedMessage to confirm the validity of the message; This method throws a ParsingException on every format violation.
      */
-    private ParsedMessage parseAuthErrorRespone(byte[] message) {
+    private ParsedMessage parseAuthErrorRespone(byte[] message) throws ParsingException {
         ByteBuffer buffer;
 
         checkType(message, MessageType.AUTH_ERROR); // Will throw an parsing exception on every error
@@ -217,7 +217,8 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage parse(byte[] message) {
+    @Override
+    public ParsedMessage parseMsg(byte[] message) throws ParsingException {
         checkSize(message); // Throws an exception if an error occurs
 
         switch (extractType(message)) {

@@ -10,16 +10,15 @@ import java.nio.ByteOrder;
  * Created by Christoph Rudolf on 25.05.17.
  * Changes by Marko Dorfhuber(PraMiD) on 27.05.17: Added checks to checkSize
  */
-public class VoidphoneParser {
+public abstract class VoidphoneParser {
     /**
      * Check an message's size value.
      * This method throws a ParsingException on any errors.
      *
      * @param message The message we shall check.
      */
-    protected void checkSize(byte[] message) {
+    protected void checkSize(byte[] message) throws ParsingException {
         if (message == null || message.length < 4) // Null or shorter than the header?
-
             throw new ParsingException("The package must at least contain the header!");
 
         if(message.length > 65536)
@@ -38,7 +37,7 @@ public class VoidphoneParser {
      * @param message The incoming message.
      * @param expectedType The expected MessageType.
      */
-    protected void checkType(byte[] message, MessageType expectedType) {
+    protected void checkType(byte[] message, MessageType expectedType) throws ParsingException {
         ByteBuffer buffer = ByteBuffer.wrap(message);
         buffer.order(ByteOrder.BIG_ENDIAN);
         MessageType actualType = MessageType.valueOf(buffer.getShort(2));
@@ -57,7 +56,7 @@ public class VoidphoneParser {
      * @param message The message we want to read the type from.
      * @return The MessageType.
      */
-    protected MessageType extractType(byte[] message) {
+    protected MessageType extractType(byte[] message) throws ParsingException {
         ByteBuffer buffer = ByteBuffer.wrap(message);
         buffer.order(ByteOrder.BIG_ENDIAN);
         MessageType type = MessageType.valueOf(buffer.getShort(2));

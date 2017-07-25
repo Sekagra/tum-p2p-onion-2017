@@ -3,13 +3,16 @@ package de.tum.in.net.group17.onion.interfaces.authentication;
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
+import de.tum.in.net.group17.onion.model.results.RawRequestResult;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParser;
 import org.apache.log4j.Logger;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -20,6 +23,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     private AuthenticationParser parser;
     private ConfigurationProvider config;
     private final AtomicInteger requestCounter;
+    private Map<Integer, RequestResult> callbacks;
     private Logger logger;
 
     /**
@@ -35,16 +39,27 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         this.config = config;
         this.requestCounter = new AtomicInteger();
         this.requestCounter.set(0);
+        setCallback(result -> readResponse(result));
+    }
+
+    private void readResponse(byte[] data) {
+        //ParsedMessage parsed = (CastToNewIntermediateType)this.parser.parseMsg(data);
+        //parsed.getType()
     }
 
     public void startSession(Peer peer, final RequestResult callback) {
         // Build session start packet
         int requestId = this.requestCounter.getAndAdd(1);
         ParsedMessage packet = null;
-        packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
+        try {
+            packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
+            this.callbacks.put(requestId, callback);
+        } catch (ParsingException e) {
+
+        }
 
         // Send the message and parse the retrieved result before passing it back to the callback given
-        sendMessage(packet.serialize(), result -> callback.respond(parser.parse(result)));
+        sendMessage(packet.serialize());
     }
 
     public void forwardIncomingHandshake1(Peer peer, ParsedMessage hs1, RequestResult callback) {

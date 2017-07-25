@@ -8,6 +8,7 @@ import de.tum.in.net.group17.onion.interfaces.onion.OnionCallback;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiCallback;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
+import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingException;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingInterface;
 import de.tum.in.net.group17.onion.model.*;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
@@ -128,7 +129,7 @@ public class Orchestrator {
             }
 
             @Override
-            public void receviedDestroy(OnionTunnelDestroyParsedMessage msg) {
+            public void receivedDestroy(OnionTunnelDestroyParsedMessage msg) {
                 // todo: Start a destruction sequence for a tunnel.
             }
         };
@@ -139,10 +140,12 @@ public class Orchestrator {
      */
     private void buildTunnel() {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
-        this.rpsInterface.queryRandomPeer(result -> {
-            Peer peer = Peer.fromRpsReponse((RpsPeerParsedMessage) result);
-            buildTunnel(peer);
-        });
+        try {
+            Peer peer = this.rpsInterface.queryRandomPeer();
+        } catch (RandomPeerSamplingException e) {
+            logger.error("Unable to get random peer as cover tunnel destination: " + e.getMessage());
+        }
+        buildTunnel();
     }
 
     /**
@@ -155,20 +158,17 @@ public class Orchestrator {
         // get random intermediate hops to destination
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
             // sync/async (order should be maintained on an open connection)?
-            this.rpsInterface.queryRandomPeer(result -> {
-                Peer peer = Peer.fromRpsReponse((RpsPeerParsedMessage) result);
-                // add new segment and the peer instance as a reference to the hostkey is needed during the building phase
-                t.addPeer(peer);
-                t.addSegment(new TunnelSegment(LidImpl.createRandomLid(), peer.getIpAddress(), peer.getPort(), Direction.FORWARD));
-            });
+            Peer p = null;
+            try {
+                p = this.rpsInterface.queryRandomPeer();
+            } catch (RandomPeerSamplingException e) {
+                logger.error("Unable to get random intermediate peer from RPS module: " + e.getMessage());
+                //todo: write error to CM
+            }
+            this.onionInterface.extendTunnel(t, p);
         }
 
-        // add segment to segments list
-        t.addPeer(destination);
-        t.addSegment(new TunnelSegment(LidImpl.createRandomLid(), destination.getIpAddress(), destination.getPort(), Direction.FORWARD));
-
-        // issue build
-        this.onionInterface.buildTunnel(t);
+        this.tunnel.add(t);
     }
 
 }

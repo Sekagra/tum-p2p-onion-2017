@@ -1,12 +1,15 @@
 package de.tum.in.net.group17.onion.interfaces;
 
+import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterface;
 import de.tum.in.net.group17.onion.model.results.RawRequestResult;
+import de.tum.in.net.group17.onion.model.results.RequestResult;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.apache.log4j.Logger;
 
 import java.net.InetAddress;
 
@@ -20,13 +23,20 @@ public class TcpClientInterface {
     private Channel channel;
     protected InetAddress host;
     protected int port;
+    private RawRequestResult callback;
+    private Logger logger;
 
     public TcpClientInterface(InetAddress host, int port) {
+        this.logger = Logger.getLogger(AuthenticationInterface.class);
         this.host = host;
         this.port = port;
     }
 
-    protected Channel getChannel(SimpleChannelInboundHandler handler, InetAddress host, int port) throws InterruptedException {
+    protected void setCallback(RawRequestResult callback) {
+        this.callback = callback;
+    }
+
+    protected Channel getChannel() {
         if(this.channel != null && this.channel.isOpen() && this.channel.isWritable()) {
             return this.channel;
         }
@@ -37,34 +47,40 @@ public class TcpClientInterface {
             b.group(workerGroup);
             b.channel(NioSocketChannel.class);
             b.option(ChannelOption.SO_KEEPALIVE, true);
-            b.handler(new ClientChannelInitializer(handler));
-
-            // Start client, wait for the connection and return the channel
-            this.channel = b.connect(host, port).sync().channel();
-            return this.channel;
-        } finally {
-            workerGroup.shutdownGracefully();
-        }
-    }
-
-    protected void sendMessage(byte[] data, final RawRequestResult callback) {
-        // Get channel with the correct response handler
-        Channel channel = null;
-        try {
-            channel = this.getChannel(new SimpleChannelInboundHandler() {
+            b.handler(new ClientChannelInitializer(new SimpleChannelInboundHandler() {
                 @Override
                 protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
                     ByteBuf buf = (ByteBuf) o;
                     byte[] bytes = new byte[buf.readableBytes()];
                     buf.readBytes(bytes);
-                    callback.respond(bytes);  //move parsing to pipeline
+                    if (callback == null) {
+                        logger.warn("No callback specified, dropping received data into oblivion.");
+                    } else {
+                        callback.respond(bytes);  //move parsing to pipeline
+                    }
                 }
-            }, this.host, this.port);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+            }));
 
-        // Send data
-        channel.writeAndFlush(Unpooled.buffer().writeBytes(data));
+            // Start client, wait for the connection and return the channel
+            this.channel = b.connect(this.host, this.port).sync().channel();
+            return this.channel;
+        } catch (InterruptedException e) {
+            logger.error("Unable to connect to Authentication Module: " + e.getMessage());
+        } finally {
+            workerGroup.shutdownGracefully();
+        }
+        return null;
+    }
+
+    protected void sendMessage(byte[] data) {
+        // Get channel with the correct response handler
+        Channel channel = this.getChannel();
+
+        // Send data if possible
+        if(channel != null) {
+            channel.writeAndFlush(Unpooled.buffer().writeBytes(data));
+        } else {
+            throw new ChannelException("Unable to create channel.");
+        }
     }
 }

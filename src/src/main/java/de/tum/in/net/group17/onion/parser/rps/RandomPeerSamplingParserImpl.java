@@ -29,7 +29,7 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
      *
      * The method throws a ParsingException on every parse error!
      */
-    public ParsedMessage buildRpsQueryMsg() {
+    public ParsedMessage buildRpsQueryMsg() throws ParsingException {
         return new RpsQueryParsedMessage();
     }
 
@@ -38,7 +38,7 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
      *
      * The method throws a ParsingException on every parse error!
      */
-    public ParsedMessage parseMsg(byte[] data) {
+    public ParsedMessage parseMsg(byte[] data) throws ParsingException {
         checkSize(data); // Throws an exception if an error occurs
 
         switch(extractType(data)) {
@@ -56,7 +56,7 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
      * @param data Array containing the packet to parse.
      * @return RpsParsedObject of type RPS_MSG_TYPE.RPS_PEER if the packet is a valid RPS PEER message.
      */
-    private ParsedMessage parseRpsPeerMsg(byte[] data) {
+    private ParsedMessage parseRpsPeerMsg(byte[] data) throws ParsingException {
         InetAddress ipAddress;
         ASN1Primitive key;
         ByteBuffer buffer;

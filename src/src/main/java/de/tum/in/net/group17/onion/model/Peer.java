@@ -17,6 +17,8 @@ public class Peer {
     private InetAddress ipAddress;
     private short port;
 
+    public Peer() { };
+
     public Peer(byte[] hostkey)  {
         this.hostkey = hostkey;
     }
@@ -59,5 +61,4 @@ public class Peer {
             throw new RuntimeException(e.getMessage());
         }
     }
-
 }

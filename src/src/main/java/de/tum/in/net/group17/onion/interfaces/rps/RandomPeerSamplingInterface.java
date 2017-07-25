@@ -1,6 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.rps;
 
-import de.tum.in.net.group17.onion.model.results.RequestResult;
+import de.tum.in.net.group17.onion.model.Peer;
 
 /**
  * This interface is responsible for maintaining the connection to the RPS module.
@@ -10,7 +10,7 @@ import de.tum.in.net.group17.onion.model.results.RequestResult;
 public interface RandomPeerSamplingInterface {
     /**
      * Query a new random peer from the RPS module.
-     * @param callback The callback to be called when the peer and its data have been retrieved.
+     * @return The random peer.
      */
-    void queryRandomPeer(RequestResult callback);
+    Peer queryRandomPeer() throws RandomPeerSamplingException;
 }
