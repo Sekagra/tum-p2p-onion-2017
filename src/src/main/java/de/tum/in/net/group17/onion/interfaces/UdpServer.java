@@ -17,6 +17,11 @@ import java.util.Date;
  * Created by Christoph Rudolf on 21.06.17.
  */
 public class UdpServer {
+    private Channel channel;
+
+    public Channel getChannel() {
+        return channel;
+    }
 
     /**
      * Start listening to incoming requests on the specified port for this server interface.
@@ -79,11 +84,15 @@ public class UdpServer {
                             p.addLast("handler", inboundHandler);
                         }
                     });
-            b.bind(port).sync().channel().closeFuture().sync();
+            this.channel = b.bind(port).sync().channel();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } finally {
+        } /*finally {
+            try {
+                this.channel.closeFuture().sync();
+            } catch(InterruptedException ex ) {}
+
             eventLoopGroup.shutdownGracefully();
-        }
+        }*/
     }
 }

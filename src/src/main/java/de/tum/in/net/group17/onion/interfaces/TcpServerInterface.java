@@ -16,9 +16,14 @@ import org.apache.log4j.Logger;
  */
 public abstract class TcpServerInterface {
     private Logger logger;
+    private Channel channel;
 
     public TcpServerInterface() {
         this.logger = Logger.getLogger(OnionApiInterface.class);
+    }
+
+    public Channel getChannel() {
+        return channel;
     }
 
     /**
@@ -34,13 +39,13 @@ public abstract class TcpServerInterface {
                     .childHandler(new ServerChannelInitializer(() -> getHandler()));
 
             // Bind and start to accept incoming connections.
-            b.bind(port).sync().channel().closeFuture().sync();
+            this.channel = b.bind(port).sync().channel();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } finally {
+        } /*finally {
             workerGroup.shutdownGracefully();
             entryGroup.shutdownGracefully();
-        }
+        }*/
     }
 
     /**

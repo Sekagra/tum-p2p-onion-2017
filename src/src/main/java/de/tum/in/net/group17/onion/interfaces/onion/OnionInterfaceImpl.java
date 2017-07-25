@@ -54,6 +54,7 @@ public class OnionInterfaceImpl implements OnionInterface {
     @Override
     public void listen(OnionCallback callback)
     {
+        this.logger.info("Starting to listen for incoming Onion connections on port " + this.port);
         this.server.listen(this.port, (ctx, packet) -> {
             logger.debug("Messaged received on " + new Date() + " from " + packet.sender().toString() + "\r");
             final ByteBuf bb = packet.content();

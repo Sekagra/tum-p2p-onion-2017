@@ -66,9 +66,9 @@ public class TcpClientInterface {
             return this.channel;
         } catch (InterruptedException e) {
             logger.error("Unable to connect to Authentication Module: " + e.getMessage());
-        } finally {
+        } /*finally {
             workerGroup.shutdownGracefully();
-        }
+        }*/
         return null;
     }
 
