@@ -9,9 +9,12 @@ import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
+import de.tum.in.net.group17.onion.parser.authentication.AuthParsedMessage;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParser;
 import org.apache.log4j.Logger;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,12 +42,29 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         this.config = config;
         this.requestCounter = new AtomicInteger();
         this.requestCounter.set(0);
+        this.callbacks = Collections.synchronizedMap(new HashMap<Integer, RequestResult>());
         setCallback(result -> readResponse(result));
     }
 
     private void readResponse(byte[] data) {
-        //ParsedMessage parsed = (CastToNewIntermediateType)this.parser.parseMsg(data);
-        //parsed.getType()
+        try {
+            ParsedMessage parsed = this.parser.parseMsg(data);
+            if(parsed instanceof AuthParsedMessage)
+            {
+                int requestID = ((AuthParsedMessage)parsed).getRequestId();
+                RequestResult cb = callbacks.remove(requestID);
+                if(cb != null) {
+                    logger.debug("Received message on onion auth client interface: " + parsed.getClass().getName());
+                    cb.respond(parsed);
+                } else {
+                    logger.warn("Received message without callback mapping: " + requestID);
+                }
+            } else {
+                logger.warn("Received SESSION CLOSE message..");
+            }
+        } catch(ParsingException e) {
+            logger.warn("Could not parse incoming AUTH message: " + e.getMessage());
+        }
     }
 
     public void startSession(Peer peer, final RequestResult callback) {
@@ -55,7 +75,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
             packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
             this.callbacks.put(requestId, callback);
         } catch (ParsingException e) {
-
+            // TODO: Handle the exception
         }
 
         // Send the message and parse the retrieved result before passing it back to the callback given
