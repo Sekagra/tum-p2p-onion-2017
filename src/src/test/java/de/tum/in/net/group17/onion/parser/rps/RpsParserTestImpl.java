@@ -57,7 +57,7 @@ public class RpsParserTestImpl {
      * Test if the RPS parser creates the right QUERY message.
      */
     @Test
-    public void testRpsQueryMessage() {
+    public void testRpsQueryMessage() throws ParsingException {
         ParsedMessage obj = prs.buildRpsQueryMsg();
         byte[] data = obj.serialize();
         byte[] compareData = {0, 4, 2, 28};
@@ -67,7 +67,7 @@ public class RpsParserTestImpl {
     }
 
     @Test
-    public void testCorrectPeerParsing() {
+    public void testCorrectPeerParsing()  throws ParsingException {
         int[] headerRaw = {
                 0x1, 0x32, 0x2, 0x1D, // Header
                 0x0, 0x80, 0x0, 0x0, // Port and res
@@ -90,36 +90,36 @@ public class RpsParserTestImpl {
     }
 
     @Test(expected=ParsingException.class)
-    public void testParseOutgoingMessage() {
+    public void testParseOutgoingMessage() throws ParsingException {
         prs.parseMsg(prs.buildRpsQueryMsg().serialize());
     }
 
     @Test(expected=ParsingException.class)
-    public void testInvalidMessageType() {
+    public void testInvalidMessageType() throws ParsingException {
         byte[] data = {0, 4, 1, 1}; // Message type = 0x11 = 17
         prs.parseMsg(data);
     }
 
     @Test(expected=ParsingException.class)
-    public void testMsgTooShortForHeader() {
+    public void testMsgTooShortForHeader() throws ParsingException {
         byte[] data = {0, 3, 2}; // Length too small for the packet
         prs.parseMsg(data);
     }
 
     @Test(expected=ParsingException.class)
-    public void testInvalidTypeield() {
+    public void testInvalidTypeield()  throws ParsingException {
         byte[] data = {0, 14, 2, 29, 1, 1, 0, 0};
         prs.parseMsg(data);
     }
 
     @Test(expected=ParsingException.class)
-    public void testMsgTooShortForAllPeerFields() {
+    public void testMsgTooShortForAllPeerFields() throws ParsingException {
         byte[] data = {0, 12, 2, 29, 1, 1, 0, 0, 127, 0, 0, 1};
         prs.parseMsg(data);
     }
 
     @Test(expected=ParsingException.class)
-    public void testInvalidHostKeyPeerMsg() {
+    public void testInvalidHostKeyPeerMsg() throws ParsingException {
         byte[] data = {0, 13, 2, 29, 1, 1, 0, 0, 127, 0, 0, 1, 1};
         prs.parseMsg(data);
     }

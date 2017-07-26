@@ -22,7 +22,7 @@ public class OnionApiParserImplTest {
      * Create a OnionApiParser used in the RpsPeerParsedMessage cases and a byte[] containing a RpsPeerParsedMessage DER-formatted RSA key.
      */
     @BeforeClass
-    public static void initTest() {
+    public static void initTest() throws ParsingException {
         prs = new OnionApiParserImpl();
 
         // Create a key in DER format used in different cases
@@ -57,7 +57,7 @@ public class OnionApiParserImplTest {
     }
 
     @Test
-    public void testBuildErrorMsg() {
+    public void testBuildErrorMsg() throws ParsingException {
         byte[] expected = new byte[] {
                 0x00, 0x0C, 0x02, 0x35, // Header
                 0x02, 0x36, 0x00, 0x00,
@@ -70,12 +70,12 @@ public class OnionApiParserImplTest {
     }
 
     @Test(expected= ParsingException.class)
-    public void testInvalidRequest() {
+    public void testInvalidRequest() throws ParsingException {
         prs.buildOnionErrorMsg(MessageType.AUTH_LAYER_DECRYPT, 0x01010101);
     }
 
     @Test
-    public void testBuildOnionTunnelIncoming() {
+    public void testBuildOnionTunnelIncoming() throws ParsingException {
         ParsedMessage generated = prs.buildOnionTunnelIncomingMsg(0x01010101, derKey);
         ByteBuffer buf = ByteBuffer.wrap(generated.serialize());
         byte[] containedKey = new byte[derKey.length];
@@ -90,14 +90,14 @@ public class OnionApiParserImplTest {
     }
 
     @Test(expected=ParsingException.class)
-    public void testInvalidSourceKey() {
+    public void testInvalidSourceKey() throws ParsingException {
         byte[] invalidKey = new byte[derKey.length];
         Arrays.fill(invalidKey, (byte) 0);
         prs.buildOnionTunnelIncomingMsg(0x01010101, invalidKey);
     }
 
     @Test
-    public void testBuildOnionTunnelReady() {
+    public void testBuildOnionTunnelReady() throws ParsingException {
         ParsedMessage generated = prs.buildOnionTunnelReadyMsg(0x01010101, derKey);
         ByteBuffer buf = ByteBuffer.wrap(generated.serialize());
         byte[] containedKey = new byte[derKey.length];
@@ -112,32 +112,32 @@ public class OnionApiParserImplTest {
     }
 
     @Test(expected=ParsingException.class)
-    public void testInvalidDestinationKey() {
+    public void testInvalidDestinationKey() throws ParsingException {
         byte[] invalidKey = new byte[derKey.length];
         Arrays.fill(invalidKey, (byte) 0);
         prs.buildOnionTunnelReadyMsg(0x01010101, invalidKey);
     }
 
     @Test(expected=ParsingException.class)
-    public void testInvalidMessageType() {
+    public void testInvalidMessageType() throws ParsingException {
         byte[] data = {0x00, 0x04, 0x02, 0x35}; // Message type = 0x0258 = 600 => Some auth message
         prs.parseMsg(data);
     }
 
     @Test(expected=ParsingException.class)
-    public void testMsgTooShortForHeader() {
+    public void testMsgTooShortForHeader() throws ParsingException {
         byte[] data = {0, 3, 2}; // Length too small for the packet
         prs.parseMsg(data);
     }
 
     @Test(expected=ParsingException.class)
-    public void testInvalidMsgField() {
+    public void testInvalidMsgField() throws ParsingException {
         byte[] data = {0, 14, 2, 29, 1, 1, 0, 0};
         prs.parseMsg(data);
     }
 
     @Test
-    public void testValidCoverMsg() {
+    public void testValidCoverMsg() throws ParsingException {
         byte[] data = new byte[] {
                 0x00, 0x08, 0x02, 0x36,
                 0x10, 0x10, 0x00, 0x00 };
@@ -147,7 +147,7 @@ public class OnionApiParserImplTest {
     }
 
     @Test
-    public void testValidDataMsg() {
+    public void testValidDataMsg() throws ParsingException {
         byte[] data = new byte[] {
                 0x00, 0x0C, 0x02, 0x34,
                 0x01, 0x01, 0x01, 0x01,
@@ -158,7 +158,7 @@ public class OnionApiParserImplTest {
     }
 
     @Test
-    public void testValidDestroyMsg() {
+    public void testValidDestroyMsg() throws ParsingException {
         byte[] data = new byte[] {
                 0x00, 0x08, 0x02, 0x33,
                 0x01, 0x01, 0x01, 0x01 };
@@ -168,7 +168,7 @@ public class OnionApiParserImplTest {
     }
 
     @Test
-    public void testValidBuildMsg() {
+    public void testValidBuildMsg() throws ParsingException {
         byte[] headIp = new byte[] {
                 0x00, 0x08, 0x02, 0x30,
                 0, 0, 0, 80,
