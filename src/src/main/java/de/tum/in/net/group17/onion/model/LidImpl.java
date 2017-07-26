@@ -1,5 +1,7 @@
 package de.tum.in.net.group17.onion.model;
 
+import com.google.inject.Inject;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.UUID;
@@ -11,9 +13,10 @@ import java.util.UUID;
  * in the first version of the application.
  */
 public class LidImpl implements Lid {
-    public static final short LENGTH = 32;
+    public static final short LENGTH = 16;
     private byte[] data;
 
+    @Inject
     private LidImpl(byte[] data) {
         this.data = data;
     }

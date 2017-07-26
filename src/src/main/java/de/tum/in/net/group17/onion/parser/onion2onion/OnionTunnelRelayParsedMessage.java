@@ -51,13 +51,11 @@ public class OnionTunnelRelayParsedMessage extends OnionToOnionParsedMessage {
      * @inheritDoc
      */
     public byte[] serialize() {
-        ByteBuffer buffer = ByteBuffer.allocate(this.getSize());
-        buffer.order(ByteOrder.BIG_ENDIAN);
+        ByteBuffer buffer = super.serializeBase();
 
-        buffer.put(super.serializeBase());
-        buffer.put(address.getAddress());
         buffer.putShort(port);
         buffer.putShort((short)(isIpv4 ? 0 : 1 << 15));
+        buffer.put(address.getAddress());
         buffer.put(outgoingTunnel.serialize());
         buffer.put(data);
 
@@ -105,7 +103,7 @@ public class OnionTunnelRelayParsedMessage extends OnionToOnionParsedMessage {
      *
      * @return A byte[] representing the data contained in this message.
      */
-    public byte[] getData() {
+    public byte[] getPayload() {
         return data;
     }
 

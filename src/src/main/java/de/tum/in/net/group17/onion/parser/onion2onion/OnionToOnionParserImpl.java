@@ -161,13 +161,12 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         addrLen = isIpv4 ? 4 : 16;
 
         try {
+            buffer.position(24);
             if (isIpv4) {
-                buffer.position(4);
                 addr = new byte[4];
                 buffer.get(addr, 0, 4);
                 ipAddress = Inet4Address.getByAddress(addr);
             } else {
-                buffer.position(4);
                 addr = new byte[16];
                 buffer.get(addr, 0, 16);
                 ipAddress = Inet6Address.getByAddress(addr);
@@ -185,7 +184,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
                 LidImpl.deserialize(lidRaw),
                 ipAddress,
                 port,
-                Arrays.copyOfRange(message, 2 * lidLen + 4 + addrLen, message.length));
+                Arrays.copyOfRange(message, 4 + 2 * lidLen + 4 + addrLen, message.length));
     }
 
 

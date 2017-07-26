@@ -36,14 +36,14 @@ public abstract class OnionToOnionParsedMessage extends ParsedMessage {
     /**
      * Serialize the header and the incoming tunnel LID.
      *
-     * @return A byte[] buffer containing the header and incoming tunnel LID of this message.
+     * @return A ByteBuffer containing the header and incoming tunnel LID of this message.
      */
-    public byte[] serializeBase() {
+    public ByteBuffer serializeBase() {
         ByteBuffer buffer = buildHeader();
 
         buffer.put(incomingLid.serialize());
 
-        return buffer.array();
+        return buffer;
     }
 
     /**

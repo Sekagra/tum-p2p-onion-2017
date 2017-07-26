@@ -17,7 +17,7 @@ public class OnionErrorParsedMessage extends ParsedMessage {
      * This object may only be created using a OnionParser.
      *
      * @param reqType The type of the message triggering the error.
-     * @param tunnelId The onion tunnel that is related to the tunnel.
+     * @param tunnelId The onion2onion tunnel that is related to the tunnel.
      */
     OnionErrorParsedMessage(MessageType reqType, int tunnelId) {
         this.requestType = reqType;

@@ -21,7 +21,7 @@ public class OnionTunnelBuildParsedMessage extends ParsedMessage {
      * Create a new ONION TUNNEL BUILD message.
      * This message may only be created by an OnionParser after checking the parameters.
      *
-     * @param port The port which should be used for the onion connection.
+     * @param port The port which should be used for the onion2onion connection.
      * @param address The address of the destination peer.
      * @param dstKey The key of the destination peer.
      */
@@ -60,7 +60,7 @@ public class OnionTunnelBuildParsedMessage extends ParsedMessage {
 
 
     /**
-     * Get the port used for the onion connection.
+     * Get the port used for the onion2onion connection.
      *
      * @return The used port.
      */

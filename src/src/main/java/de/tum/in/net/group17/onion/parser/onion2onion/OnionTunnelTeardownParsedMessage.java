@@ -39,7 +39,7 @@ public class OnionTunnelTeardownParsedMessage extends OnionToOnionParsedMessage 
      * @inheritDoc
      */
     public byte[] serialize() {
-        ByteBuffer buffer = ByteBuffer.wrap(super.serializeBase());
+        ByteBuffer buffer = super.serializeBase();
 
         buffer.put(encTimestamp);
 

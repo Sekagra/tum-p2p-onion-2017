@@ -82,7 +82,7 @@ public class Orchestrator {
     }
 
     /**
-     * Retrieves a callback to handle messages arriving at the onion module that
+     * Retrieves a callback to handle messages arriving at the onion2onion module that
      * have to be given or reacted to by any other module.
      * @return A OnionCallback instance with the methods for reacting to the specific events.
      */

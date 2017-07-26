@@ -47,7 +47,7 @@ public class OnionTunnelDestroyParsedMessage extends ParsedMessage{
     /**
      * Get the tunnel identifier contained in the message.
      *
-     * @return The tunnel ID of the corresponding onion tunnel.
+     * @return The tunnel ID of the corresponding onion2onion tunnel.
      */
     public int getTunnelId() {
         return tunnelId;

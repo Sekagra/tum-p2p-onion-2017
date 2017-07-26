@@ -54,7 +54,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
                 int requestID = ((AuthParsedMessage)parsed).getRequestId();
                 RequestResult cb = callbacks.remove(requestID);
                 if(cb != null) {
-                    logger.debug("Received message on onion auth client interface: " + parsed.getClass().getName());
+                    logger.debug("Received message on onion2onion auth client interface: " + parsed.getClass().getName());
                     cb.respond(parsed);
                 } else {
                     logger.warn("Received message without callback mapping: " + requestID);

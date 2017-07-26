@@ -11,6 +11,8 @@ import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterfaceImpl;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingInterface;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingInterfaceImpl;
+import de.tum.in.net.group17.onion.model.Lid;
+import de.tum.in.net.group17.onion.model.LidImpl;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParser;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParserImpl;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionToOnionParser;
@@ -23,7 +25,7 @@ import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParserImpl;
 /**
  * Created by Marko Dorfhuber(PraMiD) on 24.07.17.
  */
-public class TestInjector extends AbstractModule {
+public class ParserUnitTestInjector extends AbstractModule {
     @Override
     protected void configure() {
         bind(ConfigurationProvider.class).to(ConfigurationProviderImpl.class);
@@ -39,5 +41,8 @@ public class TestInjector extends AbstractModule {
         bind(OnionToOnionParser.class).to(OnionToOnionParserImpl.class);
         bind(OnionApiParser.class).to(OnionApiParserImpl.class);
         bind(RandomPeerSamplingParser.class).to(RandomPeerSamplingParserImpl.class);
+
+        // bin LID interface to the current implementation
+        bind(Lid.class).toInstance(LidImpl.createRandomLid());
     }
 }
