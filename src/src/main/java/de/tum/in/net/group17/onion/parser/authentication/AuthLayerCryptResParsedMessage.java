@@ -1,15 +1,11 @@
 package de.tum.in.net.group17.onion.parser.authentication;
 
-import de.tum.in.net.group17.onion.parser.MessageType;
-import de.tum.in.net.group17.onion.parser.ParsedMessage;
-
 import java.nio.ByteBuffer;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 06.06.17.
  */
-public abstract class AuthLayerCryptResParsedMessage extends ParsedMessage {
-    private int requestId;
+public abstract class AuthLayerCryptResParsedMessage extends AuthParsedMessage {
     private byte[] payload;
 
     /**
@@ -20,7 +16,7 @@ public abstract class AuthLayerCryptResParsedMessage extends ParsedMessage {
      * @param payload The encrypted payload.
      */
     protected AuthLayerCryptResParsedMessage(int requestId, byte[] payload) {
-        this.requestId = requestId;
+        super(requestId);
         this.payload = payload;
     }
 

@@ -1,24 +1,21 @@
 package de.tum.in.net.group17.onion.parser.authentication;
 
 import de.tum.in.net.group17.onion.parser.MessageType;
-import de.tum.in.net.group17.onion.parser.ParsedMessage;
 
 import java.nio.ByteBuffer;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 21.06.17.
  */
-public class AuthErrorParsedMessage extends ParsedMessage {
-    private final int requestID;
-
+public class AuthErrorParsedMessage extends AuthParsedMessage {
     /**
      * Create a new AuthErrorParsedMessage containing the given request ID.
      * This message may only be created by an AuthenticationParser after checking all parameters.
      *
-     * @param requestID The ID used in the corresponding request.
+     * @param requestId The ID used in the corresponding request.
      */
-    public AuthErrorParsedMessage(int requestID) {
-        this.requestID = requestID;
+    public AuthErrorParsedMessage(int requestId) {
+        super(requestId);
     }
 
     /**
@@ -28,7 +25,7 @@ public class AuthErrorParsedMessage extends ParsedMessage {
         ByteBuffer buffer = buildHeader();
 
         buffer.putInt(4, 0); // Reserved
-        buffer.putInt(8, requestID);
+        buffer.putInt(8, requestId);
 
         return buffer.array();
     }
@@ -53,6 +50,6 @@ public class AuthErrorParsedMessage extends ParsedMessage {
      * @return The contained request ID.
      */
     public int getRequestID() {
-        return requestID;
+        return requestId;
     }
 }

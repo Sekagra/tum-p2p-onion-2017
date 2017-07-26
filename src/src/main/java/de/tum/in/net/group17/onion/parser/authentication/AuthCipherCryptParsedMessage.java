@@ -1,6 +1,5 @@
 package de.tum.in.net.group17.onion.parser.authentication;
 
-import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import java.nio.ByteBuffer;
 
 /**
@@ -9,10 +8,9 @@ import java.nio.ByteBuffer;
  * Represents an AUTH CIPHER EN-/DECRYPT RESP message.
  * Objects of this class may only be created by an AuthenticationParsed after checking all parameters.
  */
-public abstract class AuthCipherCryptParsedMessage extends ParsedMessage {
+public abstract class AuthCipherCryptParsedMessage extends AuthParsedMessage {
     private final byte[] payload;
     private final boolean stillEnc;
-    private final int requestId;
 
 
     /**
@@ -26,8 +24,8 @@ public abstract class AuthCipherCryptParsedMessage extends ParsedMessage {
      */
     public AuthCipherCryptParsedMessage(boolean stillEncrypted, int requestId, byte[] payload)
     {
+        super(requestId);
         this.stillEnc = stillEncrypted;
-        this.requestId = requestId;
         this.payload = payload;
     }
 

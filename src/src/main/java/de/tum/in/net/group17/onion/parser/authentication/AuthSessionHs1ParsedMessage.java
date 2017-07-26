@@ -1,16 +1,14 @@
 package de.tum.in.net.group17.onion.parser.authentication;
 
 import de.tum.in.net.group17.onion.parser.MessageType;
-import de.tum.in.net.group17.onion.parser.ParsedMessage;
 
 import java.nio.ByteBuffer;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 06.06.17.
  */
-public class AuthSessionHs1ParsedMessage extends ParsedMessage {
+public class AuthSessionHs1ParsedMessage extends AuthParsedMessage {
     private short sessId;
-    private int requestId;
     private byte[] payload;
 
     /**
@@ -22,8 +20,8 @@ public class AuthSessionHs1ParsedMessage extends ParsedMessage {
      * @param payload The payload sent to the ONION AUTH module.
      */
     protected AuthSessionHs1ParsedMessage(short sessionId, int requestId, byte[] payload) {
+        super(requestId);
         this.sessId = sessionId;
-        this.requestId = requestId;
         this.payload = payload;
     }
 

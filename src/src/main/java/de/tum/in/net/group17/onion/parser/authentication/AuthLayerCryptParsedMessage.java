@@ -1,15 +1,11 @@
 package de.tum.in.net.group17.onion.parser.authentication;
 
-import de.tum.in.net.group17.onion.parser.MessageType;
-import de.tum.in.net.group17.onion.parser.ParsedMessage;
-
 import java.nio.ByteBuffer;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 06.06.17.
  */
-public abstract class AuthLayerCryptParsedMessage extends ParsedMessage {
-    private int requestId;
+public abstract class AuthLayerCryptParsedMessage extends AuthParsedMessage {
     private short[] sessIds;
     private byte[] payload;
 
@@ -22,11 +18,11 @@ public abstract class AuthLayerCryptParsedMessage extends ParsedMessage {
      * @param payload The payload that shall be encrypted.
      */
     protected AuthLayerCryptParsedMessage(int requestId, short[] sessionIds, byte[] payload) {
+        super(requestId);
         if(sessionIds == null || sessionIds.length < 1)
             throw new IllegalArgumentException("This message must contain at least one session ID!");
         if(sessionIds.length > 255)
             throw new IllegalArgumentException("We can only handle up to 255 session IDs!");
-        this.requestId = requestId;
         this.sessIds = sessionIds;
         this.payload = payload;
     }

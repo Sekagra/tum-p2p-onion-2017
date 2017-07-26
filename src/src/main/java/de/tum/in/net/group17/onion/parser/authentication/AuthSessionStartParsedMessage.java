@@ -1,7 +1,6 @@
 package de.tum.in.net.group17.onion.parser.authentication;
 
 import de.tum.in.net.group17.onion.parser.MessageType;
-import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import org.bouncycastle.asn1.ASN1Primitive;
 
 import java.io.IOException;
@@ -10,8 +9,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by Marko Dorfhuber(PraMiD) on 06.06.17.
  */
-public class AuthSessionStartParsedMessage extends ParsedMessage {
-    private int requestId;
+public class AuthSessionStartParsedMessage extends AuthParsedMessage {
     private ASN1Primitive key;
 
     /**
@@ -22,7 +20,7 @@ public class AuthSessionStartParsedMessage extends ParsedMessage {
      * @param key The key used in this session.
      */
     protected AuthSessionStartParsedMessage(int requestId, ASN1Primitive key) {
-        this.requestId = requestId;
+        super(requestId);
         this.key = key;
     }
 

@@ -175,13 +175,13 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     }
 
     /**
-     * Parse a AUTH_LAYER_EN-/DECRYPT_RESP message.
+     * Parse a AUTH_[LAYER|CIPHER]_[EN-|DECRYPT]_RESP message.
      *
      * @param type Is this a decrypt/encrypt message?
      * @param message The received message.
      * @return The parsed message to confirm its validity; This method throws a ParsingException on every format violation.
      */
-    private ParsedMessage parseLayerCryptResponse(MessageType type, byte[] message) throws ParsingException {
+    private ParsedMessage parseCryptResponse(MessageType type, byte[] message) throws ParsingException {
         ByteBuffer buffer;
         byte[] payload;
         int requestId;
@@ -193,6 +193,17 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         payload = new byte[message.length - 12];
         buffer.position(12);
         buffer.get(payload);
+
+        switch (type) {
+            case AUTH_LAYER_ENCRYPT_RESP:
+                return new AuthLayerEncryptResParsedMessage(requestId, payload);
+            case AUTH_LAYER_DECRYPT_RESP:
+                return new AuthLayerDecryptResParsedMessage(requestId, payload);
+            case AUTH_CIPHER_ENCRYPT_RESP:
+                return new AuthCipherEncryptResParsedMessage(requestId, payload);
+            case AUTH_CIPHER_DECRYPT_RESP:
+                return new AuthCipherDecryptResParsedMessage(requestId, payload);
+        }
 
         return (type == MessageType.AUTH_LAYER_ENCRYPT_RESP ?
                 new AuthLayerEncryptResParsedMessage(requestId, payload) :
@@ -227,13 +238,13 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
             case AUTH_SESSION_HS2:
                 return parseSessionHandshake2(message);
             case AUTH_LAYER_ENCRYPT_RESP:
-                return parseLayerCryptResponse(MessageType.AUTH_LAYER_ENCRYPT_RESP, message);
+                return parseCryptResponse(MessageType.AUTH_LAYER_ENCRYPT_RESP, message);
             case AUTH_LAYER_DECRYPT_RESP:
-                return parseLayerCryptResponse(MessageType.AUTH_LAYER_DECRYPT_RESP, message);
+                return parseCryptResponse(MessageType.AUTH_LAYER_DECRYPT_RESP, message);
             case AUTH_CIPHER_ENCRYPT_RESP:
-                return parseLayerCryptResponse(MessageType.AUTH_CIPHER_ENCRYPT_RESP, message);
+                return parseCryptResponse(MessageType.AUTH_CIPHER_ENCRYPT_RESP, message);
             case AUTH_CIPHER_DECRYPT_RESP:
-                return parseLayerCryptResponse(MessageType.AUTH_CIPHER_DECRYPT_RESP, message);
+                return parseCryptResponse(MessageType.AUTH_CIPHER_DECRYPT_RESP, message);
             case AUTH_ERROR:
                 return parseAuthErrorRespone(message);
             default:
