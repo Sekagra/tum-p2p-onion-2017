@@ -71,13 +71,12 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
 
         short port= buffer.getShort(4);
         try {
-            if ((buffer.getShort(6) & (short)0x0001) != 0) {
-                buffer.position(4);
+            buffer.position(8);
+            if ((buffer.getShort(6) & (short)0x0001) == 0) {
                 addr = new byte[4];
                 buffer.get(addr, 0, 4);
                 ipAddress = Inet4Address.getByAddress(addr);
             } else {
-                buffer.position(4);
                 addr = new byte[16];
                 buffer.get(addr, 0, 16);
                 ipAddress = Inet6Address.getByAddress(addr);

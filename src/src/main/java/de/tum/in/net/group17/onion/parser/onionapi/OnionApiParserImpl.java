@@ -161,15 +161,15 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
         short port = buffer.getShort(6);
         try {
-            if ((buffer.getShort(4) & (short)0x0001) != 0) {
-                buffer.position(4);
+            buffer.position(8);
+            if ((buffer.getShort(4) & (short)0x0001) == 0) {
                 addrRaw = new byte[4];
                 buffer.get(addrRaw, 0, 4);
                 address = Inet4Address.getByAddress(addrRaw);
             } else {
                 buffer.position(4);
                 addrRaw = new byte[16];
-                buffer.get(addrRaw, 0, 16);
+                buffer.get(addrRaw, 8, 16);
                 address = Inet6Address.getByAddress(addrRaw);
             }
         } catch(UnknownHostException e) {
@@ -228,9 +228,9 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
         buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.BIG_ENDIAN);
-        // TODO: Change to version without .position in every call -> Nicer to read
-        int tunnelId = buffer.getShort();
+        int tunnelId = buffer.getInt(4);
         byte[] msgData = new byte[data.length - 8];
+        buffer.position(8);
         buffer.get(msgData, 0, data.length - 8);
 
         return new OnionTunnelDataParsedMessage(tunnelId, msgData);

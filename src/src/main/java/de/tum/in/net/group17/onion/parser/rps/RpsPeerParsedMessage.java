@@ -35,7 +35,14 @@ public class RpsPeerParsedMessage extends ParsedMessage {
      * @inhertDoc
      */
     public byte[] serialize() {
+        short res = 0;
+
         ByteBuffer buffer = buildHeader();
+        buffer.putShort(port);
+
+        if(!isIpv4())
+            res |= 0x00000001;
+        buffer.putShort(res);
         buffer.put(ipAddress.getAddress());
         buffer.put(getKeyRaw());
 
@@ -47,7 +54,7 @@ public class RpsPeerParsedMessage extends ParsedMessage {
      */
     public short getSize() {
         short ipLen = (short)(isIpv4() ? 4 : 16);
-        return (short) (4 + getKeyRaw().length + ipLen);
+        return (short) (8 + getKeyRaw().length + ipLen);
     }
 
     /**

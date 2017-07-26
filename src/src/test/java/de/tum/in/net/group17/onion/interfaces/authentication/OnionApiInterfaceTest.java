@@ -3,6 +3,7 @@ package de.tum.in.net.group17.onion.interfaces.authentication;
 import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterfaceImpl;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParserImpl;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -11,6 +12,7 @@ import org.junit.Test;
  */
 public class OnionApiInterfaceTest {
     @Test
+    @Ignore
     public void receiveRawData() throws Exception {
         System.out.println("Server is listening for test...");
         OnionApiInterfaceImpl intf = new OnionApiInterfaceImpl(new ConfigurationProviderImpl(), new OnionApiParserImpl());
