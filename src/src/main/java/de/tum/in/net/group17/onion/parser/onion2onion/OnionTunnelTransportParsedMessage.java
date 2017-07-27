@@ -4,6 +4,7 @@ import de.tum.in.net.group17.onion.model.Lid;
 import de.tum.in.net.group17.onion.parser.MessageType;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
@@ -15,7 +16,7 @@ import java.util.Arrays;
 public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage {
     public static final byte[] MAGIC = "PtoP".getBytes();
 
-    private final byte[] data; // Inner packet without padding
+    private final byte[] data; // Inner packet including padding
     private final byte[] magic; // The (possibly encrypted) magic word
 
     /**
@@ -49,6 +50,26 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
     public boolean forMe()
     {
         return Arrays.equals(MAGIC, this.magic);
+    }
+
+
+    /**
+     * Get the packet contained in the payload of this transport message.
+     * Calling this method is only valid if this host is the receiver of the transport packet.
+     * If the packet is not for this hop we will throw a IllegalStateException.
+     *
+     * @return The packet contained in the ONION TUNNEL TRANSPORT payload.
+     */
+    public byte[] getInnerPacket()
+    {
+        if(!forMe())
+            throw new IllegalStateException("This packet is not supposed for this peer." +
+                    " Therefore, the inner packet is just garbage!");
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+
+        short size = buffer.getShort(); // Data contains another packet -> First two byte are the length
+        return Arrays.copyOfRange(data, 0, size);
     }
 
     /**
