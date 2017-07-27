@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
  */
 public class OnionTunnelVoiceParsedMessage extends ParsedMessage
 {
-    public static final int MAX_SIZE = 512;
     private final byte[] data;
 
     /**

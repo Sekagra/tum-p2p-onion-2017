@@ -1,11 +1,13 @@
 package de.tum.in.net.group17.onion.parser.onion2onion;
 
+import com.sun.media.sound.InvalidDataException;
 import de.tum.in.net.group17.onion.model.Lid;
 import de.tum.in.net.group17.onion.parser.MessageType;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.zip.DataFormatException;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 25.06.17.
@@ -14,6 +16,7 @@ import java.util.Arrays;
  * Objects of this class may only be created by a OnionToOnionParser after checking all parameters.
  */
 public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage {
+    public static final int MAX_INNER_SIZE = 512;
     public static final byte[] MAGIC = "PtoP".getBytes();
 
     private final byte[] data; // Inner packet including padding
@@ -58,13 +61,18 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
      * Calling this method is only valid if this host is the receiver of the transport packet.
      * If the packet is not for this hop we will throw a IllegalStateException.
      *
+     * We throw a IllegalDataException if data (msg + padding) has an invalid size!
+     *
      * @return The packet contained in the ONION TUNNEL TRANSPORT payload.
+     * @throws InvalidDataException If data (msg + padding) has an invalid size!
      */
-    public byte[] getInnerPacket()
-    {
+
+    public byte[] getInnerPacket() throws InvalidDataException {
         if(!forMe())
             throw new IllegalStateException("This packet is not supposed for this peer." +
                     " Therefore, the inner packet is just garbage!");
+        if(data.length != MAX_INNER_SIZE)
+            throw new InvalidDataException("Invalid data length!");
         ByteBuffer buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.BIG_ENDIAN);
 

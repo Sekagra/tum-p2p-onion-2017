@@ -31,7 +31,7 @@ public interface OnionToOnionParser extends Parser {
     public ParsedMessage buildOnionTunnelAcceptMsg(byte[] incomingLidRaw, byte[] handshakePayload) throws ParsingException;
 
     /**
-     * Create a new unencrypted ONION_TUNNE_RELAY message.
+     * Create a new unencrypted ONION_TUNNEL_RELAY message.
      * This implementation throws a ParsingException on every error.
      *
      * @param incomingLidRaw The LID of the incoming tunnel in the perspective of the relaying host.
@@ -49,10 +49,10 @@ public interface OnionToOnionParser extends Parser {
      * This implementation throws a ParsingException on every error.
      *
      * @param incominLidRaw The LID of the incoming tunnel in the perspective of the receiving host.
-     * @param data The data contained in the message.
+     * @param innerPkt The inner packet contained in this message.
      * @return A OnionTunnelTransferParsedMessage containing the given parameters.
      */
-    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, byte[] data) throws ParsingException;
+    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, ParsedMessage innerPkt) throws ParsingException;
 
     /**
      * Build a new ONION_TUNNEL_TEARDOWN message containing the given parameters.

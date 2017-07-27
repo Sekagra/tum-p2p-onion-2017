@@ -6,6 +6,7 @@ import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.VoidphoneParser;
+import org.bouncycastle.util.Arrays;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -13,7 +14,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
+import java.util.Random;
 
 /**
  * Created by Christoph Rudolf on 21.06.17.
@@ -80,11 +81,15 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, byte[] data) throws ParsingException {
-        if(data == null || data.length < 1)
-            throw new ParsingException("Data contained in ONION_TUNNEL_TRANSFER message is too short!");
+    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, ParsedMessage innerPkt) throws ParsingException {
+        if(innerPkt.getSize() > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE)
+            throw new ParsingException("Inner packet too large!");
+        byte[] padding = new byte[OnionTunnelTransportParsedMessage.MAX_INNER_SIZE - innerPkt.getSize()];
+        new Random().nextBytes(padding);
 
-        return new OnionTunnelTransportParsedMessage(LidImpl.deserialize(incominLidRaw), "PtoP".getBytes(), data);
+        return new OnionTunnelTransportParsedMessage(LidImpl.deserialize(incominLidRaw),
+                "PtoP".getBytes(),
+                Arrays.concatenate(innerPkt.serialize(), padding));
     }
 
     /**
@@ -107,7 +112,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      */
     @Override
     public ParsedMessage buildOnionTunnelVoiceMsg(byte[] payload) throws ParsingException {
-        if(payload.length + 4 > OnionTunnelVoiceParsedMessage.MAX_SIZE)
+        if(payload.length + 4 > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE)
             throw new ParsingException("Payload too long!");
 
         return new OnionTunnelVoiceParsedMessage(payload);
@@ -214,8 +219,10 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         GenericMsgContent genericHeader;
 
         try {
+            // We do not know the exact equal size as we do not control ONION AUTH encryption but, we can check for a
+            // minimal length!
             genericHeader = parseIncomingOnionMessage(message,
-                    4 + 1, // MAGIC + data
+                    4 + OnionTunnelTransportParsedMessage.MAX_INNER_SIZE, // MAGIC + data
                     MessageType.ONION_TUNNEL_TRANSPORT);
         } catch(ParsingException e) {
             throw new ParsingException("Could not parse incoming ONION TUNNEL TRANSPORT message. " + e.getMessage());
@@ -231,9 +238,9 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
     {
         checkType(message, MessageType.ONION_TUNNEL_VOICE);
 
-        if(message.length > OnionTunnelVoiceParsedMessage.MAX_SIZE) {
+        if(message.length > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE) {
             throw new ParsingException("Voice message is larger than "
-                    + OnionTunnelVoiceParsedMessage.MAX_SIZE + " byte!");
+                    + OnionTunnelTransportParsedMessage.MAX_INNER_SIZE + " byte!");
         }
 
         if(message.length < 5)
