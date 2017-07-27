@@ -63,4 +63,15 @@ public interface OnionToOnionParser extends Parser {
      * @return A OnionTunnelTeardownParsedMessage containing the given parameters.
      */
     public ParsedMessage buildOnionTunnelTeardownMsg(byte[] incomingLidRaw, byte[] timestampBlob) throws ParsingException;
+
+
+    /**
+     * Build a new ONION_TUNNEL_VOICE message containing the given payload.
+     *
+     * @param payload The payload that shall be contained in the voice message.
+     *                Length of payload and header of the resulting message must be shorter than the defined
+     *                "equal size" for all VOICE messages!
+     * @return A OnionTunnelVoiceParsedMessage containing the given payload.
+     */
+    public ParsedMessage buildOnionTunnelVoiceMsg(byte[] payload) throws ParsingException;
 }
