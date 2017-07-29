@@ -4,6 +4,7 @@ import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 
 /**
  * This interface is responsible for maintaining the connection to the Onion authentication module.
@@ -16,7 +17,7 @@ public interface AuthenticationInterface {
      * @param peer The peer to start a new session with.
      * @param callback A callback function to be called once an answer has been retrieved.
      */
-    void startSession(Peer peer, RequestResult callback);
+    void startSession(Peer peer, RequestResult callback) throws ParsingException;
 
     /**
      * Forward a received handshake initiation packet to the Onion module.

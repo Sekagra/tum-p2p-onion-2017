@@ -36,7 +36,7 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
      */
     @Inject
     public RandomPeerSamplingInterfaceImpl(ConfigurationProvider config, RandomPeerSamplingParser parser) {
-        super(config.getAuthModuleHost(), config.getAuthModuleRequestPort());
+        super(config.getRpsModuleHost(), config.getRpsModulePort());
         this.logger = Logger.getLogger(RandomPeerSamplingInterface.class);
         this.parser = parser;
         this.config = config;
@@ -47,7 +47,9 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
     private void randomPeerResult(byte[] data) {
         try {
             peers.add(Peer.fromRpsReponse((RpsPeerParsedMessage) parser.parseMsg(data)));
-            peers.notify(); //Notify one consumer to be allowed to take a peer
+            synchronized (peers) {
+                peers.notify(); //Notify one consumer to be allowed to take a peer
+            }
         } catch (ParsingException e) {
             logger.error("Parsing error for response: " + e.getMessage());
         }
@@ -68,7 +70,9 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
         sendMessage(packet.serialize());
 
         try {
-            peers.wait(5000);
+            synchronized (peers) {
+                peers.wait(5000);
+            }
         } catch (InterruptedException e) {
             throw new RandomPeerSamplingException("Interrupted during RPS fetch: " + e.getMessage());
         }

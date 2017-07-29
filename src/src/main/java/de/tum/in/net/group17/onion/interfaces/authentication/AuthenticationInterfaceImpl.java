@@ -36,7 +36,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      */
     @Inject
     public AuthenticationInterfaceImpl(ConfigurationProvider config, AuthenticationParser parser) {
-        super(config.getAuthModuleHost(), config.getAuthModuleRequestPort());
+        super(config.getAuthModuleHost(), config.getAuthModulePort());
         this.logger = Logger.getLogger(AuthenticationInterface.class);
         this.parser = parser;
         this.config = config;
@@ -46,6 +46,11 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         setCallback(result -> readResponse(result));
     }
 
+    /**
+     * Callback for all messages returned from the authentication module. The data has then be mapped to the requester
+     * by the request identifier.
+     * @param data
+     */
     private void readResponse(byte[] data) {
         try {
             ParsedMessage parsed = this.parser.parseMsg(data);
@@ -54,29 +59,26 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
                 int requestID = ((AuthParsedMessage)parsed).getRequestId();
                 RequestResult cb = callbacks.remove(requestID);
                 if(cb != null) {
-                    logger.debug("Received message on onion2onion auth client interface: " + parsed.getClass().getName());
+                    logger.debug("Received message from authentication module: " + parsed.getClass().getName());
                     cb.respond(parsed);
                 } else {
                     logger.warn("Received message without callback mapping: " + requestID);
                 }
             } else {
-                logger.warn("Received SESSION CLOSE message..");
+                logger.warn("Received SESSION CLOSE message.");
             }
         } catch(ParsingException e) {
             logger.warn("Could not parse incoming AUTH message: " + e.getMessage());
         }
     }
 
-    public void startSession(Peer peer, final RequestResult callback) {
+    public void startSession(Peer peer, final RequestResult callback) throws ParsingException {
         // Build session start packet
         int requestId = this.requestCounter.getAndAdd(1);
         ParsedMessage packet = null;
-        try {
-            packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
-            this.callbacks.put(requestId, callback);
-        } catch (ParsingException e) {
-            // TODO: Handle the exception
-        }
+
+        packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
+        this.callbacks.put(requestId, callback);
 
         // Send the message and parse the retrieved result before passing it back to the callback given
         sendMessage(packet.serialize());

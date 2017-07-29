@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionCallback;
+import de.tum.in.net.group17.onion.interfaces.onion.OnionException;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiCallback;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
@@ -18,6 +19,8 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDestroyParsedMessa
 import de.tum.in.net.group17.onion.parser.rps.RpsPeerParsedMessage;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,6 +72,10 @@ public class Orchestrator {
         assert onionInterface != null;
         assert configProvider != null;
 
+        // Init data structures
+        this.tunnel = new ArrayList<>();
+        this.segments = new HashMap<Lid, TunnelSegment>();
+
         // Listen for Onion connections and on the API
         this.onionInterface.setTunnel(tunnel);
         this.onionInterface.setSegments(segments);
@@ -79,6 +86,10 @@ public class Orchestrator {
 
         // Start with a delegate issuing the build of a random tunnel
         nextTunnelBuild = () -> buildTunnel();
+
+        buildTunnel();
+
+
     }
 
     /**
@@ -142,10 +153,10 @@ public class Orchestrator {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
         try {
             Peer peer = this.rpsInterface.queryRandomPeer();
+            buildTunnel(peer);
         } catch (RandomPeerSamplingException e) {
             logger.error("Unable to get random peer as cover tunnel destination: " + e.getMessage());
         }
-        buildTunnel();
     }
 
     /**
@@ -157,15 +168,19 @@ public class Orchestrator {
 
         // get random intermediate hops to destination
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
-            // sync/async (order should be maintained on an open connection)?
             Peer p = null;
             try {
-                p = this.rpsInterface.queryRandomPeer();
+                p = this.rpsInterface.queryRandomPeer();    // sync'd method
             } catch (RandomPeerSamplingException e) {
                 logger.error("Unable to get random intermediate peer from RPS module: " + e.getMessage());
                 //todo: write error to CM
             }
-            this.onionInterface.extendTunnel(t, p);
+            try {
+                this.onionInterface.extendTunnel(t, p);
+            } catch (OnionException e) {
+                logger.error("Unable to create tunnel: " + e.getMessage());
+                return;
+            }
         }
 
         this.tunnel.add(t);

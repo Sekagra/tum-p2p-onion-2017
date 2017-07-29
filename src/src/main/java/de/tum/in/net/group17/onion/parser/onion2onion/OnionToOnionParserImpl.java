@@ -81,13 +81,13 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, ParsedMessage innerPkt) throws ParsingException {
+    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incomingLidRaw, ParsedMessage innerPkt) throws ParsingException {
         if(innerPkt.getSize() > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE)
             throw new ParsingException("Inner packet too large!");
         byte[] padding = new byte[OnionTunnelTransportParsedMessage.MAX_INNER_SIZE - innerPkt.getSize()];
         new Random().nextBytes(padding);
 
-        return new OnionTunnelTransportParsedMessage(LidImpl.deserialize(incominLidRaw),
+        return new OnionTunnelTransportParsedMessage(LidImpl.deserialize(incomingLidRaw),
                 "PtoP".getBytes(),
                 Arrays.concatenate(innerPkt.serialize(), padding));
     }

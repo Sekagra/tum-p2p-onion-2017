@@ -25,7 +25,7 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
         return 9003;
     }
 
-    public int getAuthModuleRequestPort() {
+    public int getAuthModulePort() {
         return 9001;
     }
 
@@ -36,6 +36,19 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public InetAddress getRpsModuleHost() {
+        try {
+            return InetAddress.getByName("127.0.0.1");
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public int getRpsModulePort() {
+        return 9004;
     }
 
     @Override

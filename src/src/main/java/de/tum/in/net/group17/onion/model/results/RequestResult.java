@@ -7,10 +7,20 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
  * This response type already includes the parsing of the message that is being retrieved
  * Created by Christoph Rudolf on 06.06.17.
  */
-public interface RequestResult {
+public abstract class RequestResult {
+    private ParsedMessage result;
+
+    public void setResult(ParsedMessage result) {
+        this.result = result;
+    }
+
+    public ParsedMessage getResult() {
+        return result;
+    }
+
     /**
      * Called once the asynchronous result has been retrieved.
      * @param result The parsed message that was retrieved from the other module.
      */
-    void respond(ParsedMessage result);
+    public abstract void respond(ParsedMessage result);
 }

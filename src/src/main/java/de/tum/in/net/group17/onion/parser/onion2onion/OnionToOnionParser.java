@@ -48,11 +48,11 @@ public interface OnionToOnionParser extends Parser {
      * Create a ONION_TUNNEL_TRANSPORT message with the given parameters.
      * This implementation throws a ParsingException on every error.
      *
-     * @param incominLidRaw The LID of the incoming tunnel in the perspective of the receiving host.
+     * @param incomingLidRaw The LID of the incoming tunnel in the perspective of the receiving host.
      * @param innerPkt The inner packet contained in this message.
      * @return A OnionTunnelTransferParsedMessage containing the given parameters.
      */
-    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incominLidRaw, ParsedMessage innerPkt) throws ParsingException;
+    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incomingLidRaw, ParsedMessage innerPkt) throws ParsingException;
 
     /**
      * Build a new ONION_TUNNEL_TEARDOWN message containing the given parameters.

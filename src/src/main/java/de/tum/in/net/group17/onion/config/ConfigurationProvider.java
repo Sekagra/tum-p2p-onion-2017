@@ -10,7 +10,9 @@ import java.net.InetAddress;
 public interface ConfigurationProvider {
     int getOnionApiPort();
     int getOnionPort();
-    int getAuthModuleRequestPort();
+    int getAuthModulePort();
     InetAddress getAuthModuleHost();
     int getIntermediateHopCount();
+    InetAddress getRpsModuleHost();
+    int getRpsModulePort();
 }
