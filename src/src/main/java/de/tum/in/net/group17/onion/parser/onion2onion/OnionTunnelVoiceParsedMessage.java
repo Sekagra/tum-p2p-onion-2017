@@ -11,19 +11,27 @@ import java.nio.ByteBuffer;
  * This class represents an ONION TUNNEL VOICE message.
  * Objects of this class may only be created by an OnionToOnionParser.
  */
-public class OnionTunnelVoiceParsedMessage extends ParsedMessage
-{
+public class OnionTunnelVoiceParsedMessage extends ParsedMessage {
     private final byte[] data;
 
     /**
      * Create a new ONION TUNNEL VOICE parsed message.
      * Objects of this class may only be created by an OnionToOnionParser after checking all parameters!
      *
-     * param data The voice data contained in the packet.
+     * @param data The voice data contained in the packet.
      */
-    OnionTunnelVoiceParsedMessage(byte[] data)
-    {
+    OnionTunnelVoiceParsedMessage(byte[] data) {
         this.data = data;
+    }
+
+    /**
+     * Get the data contained in this message.
+     *
+     * @return byte[] containing the data of this message.
+     */
+    public byte[] getData()
+    {
+        return data;
     }
 
     /**
