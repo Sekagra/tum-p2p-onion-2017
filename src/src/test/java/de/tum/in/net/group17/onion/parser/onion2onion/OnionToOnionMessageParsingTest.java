@@ -147,7 +147,7 @@ public class OnionToOnionMessageParsingTest {
         }));
 
         assertEquals("Wrong parsed message type for ONION TUNNEL RELAY message!",
-                m.getClass(), OnionTunnelRelayParsedMessage.class);
+                OnionTunnelRelayParsedMessage.class, m.getClass());
 
         OnionTunnelRelayParsedMessage msg = (OnionTunnelRelayParsedMessage)m;
         assertEquals("Wrong message size for ONION TUNNEL RELAY message!", 0x30,
@@ -196,7 +196,7 @@ public class OnionToOnionMessageParsingTest {
         }));
 
         assertEquals("Wrong parsed message type for ONION TUNNEL RELAY message!",
-                m.getClass(), OnionTunnelRelayParsedMessage.class);
+                OnionTunnelRelayParsedMessage.class, m.getClass());
 
         OnionTunnelRelayParsedMessage msg = (OnionTunnelRelayParsedMessage)m;
         assertEquals("Wrong message size for ONION TUNNEL RELAY message!", 0x3C,
@@ -276,5 +276,45 @@ public class OnionToOnionMessageParsingTest {
                 Arrays.concatenate(new byte[][]{
                         header, lid.serialize(), portFlags, address, lid.serialize(), payload
                 }), testData);
+    }
+
+    @Test
+    public void testOnionTunnelVoiceParsing() throws ParsingException
+    {
+        byte[] header = {
+                0x00, 0x08, 0x02, 0x52
+        };
+
+        byte[] data = {
+                0x01, 0x02, 0x03, 0x04
+        };
+
+        ParsedMessage m = prs.parseMsg(Arrays.concatenate(header, data));
+        assertEquals("Wrong parsed message type for ONION TUNNEL VOICE message!",
+                OnionTunnelVoiceParsedMessage.class, m.getClass());
+
+        OnionTunnelVoiceParsedMessage msg = (OnionTunnelVoiceParsedMessage)m;
+        assertEquals("Wrong size for ONION TUNNEL VOICE message!", 8, msg.getSize());
+        assertEquals("Wrong message type for ONION TUNNEL VOICE message!",
+                msg.getType(),
+                MessageType.ONION_TUNNEL_VOICE);
+        assertArrayEquals("Invalid data for ONION TUNNEL VOICE message!", data, msg.getData());
+    }
+
+    @Test
+    public void testOnionTunnelVoiceSerialization() throws ParsingException
+    {
+        byte[] header = {
+                0x00, 0x08, 0x02, 0x52
+        };
+
+        byte[] data = {
+                0x01, 0x02, 0x03, 0x04
+        };
+
+        byte[] testData = prs.buildOnionTunnelVoiceMsg(data).serialize();
+
+        assertArrayEquals("Invalid serialization of ONION TUNNEL VOICE message!",
+                Arrays.concatenate(header, data), testData);
     }
 }
