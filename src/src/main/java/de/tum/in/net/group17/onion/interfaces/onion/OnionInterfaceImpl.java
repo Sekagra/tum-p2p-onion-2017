@@ -92,7 +92,7 @@ public class OnionInterfaceImpl implements OnionInterface {
 
         // Wrap the relayInit message into a transport message for the first hop if there are already peers in the tunnel
         // Send the message to the new hop or the first in an existing tunnel accordingly
-        if(!this.tunnels.isEmpty()) {
+        if(!tunnel.getSegments().isEmpty()) {
             try {
                 TunnelSegment segment = tunnel.getSegments().get(0);
                 msg = this.parser.buildOnionTunnelTransferMsg(segment.getLid().serialize(), msg);

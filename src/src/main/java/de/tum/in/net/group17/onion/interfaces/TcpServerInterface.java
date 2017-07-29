@@ -74,7 +74,9 @@ public abstract class TcpServerInterface {
             }
 
             protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf) throws Exception {
-                readIncoming(byteBuf.array());
+                byte[] buf = new byte[byteBuf.readableBytes()];
+                byteBuf.readBytes(buf);
+                readIncoming(buf);
             }
 
             @Override
