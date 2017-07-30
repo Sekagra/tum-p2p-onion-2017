@@ -102,7 +102,8 @@ public class OnionInterfaceImpl implements OnionInterface {
         if(!tunnel.getSegments().isEmpty()) {
             try {
                 TunnelSegment firstSegment = tunnel.getSegments().get(0);
-                msg = this.parser.buildOnionTunnelTransferMsg(firstSegment.getLid().serialize(), msg.serialize());
+                msg = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), msg);
+                //todo: encryption
                 try {
                     this.client.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), msg);
                 } catch (IOException e) {
