@@ -12,45 +12,28 @@ import java.nio.ByteBuffer;
  * Objects of this class may only be created by OnionToOnionParsers.
  */
 public class OnionTunnelTeardownParsedMessage extends OnionToOnionParsedMessage {
-    public final byte[] encTimestamp;
-
     /**
      * Create a new ONION_TUNNEL_TEARDONW message after checking all parameters.
      * This object may only be created by a OnionToOnionParser.
      *
      * @param incomingLid The LID of the tunnel between the initiator and the receiver.
-     * @param encryptedTimestamp Encrypted and integrity protected timestamp.
      */
-    OnionTunnelTeardownParsedMessage(Lid incomingLid, byte[] encryptedTimestamp) {
+    OnionTunnelTeardownParsedMessage(Lid incomingLid) {
         super(incomingLid);
-        this.encTimestamp = encryptedTimestamp;
-    }
-
-    /**
-     * Return the binary BLOB containing the encrypted and integrity protected timestamp of this message.
-     *
-     * @return A byte[] representing the encrypted timestamp.
-     */
-    public byte[] getEncryptedTimestamp() {
-        return encTimestamp;
     }
 
     /**
      * @inheritDoc
      */
     public byte[] serialize() {
-        ByteBuffer buffer = super.serializeBase();
-
-        buffer.put(encTimestamp);
-
-        return buffer.array();
+        return super.serializeBase().array();
     }
 
     /**
      * @inheritDoc
      */
     public short getSize() {
-        return (short)(encTimestamp.length + super.getSizeBase());
+        return super.getSizeBase();
     }
 
     /**

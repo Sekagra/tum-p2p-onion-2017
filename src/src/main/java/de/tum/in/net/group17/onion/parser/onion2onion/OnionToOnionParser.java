@@ -18,7 +18,7 @@ public interface OnionToOnionParser extends Parser {
      * @param handshakePayload The handshake payload build by the Onion Auth module.
      * @return A OnionTunnelInitParsedMessage containing all parameters.
      */
-    public ParsedMessage buildOnionTunnelInitMsg(byte[] incomingLidRaw, byte[] handshakePayload) throws ParsingException;
+    ParsedMessage buildOnionTunnelInitMsg(byte[] incomingLidRaw, byte[] handshakePayload) throws ParsingException;
 
     /**
      * Create a new ONION_TUNNEL_ACCEPT message.
@@ -28,7 +28,7 @@ public interface OnionToOnionParser extends Parser {
      * @param handshakePayload The handshake payload build by the Onion Auth module.
      * @return A OnionTunnelInitParsedMessage containing all parameters.
      */
-    public ParsedMessage buildOnionTunnelAcceptMsg(byte[] incomingLidRaw, byte[] handshakePayload) throws ParsingException;
+    ParsedMessage buildOnionTunnelAcceptMsg(byte[] incomingLidRaw, byte[] handshakePayload) throws ParsingException;
 
     /**
      * Create a new unencrypted ONION_TUNNEL_RELAY message.
@@ -41,7 +41,7 @@ public interface OnionToOnionParser extends Parser {
      * @param data The data the relay host shall send to the new host
      * @return A OnionTunnelRelayParsedMessage containing all parameters.
      */
-    public ParsedMessage buildOnionTunnelRelayMsg(byte[] incomingLidRaw, byte[] outgoingLidRaw,
+    ParsedMessage buildOnionTunnelRelayMsg(byte[] incomingLidRaw, byte[] outgoingLidRaw,
                                                   byte[] addressRaw, short port, byte[] data) throws ParsingException;
 
     /**
@@ -54,17 +54,16 @@ public interface OnionToOnionParser extends Parser {
      * @param innerPkt The inner packet contained in this message.
      * @return A OnionTunnelTransferParsedMessage containing the given parameters.
      */
-    public ParsedMessage buildOnionTunnelTransferMsgPlain(byte[] incomingLidRaw, ParsedMessage innerPkt) throws ParsingException;
+    ParsedMessage buildOnionTunnelTransferMsgPlain(byte[] incomingLidRaw, ParsedMessage innerPkt) throws ParsingException;
 
     /**
      * Build a new ONION_TUNNEL_TEARDOWN message containing the given parameters.
      * This implementation throws a ParsingException on every error.
      *
      * @param incomingLidRaw The LID of the incoming tunnel in the perspective of the receiving host.
-     * @param timestampBlob The encrypted and integrity protected timestamp contained in the message.
      * @return A OnionTunnelTeardownParsedMessage containing the given parameters.
      */
-    public ParsedMessage buildOnionTunnelTeardownMsg(byte[] incomingLidRaw, byte[] timestampBlob) throws ParsingException;
+    ParsedMessage buildOnionTunnelTeardownMsg(byte[] incomingLidRaw) throws ParsingException;
 
 
     /**
@@ -75,5 +74,5 @@ public interface OnionToOnionParser extends Parser {
      *                "equal size" for all VOICE messages!
      * @return A OnionTunnelVoiceParsedMessage containing the given payload.
      */
-    public ParsedMessage buildOnionTunnelVoiceMsg(byte[] payload) throws ParsingException;
+    ParsedMessage buildOnionTunnelVoiceMsg(byte[] payload) throws ParsingException;
 }

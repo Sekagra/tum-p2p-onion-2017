@@ -99,11 +99,8 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage buildOnionTunnelTeardownMsg(byte[] incomingLidRaw, byte[] timestampBlob) throws ParsingException {
-        if(timestampBlob == null || timestampBlob.length < 1)
-            throw new ParsingException("Timestamp data is too short!");
-
-        return new OnionTunnelTeardownParsedMessage(LidImpl.deserialize(incomingLidRaw), timestampBlob);
+    public ParsedMessage buildOnionTunnelTeardownMsg(byte[] incomingLidRaw) throws ParsingException {
+        return new OnionTunnelTeardownParsedMessage(LidImpl.deserialize(incomingLidRaw));
     }
 
     /**
@@ -142,7 +139,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
                 return parseIncomingTransportMessage(data);
             case ONION_TUNNEL_TEARDOWN:
                 content = parseIncomingOnionMessage(data, 1, MessageType.ONION_TUNNEL_TEARDOWN);
-                return new OnionTunnelTeardownParsedMessage(content.lid, content.data);
+                return new OnionTunnelTeardownParsedMessage(content.lid);
             case ONION_TUNNEL_VOICE:
                 return parseIncomingVoiceMessage(data);
             default:
