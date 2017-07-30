@@ -76,7 +76,7 @@ public class Orchestrator {
         this.tunnel = new ArrayList<>();
         this.segments = new HashMap<Lid, TunnelSegment>();
 
-        // Listen for Onion connections and on the API
+        // Listen for Onion connections
         this.onionInterface.setTunnel(tunnel);
         this.onionInterface.setSegments(segments);
         this.onionInterface.listen(getOnionCallback());

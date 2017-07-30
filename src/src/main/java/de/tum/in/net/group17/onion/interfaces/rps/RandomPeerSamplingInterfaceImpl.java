@@ -9,6 +9,7 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParser;
 import de.tum.in.net.group17.onion.parser.rps.RpsPeerParsedMessage;
+import io.netty.channel.ChannelException;
 import org.apache.log4j.Logger;
 import sun.nio.ch.sctp.PeerAddrChange;
 
@@ -67,7 +68,11 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
             throw new RandomPeerSamplingException("Parsing error during build: " + e.getMessage());
         }
 
-        sendMessage(packet.serialize());
+        try {
+            sendMessage(packet.serialize());
+        } catch(ChannelException e) { // No connection to RPS
+            throw new RandomPeerSamplingException("Unable to fetch random peer: " + e.getMessage());
+        }
 
         try {
             synchronized (peers) {

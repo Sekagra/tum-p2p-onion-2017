@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 public abstract class TcpServerInterface {
     private Logger logger;
     private Channel channel;
+    private Channel lastClient;
 
     public TcpServerInterface() {
         this.logger = Logger.getLogger(OnionApiInterface.class);
@@ -25,6 +26,7 @@ public abstract class TcpServerInterface {
     public Channel getChannel() {
         return channel;
     }
+    public Channel getLastClientChannel() { return this.lastClient; }
 
     /**
      * Start listening to incoming requests on the specified port for this server interface.
@@ -50,9 +52,11 @@ public abstract class TcpServerInterface {
 
     /**
      * Read a plain unparsed message from the TCP channel.
+     *
      * @param msg The data to be read by the receiver.
+     * @param channel The channel for this client connection.
      */
-    protected abstract void readIncoming(byte[] msg);
+    protected abstract void readIncoming(byte[] msg, Channel channel);
 
     /**
      * Retrieve a handler specifically for the interface's implementation.
@@ -73,10 +77,10 @@ public abstract class TcpServerInterface {
                 logger.info(ctx.channel().remoteAddress().toString() + " has connected (Register).");
             }
 
-            protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf) throws Exception {
+            protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) throws Exception {
                 byte[] buf = new byte[byteBuf.readableBytes()];
                 byteBuf.readBytes(buf);
-                readIncoming(buf);
+                readIncoming(buf, ctx.channel());
             }
 
             @Override

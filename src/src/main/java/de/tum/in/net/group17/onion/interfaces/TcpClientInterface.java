@@ -11,6 +11,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.apache.log4j.Logger;
 
+import java.net.ConnectException;
 import java.net.InetAddress;
 
 /**
@@ -64,9 +65,9 @@ public class TcpClientInterface {
             // Start client, wait for the connection and return the channel
             this.channel = b.connect(this.host, this.port).sync().channel();
             return this.channel;
-        } catch (InterruptedException e) {
+        } catch (Exception e) { // InterruptedException and PRIVATE AnnotatedConnectException...
             logger.error("Unable to connect to Authentication Module: " + e.getMessage());
-        } /*finally {
+        }/*finally {
             workerGroup.shutdownGracefully();
         }*/
         return null;
