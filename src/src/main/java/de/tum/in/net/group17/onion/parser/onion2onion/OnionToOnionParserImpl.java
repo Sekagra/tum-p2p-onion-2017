@@ -81,15 +81,13 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incomingLidRaw, ParsedMessage innerPkt) throws ParsingException {
-        if(innerPkt.getSize() > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE)
+    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incomingLidRaw, byte[] rawPayload) throws ParsingException {
+        if(rawPayload.length > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE)
             throw new ParsingException("Inner packet too large!");
-        byte[] padding = new byte[OnionTunnelTransportParsedMessage.MAX_INNER_SIZE - innerPkt.getSize()];
+        byte[] padding = new byte[OnionTunnelTransportParsedMessage.MAX_INNER_SIZE - rawPayload.length];
         new Random().nextBytes(padding);
 
-        return new OnionTunnelTransportParsedMessage(LidImpl.deserialize(incomingLidRaw),
-                "PtoP".getBytes(),
-                Arrays.concatenate(innerPkt.serialize(), padding));
+        return new OnionTunnelTransportParsedMessage(LidImpl.deserialize(incomingLidRaw), Arrays.concatenate(rawPayload, padding));
     }
 
     /**
@@ -229,9 +227,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         }
 
         // Just extract the magic from the data, as the rest is a BLOB for us
-        return new OnionTunnelTransportParsedMessage(genericHeader.lid,
-                Arrays.copyOfRange(genericHeader.data, 0, 4),
-                Arrays.copyOfRange(genericHeader.data, 4, genericHeader.data.length));
+        return new OnionTunnelTransportParsedMessage(genericHeader.lid, genericHeader.data);
     }
 
     private ParsedMessage parseIncomingVoiceMessage(byte[] message) throws ParsingException

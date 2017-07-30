@@ -183,6 +183,13 @@ public class Orchestrator {
             }
         }
 
+        try {
+            this.onionInterface.extendTunnel(t, destination);
+        } catch (Exception e) {
+            logger.error("Unable to create tunnel: " + e.getMessage());
+            return;
+        }
+
         this.tunnel.add(t);
     }
 

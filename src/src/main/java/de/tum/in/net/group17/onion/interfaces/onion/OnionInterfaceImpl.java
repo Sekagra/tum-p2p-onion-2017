@@ -10,13 +10,11 @@ import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
-import de.tum.in.net.group17.onion.parser.onion2onion.OnionToOnionParser;
-import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelAcceptParsedMessage;
+import de.tum.in.net.group17.onion.parser.onion2onion.*;
 import io.netty.buffer.ByteBuf;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,32 +69,12 @@ public class OnionInterfaceImpl implements OnionInterface {
             byte[] buf = new byte[bb.readableBytes()];
             bb.readBytes(buf);
 
-            // match lid with waitForAccept and TunnelSegments
             try {
                 ParsedMessage parsed = parser.parseMsg(buf);
-                switch(parsed.getType()) {
-                    case ONION_TUNNEL_INIT:
-                        break;
-                    case ONION_TUNNEL_ACCEPT:
-                        OnionTunnelAcceptParsedMessage acceptMsg = (OnionTunnelAcceptParsedMessage)parsed;
-                        if(this.waitForAccept.containsKey(acceptMsg.getLid())) {
-                            this.waitForAccept.put(acceptMsg.getLid(), acceptMsg);
-                            synchronized (this.waitForAccept) {
-                                this.waitForAccept.notify();
-                            }
-                        } else {
-                            logger.info("Received unsolicited or late accept message for an extended tunnel.");
-                        }
-                        break;
-                    case ONION_TUNNEL_TRANSPORT:    // all other ONION types would be encapsulated in this
-                        //todo: decrypt with all sessions in matching tunnel
-                        break;
-                }
-
+                handleReceiving(parsed);
             } catch (ParsingException e) {
                 logger.warn("Received invalid message over Onion P2P interface.");
             }
-
         });
     }
 
@@ -124,7 +102,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         if(!tunnel.getSegments().isEmpty()) {
             try {
                 TunnelSegment firstSegment = tunnel.getSegments().get(0);
-                msg = this.parser.buildOnionTunnelTransferMsg(firstSegment.getLid().serialize(), msg);
+                msg = this.parser.buildOnionTunnelTransferMsg(firstSegment.getLid().serialize(), msg.serialize());
                 try {
                     this.client.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), msg);
                 } catch (IOException e) {
@@ -167,6 +145,7 @@ public class OnionInterfaceImpl implements OnionInterface {
 
     /**
      * Starts a new session synchronously and returns the AuthSessionHs1 data.
+     *
      * @param peer The new peer to advance the tunnel with.
      *
      * @return The first handshake messages to forward to the new peer.
@@ -195,5 +174,103 @@ public class OnionInterfaceImpl implements OnionInterface {
             throw new InterruptedException("Timeout.");
 
         return (AuthSessionHs1ParsedMessage)callback.getResult();
+    }
+
+    /**
+     * General handling for all incoming packets. Designed to be reinvoked after decryption of inner packets.
+     *
+     * @param parsedMessage The already parsed message that confirms to a ONION P2P type
+     */
+    private void handleReceiving(ParsedMessage parsedMessage) {
+        switch(parsedMessage.getType()) {
+            case ONION_TUNNEL_INIT:
+                handleTunnelInit((OnionTunnelInitParsedMessage)parsedMessage);
+                break;
+            case ONION_TUNNEL_ACCEPT:
+                handleTunnelAccept((OnionTunnelAcceptParsedMessage)parsedMessage);
+                break;
+            case ONION_TUNNEL_RELAY:
+                handleTunnelRelay((OnionTunnelRelayParsedMessage)parsedMessage);
+                break;
+            case ONION_TUNNEL_TRANSPORT:
+                handleTunnelTransport((OnionTunnelTransportParsedMessage)parsedMessage);
+                break;
+            case ONION_TUNNEL_TEARDOWN:
+                handleTunnelTeardown((OnionTunnelTeardownParsedMessage)parsedMessage);
+                break;
+            case ONION_TUNNEL_VOICE:
+                handleTunnelVoice((OnionTunnelVoiceParsedMessage)parsedMessage);
+                break;
+            default:
+                logger.warn("Unexpected message type, received type: " + parsedMessage.getType().toString());
+        }
+    }
+
+    /**
+     * Handle an incoming tunnel init message. Respond with the correct handshake and establish a new tunnel segment.
+     *
+     * @param parsedMessage The incoming parsed OnionTunnelInitParsedMessage message.
+     */
+    private void handleTunnelInit(OnionTunnelInitParsedMessage parsedMessage) {
+        //todo: implement for intermediate hop functionality
+        //(establish state and respond with answer of the auth module)
+    }
+
+    /**
+     * Handle an incoming tunnel accept message. Find out if there has been a connection attempt waiting for this
+     * response and handle the response accordingly.
+     *
+     * @param msg The incoming parsed OnionTunnelAcceptParsedMessage message.
+     */
+    private void handleTunnelAccept(OnionTunnelAcceptParsedMessage msg) {
+        if(this.waitForAccept.containsKey(msg.getLid())) {
+            this.waitForAccept.put(msg.getLid(), msg);
+            synchronized (this.waitForAccept) {
+                this.waitForAccept.notify();
+            }
+        } else {
+            logger.info("Received unsolicited or late ACCEPT-message for an extended tunnel.");
+        }
+    }
+
+    /**
+     * Handle an incoming tunnel relay message by expanding the tunnel with the expected inner init-message and
+     * update the own state.
+     *
+     * @param msg The incoming parsed OnionTunnelRelayParsedMessage message.
+     */
+    private void handleTunnelRelay(OnionTunnelRelayParsedMessage msg) {
+        //todo: implement for intermediate hop functionality
+    }
+
+    /***
+     * Handle an incoming transport message that has to be decrypted at least once.
+     *
+     * @param msg The incoming parsed OnionTunnelTransportParsedMessage message.
+     */
+    private void handleTunnelTransport(OnionTunnelTransportParsedMessage msg) {
+        //todo: check Lid and direction
+        //todo: if direction is BACKWARD, encrypt once and hand to predecessor
+        //todo: if direction is FORWARD, decrypt, check magic bytes
+        //todo:    if not for us (magic bytes not matching) forward to sucessor
+        //todo:    if it is for us extract inner packet and reinvoke handleReceiving, possible an issue with unavailable parsers, e.g. relay?!
+    }
+
+    /***
+     * Handle an incoming teardown message.
+     *
+     * @param msg The incoming parsed OnionTunnelTeardownParsedMessage message.
+     */
+    private void handleTunnelTeardown(OnionTunnelTeardownParsedMessage msg) {
+
+    }
+
+    /***
+     * Handle an incoming voice message with plain voice data.
+     *
+     * @param msg The incoming parsed OnionTunnelVoiceParsedMessage message.
+     */
+    private void handleTunnelVoice(OnionTunnelVoiceParsedMessage msg) {
+
     }
 }

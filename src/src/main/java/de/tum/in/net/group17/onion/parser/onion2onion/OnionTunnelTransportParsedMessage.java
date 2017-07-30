@@ -19,30 +19,42 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
     public static final int MAX_INNER_SIZE = 512;
     public static final byte[] MAGIC = "PtoP".getBytes();
 
-    private final byte[] data; // Inner packet including padding
-    private final byte[] magic; // The (possibly encrypted) magic word
+    private final byte[] payload; // Inner packet including padding
 
     /**
      * Create a new ONION_TUNNEL_TRANSPORT message after checking all parameters.
      * This object may only be created by a OnionToOnionParser.
      * @param incoming_lid The LID contained in this packet.
-     * @param magic The (possibly encrypted) magic word
-     * @param data The data transported using this message
+     * @param payload The raw data transported using this message
      */
-    OnionTunnelTransportParsedMessage(Lid incoming_lid, byte[] magic, byte[] data) {
+    OnionTunnelTransportParsedMessage(Lid incoming_lid, byte[] payload) {
         super(incoming_lid);
-        this.magic = magic;
-        this.data = data;
+        this.payload = payload;
     }
 
     /**
-     * Get the data contained in this message.
-     * This data has to be forwarded to the next hop if we are not the receiver.
+     * Get the complete data contained in this message.
+     * This includes the magic block and padding.
      *
      * @return A byte[] containing the data transported by this message.
      */
+    public byte[] getPayload() {
+        return payload;
+    }
+
+    /**
+     * Get the data of this message that has been created by the authentication module. This consists of the
+     * payload without the random padding at the end.
+     *
+     * @return Returns AUTH([MAGIC] + [inner packet]) of the whole payload.
+     */
     public byte[] getData() {
-        return data;
+        throw new UnsupportedOperationException("Not implemented yet.");
+        /* Here we would need to extract everything besides the trailing random padding from the given payload
+         * This is necessary to hand the data to the Auth module for de- or encryption.
+         * The padding itself cannot be part of the encryption as the whole purpose of the padding is to create a fixed
+         * length AFTER the overhead of the encryption by AUTH is determined.
+         */
     }
 
     /**
@@ -52,7 +64,10 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
      */
     public boolean forMe()
     {
-        return Arrays.equals(MAGIC, this.magic);
+        /* If the message data is still encrypted, we have no way to know where inside the byte block the magic bytes
+         * are to be found, however, we suppose that after complete decryption, it is again the first 4 byte block of
+         * the payload. */
+        return Arrays.equals(MAGIC, Arrays.copyOfRange(this.payload, 0, 4));
     }
 
 
@@ -71,13 +86,13 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
         if(!forMe())
             throw new IllegalStateException("This packet is not supposed for this peer." +
                     " Therefore, the inner packet is just garbage!");
-        if(data.length != MAX_INNER_SIZE)
+        if(this.payload.length != MAX_INNER_SIZE)
             throw new InvalidDataException("Invalid data length!");
-        ByteBuffer buffer = ByteBuffer.wrap(data);
+        ByteBuffer buffer = ByteBuffer.wrap(this.payload);
         buffer.order(ByteOrder.BIG_ENDIAN);
 
         short size = buffer.getShort(); // Data contains another packet -> First two byte are the length
-        return Arrays.copyOfRange(data, 0, size);
+        return Arrays.copyOfRange(this.payload, 0, size);
     }
 
     /**
@@ -85,10 +100,7 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
      */
     public byte[] serialize() {
         ByteBuffer buffer = super.serializeBase();
-
-        buffer.put(magic);
-        buffer.put(data);
-
+        buffer.put(this.payload);
         return buffer.array();
     }
 
@@ -96,7 +108,7 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
      * @inheritDoc
      */
     public short getSize() {
-        return (short)(super.getSizeBase() + data.length);
+        return (short)(super.getSizeBase() + this.payload.length);
     }
 
     /**

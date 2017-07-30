@@ -49,10 +49,11 @@ public interface OnionToOnionParser extends Parser {
      * This implementation throws a ParsingException on every error.
      *
      * @param incomingLidRaw The LID of the incoming tunnel in the perspective of the receiving host.
-     * @param innerPkt The inner packet contained in this message.
+     * @param rawPayload The raw unencrypted data for this message type. This has to include the encrypted magic bytes
+     *                   and the packet data without any padding.
      * @return A OnionTunnelTransferParsedMessage containing the given parameters.
      */
-    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incomingLidRaw, ParsedMessage innerPkt) throws ParsingException;
+    public ParsedMessage buildOnionTunnelTransferMsg(byte[] incomingLidRaw, byte[] rawPayload) throws ParsingException;
 
     /**
      * Build a new ONION_TUNNEL_TEARDOWN message containing the given parameters.
