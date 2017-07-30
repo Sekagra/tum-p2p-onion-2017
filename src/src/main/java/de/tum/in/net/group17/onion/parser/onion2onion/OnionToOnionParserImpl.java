@@ -138,7 +138,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
             case ONION_TUNNEL_TRANSPORT:
                 return parseIncomingTransportMessage(data);
             case ONION_TUNNEL_TEARDOWN:
-                content = parseIncomingOnionMessage(data, 1, MessageType.ONION_TUNNEL_TEARDOWN);
+                content = parseIncomingOnionMessage(data, 0, MessageType.ONION_TUNNEL_TEARDOWN);
                 return new OnionTunnelTeardownParsedMessage(content.lid);
             case ONION_TUNNEL_VOICE:
                 return parseIncomingVoiceMessage(data);

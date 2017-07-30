@@ -317,4 +317,39 @@ public class OnionToOnionMessageParsingTest {
         assertArrayEquals("Invalid serialization of ONION TUNNEL VOICE message!",
                 Arrays.concatenate(header, data), testData);
     }
+
+    @Test
+    public void testOnionTunnelTeardownParsing() throws ParsingException
+    {
+        byte[] header = {
+            0x00, 0x14, 0x02, 0x57
+        };
+
+        ParsedMessage m = prs.parseMsg(Arrays.concatenate(header, lid.serialize()));
+
+        assertEquals("Wrong parsed message type for ONION TUNNEL TEARDOWN message!",
+                OnionTunnelTeardownParsedMessage.class, m.getClass());
+
+        OnionTunnelTeardownParsedMessage msg = (OnionTunnelTeardownParsedMessage)m;
+        assertEquals("Wrong message size for ONION TUNNEL TEARDOWN message!", 4 + lid.getSize(),
+                msg.getSize());
+        assertEquals("Wrong message type for ONION TUNNEL TEARDOWN message!", MessageType.ONION_TUNNEL_TEARDOWN,
+                msg.getType());
+        assertEquals("Wrong LID in ONION TUNNEL TEARDOWN message!", lid,
+                msg.getLid());
+    }
+
+    @Test
+    public void testOnionTunnelTeardownSerialization() throws ParsingException {
+        byte[] header = {
+                0x00, 0x14, 0x02, 0x57
+        };
+
+        byte[] testData = prs.buildOnionTunnelTeardownMsg(lid.serialize()).serialize();
+
+        assertArrayEquals("Invalid serialization of ONION TUNNEL TEARDOWN messages!",
+                Arrays.concatenate(header, lid.serialize()),
+                testData);
+
+    }
 }
