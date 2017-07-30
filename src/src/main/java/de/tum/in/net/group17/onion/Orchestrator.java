@@ -177,7 +177,7 @@ public class Orchestrator {
             }
             try {
                 this.onionInterface.extendTunnel(t, p);
-            } catch (OnionException e) {
+            } catch (Exception e) {
                 logger.error("Unable to create tunnel: " + e.getMessage());
                 return;
             }

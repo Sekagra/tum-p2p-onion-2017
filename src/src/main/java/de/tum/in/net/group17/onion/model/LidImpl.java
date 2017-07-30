@@ -49,6 +49,18 @@ public class LidImpl implements Lid {
     }
 
     /**
+     * Creates a new random LID to be used for identifying a new TunnelSegment.
+     * @return A new random LID.
+     */
+    public static Lid createRandomLid() {
+        UUID uuid = UUID.randomUUID();
+        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+        return new LidImpl(bb.array());
+    }
+
+    /**
      * Possibility to check equality with this LidImpl object.
      *
      * @param other The object to compare with.
@@ -61,15 +73,8 @@ public class LidImpl implements Lid {
         return Arrays.equals(this.data, ((LidImpl)other).data);
     }
 
-    /**
-     * Creates a new random LID to be used for identifying a new TunnelSegment.
-     * @return A new random LID.
-     */
-    public static Lid createRandomLid() {
-        UUID uuid = UUID.randomUUID();
-        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
-        bb.putLong(uuid.getMostSignificantBits());
-        bb.putLong(uuid.getLeastSignificantBits());
-        return new LidImpl(bb.array());
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(data);
     }
 }

@@ -29,9 +29,10 @@ public interface AuthenticationInterface {
     /**
      * Forward a received handshake initiation packet to the Onion module.
      * @param peer The peer with whom a session is initiated.
-     * @param callback A callback function to be called once an answer has been retrieved.
+     * @param sessionId ID of the previously started session this handshake message belongs to.
+     * @param payload The payload obtained by an incoming AUTH SESSION HS2 message.
      */
-    void forwardIncomingHandshake2(Peer peer, ParsedMessage hs2, RequestResult callback);
+    void forwardIncomingHandshake2(Peer peer, short sessionId, byte[] payload) throws ParsingException;
 
     /**
      * Order the authentication module to encrypt data for a given tunnel.

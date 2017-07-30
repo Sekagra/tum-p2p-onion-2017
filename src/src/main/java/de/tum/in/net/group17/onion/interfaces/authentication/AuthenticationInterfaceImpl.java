@@ -72,6 +72,9 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     public void startSession(Peer peer, final RequestResult callback) throws ParsingException {
         // Build session start packet
         int requestId = this.requestCounter.getAndAdd(1);
@@ -80,22 +83,35 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
         this.callbacks.put(requestId, callback);
 
-        // Send the message and parse the retrieved result before passing it back to the callback given
         sendMessage(packet.serialize());
     }
 
+    /**
+     * @inheritDoc
+     */
     public void forwardIncomingHandshake1(Peer peer, ParsedMessage hs1, RequestResult callback) {
 
     }
 
-    public void forwardIncomingHandshake2(Peer peer, ParsedMessage hs2, RequestResult callback) {
-
+    /**
+     * @inheritDoc
+     */
+    public void forwardIncomingHandshake2(Peer peer, short sessionId, byte[] payload) throws ParsingException {
+        int requestId = this.requestCounter.getAndAdd(1);
+        ParsedMessage packet = this.parser.buildSessionIncoming2(requestId, sessionId, payload);
+        sendMessage(packet.serialize());
     }
 
+    /**
+     * @inheritDoc
+     */
     public void encrypt(Tunnel tunnel, RequestResult callback) {
 
     }
 
+    /**
+     * @inheritDoc
+     */
     public void decrypt(Tunnel tunnel, RequestResult callback) {
 
     }

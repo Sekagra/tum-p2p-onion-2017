@@ -38,5 +38,5 @@ public interface OnionInterface {
      * @param tunnel The tunnel to advance.
      * @param peer The peer to make part of the tunnel at the current end.
      */
-    void extendTunnel(Tunnel tunnel, Peer peer) throws OnionException;
+    void extendTunnel(Tunnel tunnel, Peer peer) throws OnionException, InterruptedException;
 }

@@ -11,11 +11,13 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionToOnionParser;
+import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelAcceptParsedMessage;
 import io.netty.buffer.ByteBuf;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +36,8 @@ public class OnionInterfaceImpl implements OnionInterface {
     private List<Tunnel> tunnels;
     private Map<Lid, TunnelSegment> segments;
 
+    private Map<Lid, OnionTunnelAcceptParsedMessage> waitForAccept;
+
     private Logger logger;
 
     @Inject
@@ -45,6 +49,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         this.server = new UdpServer();
         this.client = new UdpClient();
         this.authInterface = authInterface;
+        this.waitForAccept = new HashMap<>();
     }
 
     @Override
@@ -62,30 +67,54 @@ public class OnionInterfaceImpl implements OnionInterface {
     {
         this.logger.info("Starting to listen for incoming Onion connections on port " + this.port);
         this.server.listen(this.port, (ctx, packet) -> {
-            logger.debug("Messaged received on " + new Date() + " from " + packet.sender().toString() + "\r");
             final ByteBuf bb = packet.content();
             byte[] buf = new byte[bb.readableBytes()];
-
             bb.readBytes(buf);
 
-            logger.debug("Received [" + new String(buf)+ "]");
+            // match lid with waitForAccept and TunnelSegments
+            try {
+                ParsedMessage parsed = parser.parseMsg(buf);
+                switch(parsed.getType()) {
+                    case ONION_TUNNEL_INIT:
+                        break;
+                    case ONION_TUNNEL_ACCEPT:
+                        OnionTunnelAcceptParsedMessage acceptMsg = (OnionTunnelAcceptParsedMessage)parsed;
+                        if(this.waitForAccept.containsKey(acceptMsg.getLid())) {
+                            this.waitForAccept.put(acceptMsg.getLid(), acceptMsg);
+                            synchronized (this.waitForAccept) {
+                                this.waitForAccept.notify();
+                            }
+                        } else {
+                            logger.info("Received unsolicited or late accept message for an extended tunnel.");
+                        }
+                        break;
+                    case ONION_TUNNEL_TRANSPORT:    // all other ONION types would be encapsulated in this
+                        //todo: decrypt with all sessions in matching tunnel
+                        break;
+                }
+
+            } catch (ParsingException e) {
+                logger.warn("Received invalid message over Onion P2P interface.");
+            }
+
         });
     }
 
     @Override
-    public void extendTunnel(Tunnel tunnel, Peer peer) throws OnionException {
-        // Send the relay message to actually advance the tunnel
-        // To do so, we have to either send a init message to the first hop for new tunnels or a relay-init message
-        // wrapped in a transport packet
+    public void extendTunnel(Tunnel tunnel, Peer peer) throws OnionException, InterruptedException {
+        TunnelSegment segment = new TunnelSegment(LidImpl.createRandomLid(), peer.getIpAddress(), peer.getPort(), Direction.FORWARD);
+        Lid lastLid = tunnel.getSegments().get(tunnel.getSegments().size() - 1).getLid();
 
         // Create the relay-init message (use the currently last lid as incoming lid)
-        Lid lastLid = tunnel.getSegments().get(tunnel.getSegments().size() - 1).getLid();
-        Lid newLid = LidImpl.createRandomLid();
         ParsedMessage msg;
         try {
-            msg = getRelayInitMessage(lastLid, newLid, peer);
+            AuthSessionHs1ParsedMessage hs1 = startSessionSynchronous(peer);
+            segment.setSessionId(hs1.getSessionId());
+            msg = this.parser.buildOnionTunnelRelayMsg(lastLid.serialize(), segment.getLid().serialize(),
+                    peer.getIpAddress().getAddress(), peer.getPort(),
+                    this.parser.buildOnionTunnelInitMsg(lastLid.serialize(), hs1.getPayload()).serialize());
         } catch (InterruptedException e) {
-            throw new OnionException("Interrupted during Onion tunnel build: " + e.getMessage());
+            throw new OnionException("Interrupted during session start build: " + e.getMessage());
         } catch (ParsingException e) {
             throw new OnionException("Unable to parse message: " + e.getMessage());
         }
@@ -94,10 +123,10 @@ public class OnionInterfaceImpl implements OnionInterface {
         // Send the message to the new hop or the first in an existing tunnel accordingly
         if(!tunnel.getSegments().isEmpty()) {
             try {
-                TunnelSegment segment = tunnel.getSegments().get(0);
-                msg = this.parser.buildOnionTunnelTransferMsg(segment.getLid().serialize(), msg);
+                TunnelSegment firstSegment = tunnel.getSegments().get(0);
+                msg = this.parser.buildOnionTunnelTransferMsg(firstSegment.getLid().serialize(), msg);
                 try {
-                    this.client.send(segment.getNextAddress(), segment.getNextPort(), msg);
+                    this.client.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), msg);
                 } catch (IOException e) {
                     throw new OnionException("Error sending the packet to initiate the a tunnel: " + e.getMessage());
                 }
@@ -106,27 +135,43 @@ public class OnionInterfaceImpl implements OnionInterface {
             }
         } else {
             try {
-                this.client.send(peer.getIpAddress(), peer.getPort(), msg);
+                this.client.send(peer.getIpAddress(), peer.getPort(), msg); // send directly to new peer
             } catch (IOException e) {
                 throw new OnionException("Error sending the packet to initiate the a tunnel: " + e.getMessage());
             }
         }
 
-        // Wait for response here ?!!? How to continue
+        // Wait for a response being there or timeout
+        this.waitForAccept.put(segment.getLid(), null);
+        synchronized (this.waitForAccept) {
+            this.waitForAccept.wait(5000);
+        }
+
+        // Continue with accept message (if there is one)
+        OnionTunnelAcceptParsedMessage acceptMsg = this.waitForAccept.get(segment.getLid());
+        if(acceptMsg == null) {
+            // This has to be a timeout, remove pending accept
+            this.waitForAccept.remove(segment.getLid());
+            throw new OnionException("Timeout when waiting for tunnel accept message.");
+            // Todo: check if notifyAll is needed which would break this test here
+        }
+        try {
+            this.authInterface.forwardIncomingHandshake2(peer, segment.getSessionId(), acceptMsg.getAuthPayload());
+        } catch (ParsingException e) {
+            throw new OnionException("Error building the packet to forward the finalizing session handshake: " + e.getMessage());
+        }
 
         // Advance the tunnel model by one segment if everything has been successful
-        tunnel.addSegment(new TunnelSegment(newLid, peer.getIpAddress(), peer.getPort(), Direction.FORWARD));
+        tunnel.addSegment(segment);
     }
 
     /**
-     * Creates a relay message including the init message for a given tunnel and peer.
-     * This includes calling the authentication module to get the first part of the handshake and is synchronized
-     * for convenience.
-     * @param incomingLid The incomingLid to be put into the relay message for the extending host to create a mapping.
-     * @param newLid A new local identifier to use as an identifier for the connection two the new peer.
+     * Starts a new session synchronously and returns the AuthSessionHs1 data.
      * @param peer The new peer to advance the tunnel with.
+     *
+     * @return The first handshake messages to forward to the new peer.
      */
-    private ParsedMessage getRelayInitMessage(Lid incomingLid, Lid newLid, Peer peer) throws InterruptedException, ParsingException {
+    private AuthSessionHs1ParsedMessage startSessionSynchronous(Peer peer) throws InterruptedException, ParsingException {
         // synchronize the request to the authentication module
         Object lock = new Object();
 
@@ -143,10 +188,12 @@ public class OnionInterfaceImpl implements OnionInterface {
 
         // Wait for the async request to return
         synchronized (lock) {
-            lock.wait();
+            lock.wait(5000);
         }
 
-        ParsedMessage initMessage = this.parser.buildOnionTunnelInitMsg(incomingLid.serialize(), ((AuthSessionHs1ParsedMessage)callback.getResult()).getPayload());
-        return this.parser.buildOnionTunnelRelayMsg(incomingLid.serialize(), newLid.serialize(), peer.getIpAddress().getAddress(), peer.getPort(), initMessage.serialize());
+        if(callback.getResult() == null)
+            throw new InterruptedException("Timeout.");
+
+        return (AuthSessionHs1ParsedMessage)callback.getResult();
     }
 }
