@@ -58,6 +58,8 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                         c.setAccessible(true);
                         OnionTunnelBuildParsedMessage msg = c.newInstance(endpointKey, endpointIp, port);
                         callbacks.receivedTunnelBuild(msg);
+
+                        tunnelEstPending = true;
                     } catch (Exception e) {
                         assertTrue("Cannot create ONION TUNNEL BUILD message! " + e.getMessage(), false);
                     }
@@ -122,6 +124,8 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
     @Override
     public void sendReady(OnionTunnelReadyParsedMessage msg) throws OnionApiException {
         outgoingTunnelId = msg.getTunnelId(); // Our tunnel is ready for usage
+
+        tunnelEstPending = false;
     }
 
     @Override
