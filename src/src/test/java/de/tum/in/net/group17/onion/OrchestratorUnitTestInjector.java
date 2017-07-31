@@ -9,6 +9,7 @@ import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterfaceImpl;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterfaceImpl;
+import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterfaceMock;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingInterface;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingInterfaceImpl;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingInterfaceMock;
@@ -34,7 +35,7 @@ public class OrchestratorUnitTestInjector extends AbstractModule{
         // bind interfaces to other modules to their implementations
         bind(AuthenticationInterface.class).to(AuthenticationInterfaceImpl.class);
         bind(OnionInterface.class).to(OnionInterfaceImpl.class);
-        bind(OnionApiInterface.class).to(OnionApiInterfaceImpl.class);
+        bind(OnionApiInterface.class).to(OnionApiInterfaceMock.class);
         bind(RandomPeerSamplingInterface.class).to(RandomPeerSamplingInterfaceMock.class);
 
         // bind interfaces of parsers to the parser implementation
