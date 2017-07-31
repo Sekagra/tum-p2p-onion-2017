@@ -1,8 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.onionapi;
 
-import de.tum.in.net.group17.onion.parser.onionapi.OnionErrorParsedMessage;
-import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelIncomingParsedMessage;
-import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelReadyParsedMessage;
+import de.tum.in.net.group17.onion.parser.onionapi.*;
 
 /**
  * This interface is responsible for serving incoming requests of the UI/CM thus essentially providing the Onion API
@@ -35,4 +33,12 @@ public interface OnionApiInterface {
      * @throws OnionApiException If the channel is in an invalid state.
      */
     void sendError(OnionErrorParsedMessage msg) throws OnionApiException;
+
+    /**
+     * Send voice data received on a tunnel to the corresponding CM module.
+     *
+     * @param msg The message to send.
+     * @throws OnionApiException If the channel is in an invalid state.
+     */
+    void sendVoiceData(OnionTunnelDataParsedMessage msg) throws OnionApiException;
 }

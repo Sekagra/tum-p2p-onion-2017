@@ -131,6 +131,7 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
         try {
             // Check if it is possible to send data through the channel.
             checkChannelState(chn);
+            chn.writeAndFlush(Unpooled.buffer().writeBytes(msg.serialize()));
         } catch (OnionApiException e) {
             logger.error("The channel that corresponds to tunnel ID " + msg.getTunnelId() + " is in an invalid state!" +
                     e.getMessage());
@@ -138,8 +139,26 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
             chn.close();
             throw new OnionApiException("Cannot send ONION ERROR message!" + e.getMessage());
         }
+    }
 
-        chn.writeAndFlush(Unpooled.buffer().writeBytes(msg.serialize()));
+    public void sendVoiceData(OnionTunnelDataParsedMessage msg) throws OnionApiException
+    {
+        // TODO: Remove duplicated code..
+        Channel chn = clients.get(msg.getTunnelId());
+        if(chn == null)
+            throw new OnionApiException("No mapping for this tunnel ID!");
+
+        try {
+            // Check if it is possible to send data through the channel.
+            checkChannelState(chn);
+            chn.writeAndFlush(Unpooled.buffer().writeBytes(msg.serialize()));
+        } catch (OnionApiException e) {
+            logger.error("The channel that corresponds to tunnel ID " + msg.getTunnelId() + " is in an invalid state!" +
+                    e.getMessage());
+            clients.remove(msg.getTunnelId());
+            chn.close();
+            throw new OnionApiException("Cannot send ONION TUNNEL DATA message!" + e.getMessage());
+        }
     }
 
     /**

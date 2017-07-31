@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by Marko Dorfhuber(PraMiD) on 05.06.17.
  */
-public class OnionTunnelDestroyParsedMessage extends ParsedMessage{
+public class OnionTunnelDestroyParsedMessage extends ParsedMessage {
     private final int tunnelId;
 
     /**
