@@ -5,6 +5,8 @@ import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
+import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
+import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelTransportParsedMessage;
 
 /**
  * This interface is responsible for maintaining the connection to the Onion authentication module.
@@ -13,11 +15,10 @@ import de.tum.in.net.group17.onion.parser.ParsingException;
  */
 public interface AuthenticationInterface {
     /**
-     * Issue the start of a new session on the Onion Authentication module.
+     * Issue the start of a new session on the Onion Authentication module (synchronized).
      * @param peer The peer to start a new session with.
-     * @param callback A callback function to be called once an answer has been retrieved.
      */
-    void startSession(Peer peer, RequestResult callback) throws ParsingException;
+    AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException;
 
     /**
      * Forward a received handshake initiation packet to the Onion module.
@@ -35,16 +36,18 @@ public interface AuthenticationInterface {
     void forwardIncomingHandshake2(Peer peer, short sessionId, byte[] payload) throws ParsingException;
 
     /**
-     * Order the authentication module to encrypt data for a given tunnel.
+     * Order the authentication module to encrypt data for a whole tunnel.
+     * @param packet Plain OnionTunnelTransportParsedMessage to be encrypted with all sessions in the given tunnel.
      * @param tunnel The tunnel for which this message has to be encrypted. This defines the target and all hops.
-     * @param callback A callback for delivery of the encrypted data.
+     *
+     * @return The incoming message but with encrypted data.
      */
-    void encrypt(Tunnel tunnel, RequestResult callback);
+    OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException;
 
     /**
-     * Order the authentication module to decrypt data for a given tunnel.
-     * @param tunnel The tunnel for which this message has to be decrypted. This defines the target and all hops.
-     * @param callback A callback for delivery of the decrypted data.
+     * Order the authentication module to decrypt data for a whole tunnel.
+     * @param packet Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
+     * @param tunnel The tunnel for which this message has to be encrypted. This defines the target and all hops.
      */
-    void decrypt(Tunnel tunnel, RequestResult callback);
+    OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException;
 }

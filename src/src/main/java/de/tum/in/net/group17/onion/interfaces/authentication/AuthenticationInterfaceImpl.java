@@ -1,5 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.authentication;
 
+import com.google.common.primitives.Shorts;
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
@@ -9,14 +10,15 @@ import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
-import de.tum.in.net.group17.onion.parser.authentication.AuthParsedMessage;
-import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParser;
+import de.tum.in.net.group17.onion.parser.authentication.*;
+import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelTransportParsedMessage;
 import org.apache.log4j.Logger;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of an interface to the Onion Authentication module.
@@ -26,7 +28,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     private AuthenticationParser parser;
     private ConfigurationProvider config;
     private final AtomicInteger requestCounter;
-    private Map<Integer, RequestResult> callbacks;
+    private Map<Integer, RequestResult> results;
     private Logger logger;
 
     /**
@@ -42,7 +44,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         this.config = config;
         this.requestCounter = new AtomicInteger();
         this.requestCounter.set(0);
-        this.callbacks = Collections.synchronizedMap(new HashMap<Integer, RequestResult>());
+        this.results = Collections.synchronizedMap(new HashMap<Integer, RequestResult>());
         setCallback(result -> readResponse(result));
     }
 
@@ -57,10 +59,12 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
             if(parsed instanceof AuthParsedMessage)
             {
                 int requestID = ((AuthParsedMessage)parsed).getRequestId();
-                RequestResult cb = callbacks.remove(requestID);
-                if(cb != null) {
+                RequestResult res = results.get(requestID);
+                if(res != null) {
                     logger.debug("Received message from authentication module: " + parsed.getClass().getName());
-                    cb.respond(parsed);
+                    res.setReturned(true);
+                    res.setResult(parsed);
+                    this.results.notifyAll();
                 } else {
                     logger.warn("Received message without callback mapping: " + requestID);
                 }
@@ -75,15 +79,28 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     /**
      * @inheritDoc
      */
-    public void startSession(Peer peer, final RequestResult callback) throws ParsingException {
+    public AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException {
         // Build session start packet
         int requestId = this.requestCounter.getAndAdd(1);
-        ParsedMessage packet = null;
-
-        packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
-        this.callbacks.put(requestId, callback);
+        ParsedMessage packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
+        this.results.put(requestId, null);
 
         sendMessage(packet.serialize());
+
+        synchronized (this.results) {
+            while(!this.results.get(requestId).isReturned())
+                this.results.wait(5000);
+        }
+
+        if(this.results.get(requestId).isReturned())
+            try {
+                RequestResult response = this.results.remove(requestId);
+                return (AuthSessionHs1ParsedMessage)response.getResult();
+            } catch (ClassCastException e) {
+                throw new ParsingException("Unable to parse response to session start." + e.getMessage());
+            }
+        else
+            throw new ParsingException("Did not receive a response from the auth module to an issued session start.");
     }
 
     /**
@@ -105,14 +122,59 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     /**
      * @inheritDoc
      */
-    public void encrypt(Tunnel tunnel, RequestResult callback) {
+    @Override
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException {
+        int requestId = this.requestCounter.getAndAdd(1);
+        short[] sessionIds = Shorts.toArray(tunnel.getSegments().stream().map(x -> x.getSessionId()).collect(Collectors.toList()));
+        ParsedMessage packet = this.parser.buildLayerEncrypt(requestId, sessionIds, message.getData());
 
+        this.results.put(requestId, null);
+        sendMessage(packet.serialize());
+
+        synchronized (this.results) {
+            while(!this.results.get(requestId).isReturned())
+                this.results.wait(5000);
+        }
+
+        if(this.results.get(requestId).isReturned())
+            try {
+                AuthLayerEncryptResParsedMessage response = (AuthLayerEncryptResParsedMessage)this.results.remove(requestId).getResult();
+                message.setData(response.getPayload());
+                return message;
+            } catch (ClassCastException e) {
+                throw new ParsingException("Unable to parse response to session layer encrypt." + e.getMessage());
+            }
+        else
+            throw new ParsingException("Did not receive a response from the auth module to an issued session layer encrypt.");
     }
 
     /**
      * @inheritDoc
      */
-    public void decrypt(Tunnel tunnel, RequestResult callback) {
+    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException  {
+        // build the message
+        int requestId = this.requestCounter.getAndAdd(1);
+        short[] sessionIds = Shorts.toArray(tunnel.getSegments().stream().map(x -> x.getSessionId()).collect(Collectors.toList()));
+        ParsedMessage packet = this.parser.buildLayerDecrypt(requestId, sessionIds, message.getData());
 
+        this.results.put(requestId, null);
+        sendMessage(packet.serialize());
+
+        // wait for the response
+        synchronized (this.results) {
+            while(!this.results.get(requestId).isReturned())
+                this.results.wait(5000);
+        }
+
+        if(this.results.get(requestId).isReturned())
+            try {
+                AuthLayerDecryptResParsedMessage response = (AuthLayerDecryptResParsedMessage)this.results.remove(requestId).getResult();
+                message.setData(response.getPayload());
+                return message;
+            } catch (ClassCastException e) {
+                throw new ParsingException("Unable to parse response to session layer decrypt." + e.getMessage());
+            }
+        else
+            throw new ParsingException("Did not receive a response from the auth module to an issued session layer decrypt.");
     }
 }

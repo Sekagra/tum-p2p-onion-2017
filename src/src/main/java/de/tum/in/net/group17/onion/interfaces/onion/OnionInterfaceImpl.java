@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of the Onion to Onion interface via UDP.
@@ -37,6 +38,8 @@ public class OnionInterfaceImpl implements OnionInterface {
     private Map<Lid, OnionTunnelAcceptParsedMessage> waitForAccept;
 
     private Logger logger;
+
+    private OnionCallback orchestratorCallback;
 
     @Inject
     public OnionInterfaceImpl(ConfigurationProvider config, OnionToOnionParser parser, AuthenticationInterface authInterface) {
@@ -63,6 +66,8 @@ public class OnionInterfaceImpl implements OnionInterface {
     @Override
     public void listen(OnionCallback callback)
     {
+        orchestratorCallback = callback;
+
         this.logger.info("Starting to listen for incoming Onion connections on port " + this.port);
         this.server.listen(this.port, (ctx, packet) -> {
             final ByteBuf bb = packet.content();
@@ -86,7 +91,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         // Create the relay-init message (use the currently last lid as incoming lid)
         ParsedMessage msg;
         try {
-            AuthSessionHs1ParsedMessage hs1 = startSessionSynchronous(peer);
+            AuthSessionHs1ParsedMessage hs1 = this.authInterface.startSession(peer);
             segment.setSessionId(hs1.getSessionId());
             msg = this.parser.buildOnionTunnelRelayMsg(lastLid.serialize(), segment.getLid().serialize(),
                     peer.getIpAddress().getAddress(), peer.getPort(),
@@ -103,7 +108,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             try {
                 TunnelSegment firstSegment = tunnel.getSegments().get(0);
                 msg = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), msg);
-                //todo: encryption
+                msg = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)msg, tunnel);
                 try {
                     this.client.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), msg);
                 } catch (IOException e) {
@@ -142,39 +147,6 @@ public class OnionInterfaceImpl implements OnionInterface {
 
         // Advance the tunnel model by one segment if everything has been successful
         tunnel.addSegment(segment);
-    }
-
-    /**
-     * Starts a new session synchronously and returns the AuthSessionHs1 data.
-     *
-     * @param peer The new peer to advance the tunnel with.
-     *
-     * @return The first handshake messages to forward to the new peer.
-     */
-    private AuthSessionHs1ParsedMessage startSessionSynchronous(Peer peer) throws InterruptedException, ParsingException {
-        // synchronize the request to the authentication module
-        Object lock = new Object();
-
-        RequestResult callback = new RequestResult() {
-            @Override
-            public void respond(ParsedMessage result) {
-                setResult(result);
-                synchronized (lock) {
-                    lock.notify();
-                }
-            }
-        };
-        this.authInterface.startSession(peer, callback);
-
-        // Wait for the async request to return
-        synchronized (lock) {
-            lock.wait(5000);
-        }
-
-        if(callback.getResult() == null)
-            throw new InterruptedException("Timeout.");
-
-        return (AuthSessionHs1ParsedMessage)callback.getResult();
     }
 
     /**
@@ -250,11 +222,32 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param msg The incoming parsed OnionTunnelTransportParsedMessage message.
      */
     private void handleTunnelTransport(OnionTunnelTransportParsedMessage msg) {
-        //todo: check Lid and direction
-        //todo: if direction is BACKWARD, encrypt once and hand to predecessor
-        //todo: if direction is FORWARD, decrypt, check magic bytes
-        //todo:    if not for us (magic bytes not matching) forward to sucessor
-        //todo:    if it is for us extract inner packet and reinvoke handleReceiving, possible an issue with unavailable parsers, e.g. relay?!
+        Lid lid = msg.getLid();
+
+        // check Lid in TunnelSegment list (case: intermediate hop)
+        TunnelSegment segment = this.segments.get(lid);
+        if(segment != null) {
+            // todo: if direction is BACKWARD, encrypt once and hand to predecessor
+
+            // todo: else decrypt and check magic bytes
+            // todo:    if not for us (magic bytes not matching) replace Lid and forward to successor
+            //todo:    if it is for us extract inner packet and reinvoke handleReceiving, possible an issue with padding that has to be removed first
+
+        } else {
+            List<Tunnel> matches = this.tunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid()).collect(Collectors.toList());
+            if(matches.size() == 1) {
+                // decrypt the complete onion as this message is for us
+                try {
+                    this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, matches.get(0)).getInnerPacket()));
+                } catch (InterruptedException e) {
+                    logger.warn("Interrupted during transport message decryption: " + e.getMessage());
+                } catch (ParsingException e) {
+                    logger.warn("Unable to parse transport message: " + e.getMessage());
+                }
+            } else {
+                logger.warn("Received transport message with unknown/ambiguous local identifier. Dropping it.");
+            }
+        }
     }
 
     /***

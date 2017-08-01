@@ -52,7 +52,7 @@ public interface OnionToOnionParser extends Parser {
      *
      * @param incomingLidRaw The LID of the incoming tunnel in the perspective of the receiving host.
      * @param innerPkt The inner packet contained in this message.
-     * @return A OnionTunnelTransferParsedMessage containing the given parameters.
+     * @return A OnionTunnelTransportParsedMessage containing the given parameters.
      */
     ParsedMessage buildOnionTunnelTransferMsgPlain(byte[] incomingLidRaw, ParsedMessage innerPkt) throws ParsingException;
 

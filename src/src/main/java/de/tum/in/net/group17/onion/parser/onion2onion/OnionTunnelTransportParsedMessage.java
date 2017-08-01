@@ -1,13 +1,12 @@
 package de.tum.in.net.group17.onion.parser.onion2onion;
 
-import com.sun.media.sound.InvalidDataException;
 import de.tum.in.net.group17.onion.model.Lid;
 import de.tum.in.net.group17.onion.parser.MessageType;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.zip.DataFormatException;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 25.06.17.
@@ -73,15 +72,15 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
      * We throw a IllegalDataException if data (msg + padding) has an invalid size!
      *
      * @return The packet contained in the ONION TUNNEL TRANSPORT payload.
-     * @throws InvalidDataException If data (msg + padding) has an invalid size!
+     * @throws ParsingException If data (msg + padding) has an invalid size!
      */
 
-    public byte[] getInnerPacket() throws InvalidDataException {
+    public byte[] getInnerPacket() throws ParsingException {
         if(!forMe())
             throw new IllegalStateException("This packet is not supposed for this peer." +
                     " Therefore, the inner packet is just garbage!");
         if(this.data.length != MAX_INNER_SIZE)
-            throw new InvalidDataException("Invalid data length!");
+            throw new ParsingException("Invalid data length!");
         ByteBuffer buffer = ByteBuffer.wrap(this.data);
         buffer.order(ByteOrder.BIG_ENDIAN);
 
