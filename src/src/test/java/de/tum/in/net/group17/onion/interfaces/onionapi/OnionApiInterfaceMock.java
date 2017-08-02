@@ -16,13 +16,12 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static org.junit.Assert.assertTrue;
-
 /**
  * Created by Marko Dorfhuber(PraMiD) on 31.07.17.
  */
 public class OnionApiInterfaceMock implements OnionApiInterface {
     private static final int INTERVAL_MS = 1000;
+    private static final int DELAY_MS = 1000;
     private static final String VOICE_DATA = "VOICE";
 
     private int outgoingTunnelId = -1; // Negative ID means that no tunnel is currently established
@@ -32,51 +31,69 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
     private OnionApiCallback callbacks;
 
     private Timer testRunner;
+
+    private ASN1Primitive endpointKey;
+    private InetAddress endpointIp;
+    private short port;
+
     @Inject
     private OnionApiParser parser;
     // Only the sender of the test initiates voice and cover traffic transfer -> The receiver just sends back the received data
     private boolean sender;
 
-    public OnionApiInterfaceMock() throws IOException {
-        ASN1Primitive endpointKey = getEndpointKey();
-        InetAddress endpointIp = Inet4Address.getByName("localhost");
-        short port = 8890;
-        this.sender = false;
+    // If the peer is an intermediate hop, the CM module will not send any requests
+    private boolean intermediate;
 
+    public OnionApiInterfaceMock() throws IOException {
+        endpointKey = getEndpointKey();
+        endpointIp = Inet4Address.getByName("localhost");
+        port = 6001;
+
+        this.sender = false;
+        this.intermediate = false;
+
+        testRunner = new Timer();
+    }
+
+    @Override
+    public void listen(OnionApiCallback callback) {
         TimerTask tsk = new TimerTask() {
-            // Reflection.. The price we pay for protecting the ParsedMessage constructors..
             @Override
             public void run() {
+                if(intermediate || !sender) {
+                    this.cancel();
+                    return;
+                }
                 if(tunnelEstPending) { // Just wait for tunnel establishment
                     return;
-                } else if(outgoingTunnelId == -1) {
+                } else if(outgoingTunnelId == -1 && sender) {
                     try {
                         Constructor<OnionTunnelBuildParsedMessage> c =
                                 OnionTunnelBuildParsedMessage.class.getDeclaredConstructor(
-                                        ASN1Primitive.class, InetAddress.class, short.class
+                                        short.class, InetAddress.class, ASN1Primitive.class
                                 );
                         c.setAccessible(true);
-                        OnionTunnelBuildParsedMessage msg = c.newInstance(endpointKey, endpointIp, port);
+                        OnionTunnelBuildParsedMessage msg = c.newInstance(port, endpointIp, endpointKey);
                         callbacks.receivedTunnelBuild(msg);
 
                         tunnelEstPending = true;
                     } catch (Exception e) {
-                        assertTrue("Cannot create ONION TUNNEL BUILD message! " + e.getMessage(), false);
+                        throw new RuntimeException("Cannot create ONION TUNNEL BUILD message! " + e.getMessage());
                     }
                 } else if(!sentVoice && sender) {
                     try {
                         Constructor<OnionTunnelDataParsedMessage> c =
                                 OnionTunnelDataParsedMessage.class.getDeclaredConstructor(
-                                       int.class, byte[].class
+                                        int.class, byte[].class
                                 );
                         c.setAccessible(true);
                         OnionTunnelDataParsedMessage msg = c.newInstance(outgoingTunnelId, VOICE_DATA.getBytes());
                         callbacks.receivedVoiceData(msg);
                         sentVoice = true;
                     } catch (Exception e) {
-                        assertTrue("Cannot create ONION TUNNEL VOICE message! " + e.getMessage(), false);
+                        throw new RuntimeException("Cannot create ONION TUNNEL VOICE message! " + e.getMessage());
                     }
-                } else if(!sentCover && sender) {
+                } else if(!sentCover && sender && !receivedVoice) {
                     try {
                         Constructor<OnionCoverParsedMessage> c =
                                 OnionCoverParsedMessage.class.getDeclaredConstructor(
@@ -87,8 +104,7 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                         callbacks.receivedCoverData(msg);
                         sentCover = true;
                     } catch (Exception e) {
-                        assertTrue("Cannot create ONION COVER message! " + e.getMessage(), false);
-                        return;
+                        throw new RuntimeException("Cannot create ONION COVER message! " + e.getMessage());
                     }
                 } else if(receivedCover && receivedVoice) {
                     try {
@@ -99,21 +115,17 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                         c.setAccessible(true);
                         OnionTunnelDestroyParsedMessage msg = c.newInstance(outgoingTunnelId);
                         callbacks.receivedDestroy(msg);
+
+                        this.cancel();
                     } catch (Exception e) {
-                        assertTrue("Cannot create ONION TUNNEL DESTROY message! " + e.getMessage(), false);
-                        return;
+                        throw new RuntimeException("Cannot create ONION TUNNEL DESTROY message! " + e.getMessage());
                     }
                 }
             }
         };
 
-        testRunner = new Timer();
-        testRunner.schedule(tsk, 0, INTERVAL_MS);
-    }
-
-    @Override
-    public void listen(OnionApiCallback callback) {
         this.callbacks = callback;
+        testRunner.schedule(tsk, DELAY_MS, INTERVAL_MS);
     }
 
     @Override
@@ -149,7 +161,7 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                     callbacks.receivedVoiceData(message);
                     sentVoice = true;
                 } catch (Exception e) {
-                    assertTrue("Cannot create ONION TUNNEL VOICE message! " + e.getMessage(), false);
+                    throw new RuntimeException("Cannot create ONION TUNNEL VOICE message! " + e.getMessage());
                 }
             }
         } else if(!receivedCover) {
@@ -166,25 +178,29 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                     callbacks.receivedCoverData(message);
                     sentCover = true;
                 } catch (Exception e) {
-                    assertTrue("Cannot create ONION COVER message! " + e.getMessage(), false);
-                    return;
+                    throw new RuntimeException("Cannot create ONION COVER message! " + e.getMessage());
                 }
             }
         } else {
-            assertTrue("Received invalid data!" +
-                    "Either cover data was sent twice or the tunnel corrupted our data!", false);
-            return;
+            throw new RuntimeException("Received invalid data!" +
+                    "Either cover data was sent twice or the tunnel corrupted our data!");
         }
     }
 
     /**
-     * Set if this instance of the CM mock is used as sender or receiver
-     *
-     * @param sender Is this instance the sender?
+     * Set if this instance of the CM mock is used as sender or receiver.
      */
-    public void setSender(boolean sender)
+    public void setSender()
     {
-        this.sender = sender;
+        this.sender = true;
+    }
+
+    /**
+     * Specify this CM module as an intermediate hop.
+     * Specifying a hop as intermediate is not revertible.
+     */
+    public void setIntermediate() {
+        this.intermediate = true;
     }
 
     public ASN1Primitive getEndpointKey() throws IOException {
