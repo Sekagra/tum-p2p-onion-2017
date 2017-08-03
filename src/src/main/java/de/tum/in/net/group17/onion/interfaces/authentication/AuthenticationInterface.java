@@ -1,5 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.authentication;
 
+import de.tum.in.net.group17.onion.model.TunnelSegment;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
@@ -45,9 +46,27 @@ public interface AuthenticationInterface {
     OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException;
 
     /**
+     * Order the authentication module to encrypt data for a single layer.
+     * @param packet Plain OnionTunnelTransportParsedMessage to be encrypted with all sessions in the given tunnel.
+     * @param segment The segment for which this message has to be layer-encrypted once.
+     *
+     * @return The incoming message but with encrypted data.
+     */
+    OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException;
+
+    /**
      * Order the authentication module to decrypt data for a whole tunnel.
      * @param packet Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
      * @param tunnel The tunnel for which this message has to be encrypted. This defines the target and all hops.
      */
     OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException;
+
+    /**
+     * Order the authentication module to decrypt data for a single layer.
+     * @param packet Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
+     * @param segment The segment for which this message has to be layer-decrypted once.
+     *
+     * @return The incoming message but with encrypted data.
+     */
+    OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException;
 }

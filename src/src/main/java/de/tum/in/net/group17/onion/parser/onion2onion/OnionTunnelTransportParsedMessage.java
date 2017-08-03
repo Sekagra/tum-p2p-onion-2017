@@ -32,6 +32,15 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
     }
 
     /**
+     * Set the local identifier of this message to a new value.
+     * Necessary for forwarding/onion routing of the message.
+     * @param newLid The new local identifier for this message.
+     */
+    public void setLid(Lid newLid) {
+        this.incomingLid = newLid;
+    }
+
+    /**
      * Get the complete data contained in this message.
      * This includes the magic block and padding.
      *

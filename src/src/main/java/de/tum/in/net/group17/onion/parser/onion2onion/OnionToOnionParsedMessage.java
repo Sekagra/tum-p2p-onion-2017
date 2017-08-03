@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
  * This class encapsulates the fields used by all messages in the OnionToOnion protocol.
  */
 public abstract class OnionToOnionParsedMessage extends ParsedMessage {
-    private final Lid incomingLid;
+    protected Lid incomingLid;
 
     /**
      * Create a new OnionToOnionParsedMessage.

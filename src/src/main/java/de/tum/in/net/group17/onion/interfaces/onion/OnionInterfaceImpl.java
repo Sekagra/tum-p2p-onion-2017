@@ -166,7 +166,16 @@ public class OnionInterfaceImpl implements OnionInterface {
                 handleTunnelRelay((OnionTunnelRelayParsedMessage)parsedMessage);
                 break;
             case ONION_TUNNEL_TRANSPORT:
-                handleTunnelTransport((OnionTunnelTransportParsedMessage)parsedMessage);
+                try {
+                    handleTunnelTransport((OnionTunnelTransportParsedMessage)parsedMessage);
+                } catch (InterruptedException e) {
+                    logger.warn("Interrupted during transport message decryption: " + e.getMessage());
+                } catch (ParsingException e) {
+                    logger.warn("Unable to parse transport message: " + e.getMessage());
+                } catch(IOException ex) {
+                    this.logger.warn("Error during message forwarding, tunnel possibly went down: " + ex.getMessage());
+                }
+                //todo: tear down tunnel
                 break;
             case ONION_TUNNEL_TEARDOWN:
                 handleTunnelTeardown((OnionTunnelTeardownParsedMessage)parsedMessage);
@@ -221,29 +230,36 @@ public class OnionInterfaceImpl implements OnionInterface {
      *
      * @param msg The incoming parsed OnionTunnelTransportParsedMessage message.
      */
-    private void handleTunnelTransport(OnionTunnelTransportParsedMessage msg) {
+    private void handleTunnelTransport(OnionTunnelTransportParsedMessage msg) throws IOException, ParsingException, InterruptedException {
         Lid lid = msg.getLid();
 
         // check Lid in TunnelSegment list (case: intermediate hop)
         TunnelSegment segment = this.segments.get(lid);
         if(segment != null) {
-            // todo: if direction is BACKWARD, encrypt once and hand to predecessor
-
-            // todo: else decrypt and check magic bytes
-            // todo:    if not for us (magic bytes not matching) replace Lid and forward to successor
-            //todo:    if it is for us extract inner packet and reinvoke handleReceiving, possible an issue with padding that has to be removed first
-
+            if(segment.getDirection() == Direction.FORWARD) {
+                msg = this.authInterface.decrypt(msg, segment);
+                if(msg.forMe()) {   // if direction is forward, decrypt and check magic bytes
+                    this.handleReceiving(this.parser.parseMsg(msg.getInnerPacket()));   // reinvoke handling for inner packet
+                } else {
+                    // if not for us (magic bytes not matching) replace Lid and forward to successor
+                    msg.setLid(segment.getLid());
+                    this.client.send(segment.getNextAddress(), segment.getNextPort(), msg);
+                }
+            } else if (segment.getDirection() == Direction.BACKWARD) {
+                // if direction is BACKWARD, encrypt once and hand to predecessor
+                msg = this.authInterface.encrypt(msg, segment);
+                if(segment.getOther() != null) {
+                    msg.setLid(segment.getLid());
+                    this.client.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg);
+                } else {
+                    this.logger.warn("Unable to forward transport message backwards through the tunnel due to missing segment.");
+                }
+            }
         } else {
-            List<Tunnel> matches = this.tunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid()).collect(Collectors.toList());
+            List<Tunnel> matches = this.tunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid() == lid).collect(Collectors.toList());
             if(matches.size() == 1) {
                 // decrypt the complete onion as this message is for us
-                try {
-                    this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, matches.get(0)).getInnerPacket()));
-                } catch (InterruptedException e) {
-                    logger.warn("Interrupted during transport message decryption: " + e.getMessage());
-                } catch (ParsingException e) {
-                    logger.warn("Unable to parse transport message: " + e.getMessage());
-                }
+                this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, matches.get(0)).getInnerPacket()));
             } else {
                 logger.warn("Received transport message with unknown/ambiguous local identifier. Dropping it.");
             }

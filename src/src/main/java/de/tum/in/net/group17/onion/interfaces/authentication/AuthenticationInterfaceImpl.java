@@ -4,6 +4,7 @@ import com.google.common.primitives.Shorts;
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
+import de.tum.in.net.group17.onion.model.TunnelSegment;
 import de.tum.in.net.group17.onion.model.results.RawRequestResult;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
@@ -151,11 +152,69 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     /**
      * @inheritDoc
      */
+    @Override
     public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException  {
         // build the message
         int requestId = this.requestCounter.getAndAdd(1);
         short[] sessionIds = Shorts.toArray(tunnel.getSegments().stream().map(x -> x.getSessionId()).collect(Collectors.toList()));
         ParsedMessage packet = this.parser.buildLayerDecrypt(requestId, sessionIds, message.getData());
+
+        this.results.put(requestId, null);
+        sendMessage(packet.serialize());
+
+        // wait for the response
+        synchronized (this.results) {
+            while(!this.results.get(requestId).isReturned())
+                this.results.wait(5000);
+        }
+
+        if(this.results.get(requestId).isReturned())
+            try {
+                AuthLayerDecryptResParsedMessage response = (AuthLayerDecryptResParsedMessage)this.results.remove(requestId).getResult();
+                message.setData(response.getPayload());
+                return message;
+            } catch (ClassCastException e) {
+                throw new ParsingException("Unable to parse response to session layer decrypt." + e.getMessage());
+            }
+        else
+            throw new ParsingException("Did not receive a response from the auth module to an issued session layer decrypt.");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
+        int requestId = this.requestCounter.getAndAdd(1);
+        ParsedMessage packet = this.parser.buildLayerEncrypt(requestId, new short[] { segment.getSessionId() }, message.getData());
+
+        this.results.put(requestId, null);
+        sendMessage(packet.serialize());
+
+        synchronized (this.results) {
+            while(!this.results.get(requestId).isReturned())
+                this.results.wait(5000);
+        }
+
+        if(this.results.get(requestId).isReturned())
+            try {
+                AuthLayerEncryptResParsedMessage response = (AuthLayerEncryptResParsedMessage)this.results.remove(requestId).getResult();
+                message.setData(response.getPayload());
+                return message;
+            } catch (ClassCastException e) {
+                throw new ParsingException("Unable to parse response to session layer encrypt." + e.getMessage());
+            }
+        else
+            throw new ParsingException("Did not receive a response from the auth module to an issued session layer encrypt.");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
+        int requestId = this.requestCounter.getAndAdd(1);
+        ParsedMessage packet = this.parser.buildLayerDecrypt(requestId, new short[] { segment.getSessionId() }, message.getData());
 
         this.results.put(requestId, null);
         sendMessage(packet.serialize());
