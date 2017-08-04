@@ -7,6 +7,7 @@ import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
+import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs2ParsedMessage;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelTransportParsedMessage;
 
 /**
@@ -23,18 +24,16 @@ public interface AuthenticationInterface {
 
     /**
      * Forward a received handshake initiation packet to the Onion module.
-     * @param peer The peer with whom a session is initiated.
-     * @param callback A callback function to be called once an answer has been retrieved.
+     * @param hs1 The handshake payload given by the peers authentication module in AUTH SESSION HS1.
      */
-    void forwardIncomingHandshake1(Peer peer, ParsedMessage hs1, RequestResult callback);
+    AuthSessionHs2ParsedMessage forwardIncomingHandshake1(byte[] payload) throws ParsingException, InterruptedException;
 
     /**
      * Forward a received handshake initiation packet to the Onion module.
-     * @param peer The peer with whom a session is initiated.
      * @param sessionId ID of the previously started session this handshake message belongs to.
      * @param payload The payload obtained by an incoming AUTH SESSION HS2 message.
      */
-    void forwardIncomingHandshake2(Peer peer, short sessionId, byte[] payload) throws ParsingException;
+    void forwardIncomingHandshake2(short sessionId, byte[] payload) throws ParsingException;
 
     /**
      * Order the authentication module to encrypt data for a whole tunnel.
@@ -42,6 +41,9 @@ public interface AuthenticationInterface {
      * @param tunnel The tunnel for which this message has to be encrypted. This defines the target and all hops.
      *
      * @return The incoming message but with encrypted data.
+     *
+     * @throws ParsingException Exception in case anything is wrong with the packet layouts.
+     * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
     OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException;
 
@@ -51,6 +53,9 @@ public interface AuthenticationInterface {
      * @param segment The segment for which this message has to be layer-encrypted once.
      *
      * @return The incoming message but with encrypted data.
+     *
+     * @throws ParsingException Exception in case anything is wrong with the packet layouts.
+     * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
     OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException;
 
@@ -58,6 +63,11 @@ public interface AuthenticationInterface {
      * Order the authentication module to decrypt data for a whole tunnel.
      * @param packet Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
      * @param tunnel The tunnel for which this message has to be encrypted. This defines the target and all hops.
+     *
+     * @return The incoming message but with decrypted data.
+     *
+     * @throws ParsingException Exception in case anything is wrong with the packet layouts.
+     * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
     OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException;
 
@@ -66,7 +76,10 @@ public interface AuthenticationInterface {
      * @param packet Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
      * @param segment The segment for which this message has to be layer-decrypted once.
      *
-     * @return The incoming message but with encrypted data.
+     * @return The incoming message but with decrypted data.
+     *
+     * @throws ParsingException Exception in case anything is wrong with the packet layouts.
+     * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
     OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException;
 }

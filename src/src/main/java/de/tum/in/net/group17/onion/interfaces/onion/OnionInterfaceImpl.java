@@ -10,11 +10,14 @@ import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
+import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs2ParsedMessage;
 import de.tum.in.net.group17.onion.parser.onion2onion.*;
 import io.netty.buffer.ByteBuf;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +79,8 @@ public class OnionInterfaceImpl implements OnionInterface {
 
             try {
                 ParsedMessage parsed = parser.parseMsg(buf);
-                handleReceiving(parsed);
+                InetSocketAddress senderSocketAddress = ((InetSocketAddress)ctx.channel().remoteAddress());
+                handleReceiving(parsed, senderSocketAddress.getAddress(), (short)senderSocketAddress.getPort());
             } catch (ParsingException e) {
                 logger.warn("Received invalid message over Onion P2P interface.");
             }
@@ -140,7 +144,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             // Todo: check if notifyAll is needed which would break this test here
         }
         try {
-            this.authInterface.forwardIncomingHandshake2(peer, segment.getSessionId(), acceptMsg.getAuthPayload());
+            this.authInterface.forwardIncomingHandshake2(segment.getSessionId(), acceptMsg.getAuthPayload());
         } catch (ParsingException e) {
             throw new OnionException("Error building the packet to forward the finalizing session handshake: " + e.getMessage());
         }
@@ -153,21 +157,23 @@ public class OnionInterfaceImpl implements OnionInterface {
      * General handling for all incoming packets. Designed to be reinvoked after decryption of inner packets.
      *
      * @param parsedMessage The already parsed message that confirms to a ONION P2P type
+     * @param senderAddress InetAddress of the sender of this datagram.
+     * @param senderPort The remote port of the sender of this datagram.
      */
-    private void handleReceiving(ParsedMessage parsedMessage) {
+    private void handleReceiving(ParsedMessage parsedMessage, InetAddress senderAddress, short senderPort) {
         switch(parsedMessage.getType()) {
             case ONION_TUNNEL_INIT:
-                handleTunnelInit((OnionTunnelInitParsedMessage)parsedMessage);
+                handleTunnelInit((OnionTunnelInitParsedMessage)parsedMessage, senderAddress, senderPort);
                 break;
             case ONION_TUNNEL_ACCEPT:
-                handleTunnelAccept((OnionTunnelAcceptParsedMessage)parsedMessage);
+                handleTunnelAccept((OnionTunnelAcceptParsedMessage)parsedMessage, senderAddress, senderPort);
                 break;
             case ONION_TUNNEL_RELAY:
                 handleTunnelRelay((OnionTunnelRelayParsedMessage)parsedMessage);
                 break;
             case ONION_TUNNEL_TRANSPORT:
                 try {
-                    handleTunnelTransport((OnionTunnelTransportParsedMessage)parsedMessage);
+                    handleTunnelTransport((OnionTunnelTransportParsedMessage)parsedMessage, senderAddress, senderPort);
                 } catch (InterruptedException e) {
                     logger.warn("Interrupted during transport message decryption: " + e.getMessage());
                 } catch (ParsingException e) {
@@ -192,10 +198,29 @@ public class OnionInterfaceImpl implements OnionInterface {
      * Handle an incoming tunnel init message. Respond with the correct handshake and establish a new tunnel segment.
      *
      * @param parsedMessage The incoming parsed OnionTunnelInitParsedMessage message.
+     * @param senderAddress InetAddress of the sender of this datagram.
+     * @param senderPort The remote port of the sender of this datagram.
      */
-    private void handleTunnelInit(OnionTunnelInitParsedMessage parsedMessage) {
-        //todo: implement for intermediate hop functionality
-        //(establish state and respond with answer of the auth module)
+    private void handleTunnelInit(OnionTunnelInitParsedMessage parsedMessage, InetAddress senderAddress, short senderPort) {
+        TunnelSegment segment = new TunnelSegment(parsedMessage.getLid(), senderAddress, senderPort, Direction.BACKWARD);
+
+        // get AuthSessionHs2ParsedMessage from auth module handshake
+        try {
+            AuthSessionHs2ParsedMessage response = this.authInterface.forwardIncomingHandshake1(parsedMessage.getAuthPayload());
+
+            // build accept message
+            ParsedMessage acceptMsg = this.parser.buildOnionTunnelAcceptMsg(parsedMessage.getLid().serialize(), response.getPayload());
+            this.client.send(senderAddress, senderPort, acceptMsg);
+
+            // if everything went like expected, add the state to this peer's segments list
+            this.segments.put(parsedMessage.getLid(), segment);
+        } catch (InterruptedException e) {
+            logger.warn("Interrupted during session init build: " + e.getMessage());
+        } catch (ParsingException e) {
+            logger.warn("Unable to parse message: " + e.getMessage());
+        } catch (IOException e) {
+            logger.warn("Unable to send accept message: " + e.getMessage());
+        }
     }
 
     /**
@@ -203,15 +228,17 @@ public class OnionInterfaceImpl implements OnionInterface {
      * response and handle the response accordingly.
      *
      * @param msg The incoming parsed OnionTunnelAcceptParsedMessage message.
+     * @param senderAddress InetAddress of the sender of this datagram.
+     * @param senderPort The remote port of the sender of this datagram.
      */
-    private void handleTunnelAccept(OnionTunnelAcceptParsedMessage msg) {
+    private void handleTunnelAccept(OnionTunnelAcceptParsedMessage msg, InetAddress senderAddress, short senderPort) {
         if(this.waitForAccept.containsKey(msg.getLid())) {
             this.waitForAccept.put(msg.getLid(), msg);
             synchronized (this.waitForAccept) {
                 this.waitForAccept.notify();
             }
         } else {
-            logger.info("Received unsolicited or late ACCEPT-message for an extended tunnel.");
+            logger.info("Received unsolicited or late ACCEPT-message from " + senderAddress.getHostAddress() + ":" + Short.toString(senderPort));
         }
     }
 
@@ -229,8 +256,11 @@ public class OnionInterfaceImpl implements OnionInterface {
      * Handle an incoming transport message that has to be decrypted at least once.
      *
      * @param msg The incoming parsed OnionTunnelTransportParsedMessage message.
+     * @param senderAddress InetAddress of the sender of this datagram.
+     * @param senderPort The remote port of the sender of this datagram.
      */
-    private void handleTunnelTransport(OnionTunnelTransportParsedMessage msg) throws IOException, ParsingException, InterruptedException {
+    private void handleTunnelTransport(OnionTunnelTransportParsedMessage msg, InetAddress senderAddress, short senderPort)
+            throws IOException, ParsingException, InterruptedException {
         Lid lid = msg.getLid();
 
         // check Lid in TunnelSegment list (case: intermediate hop)
@@ -239,7 +269,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             if(segment.getDirection() == Direction.FORWARD) {
                 msg = this.authInterface.decrypt(msg, segment);
                 if(msg.forMe()) {   // if direction is forward, decrypt and check magic bytes
-                    this.handleReceiving(this.parser.parseMsg(msg.getInnerPacket()));   // reinvoke handling for inner packet
+                    this.handleReceiving(this.parser.parseMsg(msg.getInnerPacket()), senderAddress, senderPort);   // reinvoke handling for inner packet
                 } else {
                     // if not for us (magic bytes not matching) replace Lid and forward to successor
                     msg.setLid(segment.getLid());
@@ -259,7 +289,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             List<Tunnel> matches = this.tunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid() == lid).collect(Collectors.toList());
             if(matches.size() == 1) {
                 // decrypt the complete onion as this message is for us
-                this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, matches.get(0)).getInnerPacket()));
+                this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, matches.get(0)).getInnerPacket()), senderAddress, senderPort);
             } else {
                 logger.warn("Received transport message with unknown/ambiguous local identifier. Dropping it.");
             }
@@ -272,7 +302,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param msg The incoming parsed OnionTunnelTeardownParsedMessage message.
      */
     private void handleTunnelTeardown(OnionTunnelTeardownParsedMessage msg) {
-
+        //todo: Missing Tunnel ID
     }
 
     /***
@@ -281,6 +311,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param msg The incoming parsed OnionTunnelVoiceParsedMessage message.
      */
     private void handleTunnelVoice(OnionTunnelVoiceParsedMessage msg) {
-
+        //todo: Missing Tunnel ID
+        //orchestratorCallback.tunnelData();
     }
 }

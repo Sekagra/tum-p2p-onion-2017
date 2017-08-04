@@ -4,6 +4,7 @@ import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParser;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParserImpl;
 import org.junit.BeforeClass;
@@ -53,11 +54,9 @@ public class AuthenticationInterfaceImplTest {
         AuthenticationInterfaceImpl intf = new AuthenticationInterfaceImpl(new ConfigurationProviderImpl(), new AuthenticationParserImpl());
 
         Peer peer = new Peer(derKey);
-        intf.startSession(peer, new RequestResult() {
-            public void respond(ParsedMessage result) {
-                System.out.println("Received response");
-            }
-        });
+        AuthSessionHs1ParsedMessage res = intf.startSession(peer);
+        if (res != null)
+            System.out.println("Received response");
     }
 
 }
