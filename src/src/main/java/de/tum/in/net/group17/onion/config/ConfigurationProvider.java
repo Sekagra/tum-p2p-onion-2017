@@ -8,11 +8,17 @@ import java.net.InetAddress;
  * Created by Christoph Rudolf on 09.07.17.
  */
 public interface ConfigurationProvider {
-    int getOnionApiPort();
-    int getOnionPort();
-    int getAuthModulePort();
-    InetAddress getAuthModuleHost();
     int getIntermediateHopCount();
-    InetAddress getRpsModuleHost();
-    int getRpsModulePort();
+
+    InetAddress getOnionP2PHost();
+    int getOnionP2PPort();
+
+    InetAddress getOnionApiHost();
+    int getOnionApiPort();
+
+    InetAddress getAuthApiHost();
+    int getAuthApiPort();
+
+    InetAddress getRpsApiHost();
+    int getRpsApiPort();
 }

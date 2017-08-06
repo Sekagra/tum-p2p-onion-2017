@@ -88,6 +88,8 @@ public class OrchestratorTest {
                             9000,
                             1,
                             "localhost",
+                            "localhost",
+                            "localhost",
                             "localhost");
                 } catch (UnknownHostException e) {
                     assertTrue("Unable to create sender configuration! " + e.getMessage(), false);
@@ -113,10 +115,12 @@ public class OrchestratorTest {
                 OnionApiInterfaceMock apiInterface = null;
                 try {
                     config = new ConfigurationProviderMock(5000,
-                            6002,
+                            6000,
                             7000,
                             9000,
                             1,
+                            "localhost",
+                            "localhost",
                             "localhost",
                             "localhost");
                 } catch (UnknownHostException e) {
@@ -142,10 +146,12 @@ public class OrchestratorTest {
                 OnionApiInterfaceMock apiInterface = null;
                 try {
                     config = new ConfigurationProviderMock(5000,
-                            6001,
+                            6000,
                             7000,
                             9000,
                             1,
+                            "localhost",
+                            "localhost",
                             "localhost",
                             "localhost");
                 } catch (UnknownHostException e) {

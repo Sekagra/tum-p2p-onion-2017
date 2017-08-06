@@ -19,15 +19,27 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParser;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParserImpl;
 import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParser;
 import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParserImpl;
+import org.ini4j.InvalidFileFormatException;
+
+import java.nio.file.NoSuchFileException;
 
 /**
  * Injector for production usage of the Onion module, thus, not using mocks as a testing injector would.
  * Created by Christoph Rudolf on 09.07.17.
  */
 public class ProductionInjector extends AbstractModule {
+    private final String configPath;
+    private final ConfigurationProvider cfgProvider;
+
+    public ProductionInjector(String configPath) throws NoSuchFileException, InvalidFileFormatException {
+        this.configPath = configPath;
+
+        // Create configuration provider here to pass errors to the Orchestrator!
+        cfgProvider = new ConfigurationProviderImpl(configPath);
+    }
     @Override
     protected void configure() {
-        bind(ConfigurationProvider.class).to(ConfigurationProviderImpl.class);
+        bind(ConfigurationProvider.class).toInstance(cfgProvider);
 
         // bind interfaces to other modules to their implementations
         bind(AuthenticationInterface.class).to(AuthenticationInterfaceImpl.class);

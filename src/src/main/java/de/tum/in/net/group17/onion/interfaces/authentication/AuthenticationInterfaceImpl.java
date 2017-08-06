@@ -39,7 +39,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      */
     @Inject
     public AuthenticationInterfaceImpl(ConfigurationProvider config, AuthenticationParser parser) {
-        super(config.getAuthModuleHost(), config.getAuthModulePort());
+        super(config.getAuthApiHost(), config.getAuthApiPort());
         this.logger = Logger.getLogger(AuthenticationInterface.class);
         this.parser = parser;
         this.config = config;

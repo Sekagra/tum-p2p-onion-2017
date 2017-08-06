@@ -18,7 +18,9 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelBuildParsedMessage
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDestroyParsedMessage;
 import org.apache.log4j.Logger;
+import org.ini4j.InvalidFileFormatException;
 
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,10 +58,25 @@ public class Orchestrator {
     public static void main(String[] args) {
         logger.info("Starting up!");
 
-        // Setup the dependency injection with Guice
-        Injector injector = Guice.createInjector(new ProductionInjector());
-        Orchestrator orchestrator = injector.getInstance(Orchestrator.class);
-        orchestrator.start();
+        if(args.length < 0) {
+            logger.fatal("No path for configuration file given as command line argument!");
+            System.err.println("No path for configuration file given as command line argument!");
+            System.exit(1);
+        }
+
+        try {
+            // Setup the dependency injection with Guice
+            Injector injector = Guice.createInjector(new ProductionInjector(args[0]));
+            Orchestrator orchestrator = injector.getInstance(Orchestrator.class);
+            orchestrator.start();
+        } catch (NoSuchFileException e) {
+            logger.fatal("Could not set up Onion module: " + e.getMessage());
+            System.exit(1);
+        }
+        catch(InvalidFileFormatException e) {
+            logger.fatal("Could not parse configuration file: " + e.getMessage());
+            System.exit(1);
+        }
     }
 
     /**
@@ -86,8 +103,6 @@ public class Orchestrator {
 
         // Start with a delegate issuing the build of a random tunnel
         nextTunnelBuild = () -> buildTunnel();
-
-        buildTunnel();
     }
 
     /**

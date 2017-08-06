@@ -50,7 +50,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         this.logger = Logger.getLogger(OnionInterface.class);
         this.parser = parser;
         this.config = config;
-        this.port = this.config.getOnionPort();
+        this.port = this.config.getOnionP2PPort();
         this.server = new UdpServer();
         this.client = new UdpClient();
         this.authInterface = authInterface;

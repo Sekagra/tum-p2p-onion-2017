@@ -1,6 +1,8 @@
 package de.tum.in.net.group17.onion.interfaces.authentication;
 
+import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
+import de.tum.in.net.group17.onion.config.ConfigurationProviderMock;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterfaceImpl;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParserImpl;
 import org.junit.Ignore;
@@ -15,7 +17,16 @@ public class OnionApiInterfaceTest {
     @Ignore
     public void receiveRawData() throws Exception {
         System.out.println("Server is listening for test...");
-        OnionApiInterfaceImpl intf = new OnionApiInterfaceImpl(new ConfigurationProviderImpl(), new OnionApiParserImpl());
+        ConfigurationProvider config = new ConfigurationProviderMock(5000,
+                6000,
+                7000,
+                9000,
+                1,
+                "localhost",
+                "localhost",
+                "localhost",
+                "localhost");
+        OnionApiInterfaceImpl intf = new OnionApiInterfaceImpl(config, new OnionApiParserImpl());
         //intf.listen();
     }
 }

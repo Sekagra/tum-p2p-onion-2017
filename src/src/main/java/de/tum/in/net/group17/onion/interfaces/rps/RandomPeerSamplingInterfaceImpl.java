@@ -4,20 +4,16 @@ import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
 import de.tum.in.net.group17.onion.model.Peer;
-import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParser;
 import de.tum.in.net.group17.onion.parser.rps.RpsPeerParsedMessage;
 import io.netty.channel.ChannelException;
 import org.apache.log4j.Logger;
-import sun.nio.ch.sctp.PeerAddrChange;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -37,7 +33,7 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
      */
     @Inject
     public RandomPeerSamplingInterfaceImpl(ConfigurationProvider config, RandomPeerSamplingParser parser) {
-        super(config.getRpsModuleHost(), config.getRpsModulePort());
+        super(config.getRpsApiHost(), config.getRpsApiPort());
         this.logger = Logger.getLogger(RandomPeerSamplingInterface.class);
         this.parser = parser;
         this.config = config;

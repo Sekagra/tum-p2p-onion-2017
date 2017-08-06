@@ -17,8 +17,12 @@ public class ConfigurationProviderMock implements ConfigurationProvider {
 
     private InetAddress rpsModuleAddress;
     private InetAddress authModuleAddress;
+    private InetAddress onionModuleAddress;
+    private InetAddress onionListenAddress;
 
-    public ConfigurationProviderMock(int onionApiPort, int onionPort, int authModulePort, int rpsModulePort, int intermediateHopCount, String rpsModuleAddress, String authModuleAddress) throws UnknownHostException {
+    public ConfigurationProviderMock(int onionApiPort, int onionPort, int authModulePort, int rpsModulePort,
+                                     int intermediateHopCount, String rpsModuleAddress, String authModuleAddress,
+                                     String onionModuleAddress, String onionListenAddress) throws UnknownHostException {
         this.onionApiPort = onionApiPort;
         this.onionPort = onionPort;
         this.authModulePort = authModulePort;
@@ -26,6 +30,8 @@ public class ConfigurationProviderMock implements ConfigurationProvider {
         this.rpsModulePort = rpsModulePort;
         this.rpsModuleAddress = InetAddress.getByName(rpsModuleAddress);
         this.authModuleAddress = InetAddress.getByName(authModuleAddress);
+        this.onionModuleAddress = InetAddress.getByName(onionModuleAddress);
+        this.onionListenAddress = InetAddress.getByName(onionListenAddress);
     }
 
     @Override
@@ -34,17 +40,22 @@ public class ConfigurationProviderMock implements ConfigurationProvider {
     }
 
     @Override
-    public int getOnionPort() {
+    public int getOnionP2PPort() {
         return onionPort;
     }
 
     @Override
-    public int getAuthModulePort() {
+    public InetAddress getOnionApiHost() {
+        return onionModuleAddress;
+    }
+
+    @Override
+    public int getAuthApiPort() {
         return authModulePort;
     }
 
     @Override
-    public InetAddress getAuthModuleHost() {
+    public InetAddress getAuthApiHost() {
         return authModuleAddress;
     }
 
@@ -54,12 +65,17 @@ public class ConfigurationProviderMock implements ConfigurationProvider {
     }
 
     @Override
-    public InetAddress getRpsModuleHost() {
+    public InetAddress getOnionP2PHost() {
+        return onionListenAddress;
+    }
+
+    @Override
+    public InetAddress getRpsApiHost() {
         return rpsModuleAddress;
     }
 
     @Override
-    public int getRpsModulePort() {
+    public int getRpsApiPort() {
         return rpsModulePort;
     }
 }
