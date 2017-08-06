@@ -24,7 +24,7 @@ public interface AuthenticationInterface {
 
     /**
      * Forward a received handshake initiation packet to the Onion module.
-     * @param hs1 The handshake payload given by the peers authentication module in AUTH SESSION HS1.
+     * @param payload The handshake payload given by the peers authentication module in AUTH SESSION HS1.
      */
     AuthSessionHs2ParsedMessage forwardIncomingHandshake1(byte[] payload) throws ParsingException, InterruptedException;
 
@@ -37,7 +37,7 @@ public interface AuthenticationInterface {
 
     /**
      * Order the authentication module to encrypt data for a whole tunnel.
-     * @param packet Plain OnionTunnelTransportParsedMessage to be encrypted with all sessions in the given tunnel.
+     * @param message Plain OnionTunnelTransportParsedMessage to be encrypted with all sessions in the given tunnel.
      * @param tunnel The tunnel for which this message has to be encrypted. This defines the target and all hops.
      *
      * @return The incoming message but with encrypted data.
@@ -49,7 +49,7 @@ public interface AuthenticationInterface {
 
     /**
      * Order the authentication module to encrypt data for a single layer.
-     * @param packet Plain OnionTunnelTransportParsedMessage to be encrypted with all sessions in the given tunnel.
+     * @param message Plain OnionTunnelTransportParsedMessage to be encrypted with all sessions in the given tunnel.
      * @param segment The segment for which this message has to be layer-encrypted once.
      *
      * @return The incoming message but with encrypted data.
@@ -61,7 +61,7 @@ public interface AuthenticationInterface {
 
     /**
      * Order the authentication module to decrypt data for a whole tunnel.
-     * @param packet Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
+     * @param message Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
      * @param tunnel The tunnel for which this message has to be encrypted. This defines the target and all hops.
      *
      * @return The incoming message but with decrypted data.
@@ -73,7 +73,7 @@ public interface AuthenticationInterface {
 
     /**
      * Order the authentication module to decrypt data for a single layer.
-     * @param packet Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
+     * @param message Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
      * @param segment The segment for which this message has to be layer-decrypted once.
      *
      * @return The incoming message but with decrypted data.
