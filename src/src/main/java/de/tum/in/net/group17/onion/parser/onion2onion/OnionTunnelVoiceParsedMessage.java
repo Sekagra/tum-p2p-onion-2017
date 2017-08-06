@@ -1,5 +1,6 @@
 package de.tum.in.net.group17.onion.parser.onion2onion;
 
+import de.tum.in.net.group17.onion.model.Lid;
 import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 
@@ -11,16 +12,18 @@ import java.nio.ByteBuffer;
  * This class represents an ONION TUNNEL VOICE message.
  * Objects of this class may only be created by an OnionToOnionParser.
  */
-public class OnionTunnelVoiceParsedMessage extends ParsedMessage {
+public class OnionTunnelVoiceParsedMessage extends OnionToOnionParsedMessage {
     private final byte[] data;
 
     /**
      * Create a new ONION TUNNEL VOICE parsed message.
      * Objects of this class may only be created by an OnionToOnionParser after checking all parameters!
      *
+     * @param lid The LID contained in the message.
      * @param data The voice data contained in the packet.
      */
-    OnionTunnelVoiceParsedMessage(byte[] data) {
+    OnionTunnelVoiceParsedMessage(Lid lid, byte[] data) {
+        super(lid);
         this.data = data;
     }
 

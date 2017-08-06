@@ -109,11 +109,11 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      * This implementation throws a ParsingError on every error!
      */
     @Override
-    public ParsedMessage buildOnionTunnelVoiceMsg(byte[] payload) throws ParsingException {
+    public ParsedMessage buildOnionTunnelVoiceMsg(byte[] incomingLidRaw, byte[] payload) throws ParsingException {
         if(payload.length + 4 > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE)
             throw new ParsingException("Payload too long!");
 
-        return new OnionTunnelVoiceParsedMessage(payload);
+        return new OnionTunnelVoiceParsedMessage(LidImpl.deserialize(incomingLidRaw), payload);
     }
 
     /**
@@ -141,7 +141,8 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
                 content = parseIncomingOnionMessage(data, 0, MessageType.ONION_TUNNEL_TEARDOWN);
                 return new OnionTunnelTeardownParsedMessage(content.lid);
             case ONION_TUNNEL_VOICE:
-                return parseIncomingVoiceMessage(data);
+                content = parseIncomingOnionMessage(data, 1, MessageType.ONION_TUNNEL_VOICE);
+                return new OnionTunnelVoiceParsedMessage(content.lid, content.data);
             default:
                 throw new ParsingException("Not able to parse message. Type: " + extractType(data).getValue() + "!");
         }
@@ -229,22 +230,6 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         // Just extract the magic from the data, as the rest is a BLOB for us
         return new OnionTunnelTransportParsedMessage(genericHeader.lid, genericHeader.data);
     }
-
-    private ParsedMessage parseIncomingVoiceMessage(byte[] message) throws ParsingException
-    {
-        checkType(message, MessageType.ONION_TUNNEL_VOICE);
-
-        if(message.length > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE) {
-            throw new ParsingException("Voice message is larger than "
-                    + OnionTunnelTransportParsedMessage.MAX_INNER_SIZE + " byte!");
-        }
-
-        if(message.length < 5)
-            throw new ParsingException("Message to short!");
-
-        return new OnionTunnelVoiceParsedMessage(Arrays.copyOfRange(message, 4, message.length));
-    }
-
 
     /**
      * Parse all messages retrieved by the Onion module with respect to a given type, minimalDataLen, and a MessageType.

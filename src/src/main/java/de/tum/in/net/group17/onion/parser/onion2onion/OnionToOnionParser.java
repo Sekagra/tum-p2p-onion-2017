@@ -69,10 +69,11 @@ public interface OnionToOnionParser extends Parser {
     /**
      * Build a new ONION_TUNNEL_VOICE message containing the given payload.
      *
+     * @param incomingLidRaw The LID of the incoming tunnel in the perspective of the receiving host.
      * @param payload The payload that shall be contained in the voice message.
      *                Length of payload and header of the resulting message must be shorter than the defined
      *                "equal size" for all VOICE messages!
      * @return A OnionTunnelVoiceParsedMessage containing the given payload.
      */
-    ParsedMessage buildOnionTunnelVoiceMsg(byte[] payload) throws ParsingException;
+    ParsedMessage buildOnionTunnelVoiceMsg(byte[] incomingLidRaw, byte[] payload) throws ParsingException;
 }

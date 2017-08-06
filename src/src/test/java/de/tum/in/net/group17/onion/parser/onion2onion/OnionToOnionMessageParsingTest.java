@@ -282,14 +282,14 @@ public class OnionToOnionMessageParsingTest {
     public void testOnionTunnelVoiceParsing() throws ParsingException
     {
         byte[] header = {
-                0x00, 0x08, 0x02, 0x52
+                0x00, 0x18, 0x02, 0x52
         };
 
         byte[] data = {
                 0x01, 0x02, 0x03, 0x04
         };
 
-        ParsedMessage m = prs.parseMsg(Arrays.concatenate(header, data));
+        ParsedMessage m = prs.parseMsg(Arrays.concatenate(header, lid.serialize(), data));
         assertEquals("Wrong parsed message type for ONION TUNNEL VOICE message!",
                 OnionTunnelVoiceParsedMessage.class, m.getClass());
 
@@ -312,7 +312,7 @@ public class OnionToOnionMessageParsingTest {
                 0x01, 0x02, 0x03, 0x04
         };
 
-        byte[] testData = prs.buildOnionTunnelVoiceMsg(data).serialize();
+        byte[] testData = prs.buildOnionTunnelVoiceMsg(lid.serialize(), data).serialize();
 
         assertArrayEquals("Invalid serialization of ONION TUNNEL VOICE message!",
                 Arrays.concatenate(header, data), testData);
