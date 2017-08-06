@@ -12,6 +12,7 @@ import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingException;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingInterface;
 import de.tum.in.net.group17.onion.model.*;
+import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelVoiceParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelBuildParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
@@ -105,12 +106,12 @@ public class Orchestrator {
             }
 
             @Override
-            public void error() {
-                // todo: Notify the CM via "ONION ERROR"
+            public void error(int tunnelId) {
+                    // todo: Notify the CM via "ONION ERROR"
             }
 
             @Override
-            public void tunnelData(int tunnelId, OnionTunnelDataParsedMessage msg) {
+            public void tunnelData(int tunnelId, OnionTunnelVoiceParsedMessage msg) {
                 // todo: Notify the CM via "ONION TUNNEL DATA"
             }
         };

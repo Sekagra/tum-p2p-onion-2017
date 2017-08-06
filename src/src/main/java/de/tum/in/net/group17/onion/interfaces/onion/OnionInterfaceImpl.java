@@ -6,7 +6,6 @@ import de.tum.in.net.group17.onion.interfaces.UdpClient;
 import de.tum.in.net.group17.onion.interfaces.UdpServer;
 import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterface;
 import de.tum.in.net.group17.onion.model.*;
-import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
@@ -114,7 +113,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 msg = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), msg);
                 msg = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)msg, tunnel);
                 try {
-                    this.client.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), msg);
+                    this.client.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), msg.serialize());
                 } catch (IOException e) {
                     throw new OnionException("Error sending the packet to initiate the a tunnel: " + e.getMessage());
                 }
@@ -123,7 +122,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             }
         } else {
             try {
-                this.client.send(peer.getIpAddress(), peer.getPort(), msg); // send directly to new peer
+                this.client.send(peer.getIpAddress(), peer.getPort(), msg.serialize()); // send directly to new peer
             } catch (IOException e) {
                 throw new OnionException("Error sending the packet to initiate the a tunnel: " + e.getMessage());
             }
@@ -169,7 +168,11 @@ public class OnionInterfaceImpl implements OnionInterface {
                 handleTunnelAccept((OnionTunnelAcceptParsedMessage)parsedMessage, senderAddress, senderPort);
                 break;
             case ONION_TUNNEL_RELAY:
-                handleTunnelRelay((OnionTunnelRelayParsedMessage)parsedMessage);
+                try {
+                    handleTunnelRelay((OnionTunnelRelayParsedMessage)parsedMessage);
+                } catch (IOException e) {
+                    this.logger.warn("Unable to extend tunnel building towards the targeted peer." + e.getMessage());
+                }
                 break;
             case ONION_TUNNEL_TRANSPORT:
                 try {
@@ -178,10 +181,10 @@ public class OnionInterfaceImpl implements OnionInterface {
                     logger.warn("Interrupted during transport message decryption: " + e.getMessage());
                 } catch (ParsingException e) {
                     logger.warn("Unable to parse transport message: " + e.getMessage());
-                } catch(IOException ex) {
-                    this.logger.warn("Error during message forwarding, tunnel possibly went down: " + ex.getMessage());
+                } catch(IOException e) {
+                    this.logger.warn("Error during message forwarding, tunnel possibly went down: " + e.getMessage());
                 }
-                //todo: tear down tunnel
+                //todo: tear down tunnel in case of an exception (that's why they are caught here)
                 break;
             case ONION_TUNNEL_TEARDOWN:
                 handleTunnelTeardown((OnionTunnelTeardownParsedMessage)parsedMessage);
@@ -210,7 +213,7 @@ public class OnionInterfaceImpl implements OnionInterface {
 
             // build accept message
             ParsedMessage acceptMsg = this.parser.buildOnionTunnelAcceptMsg(parsedMessage.getLid().serialize(), response.getPayload());
-            this.client.send(senderAddress, senderPort, acceptMsg);
+            this.client.send(senderAddress, senderPort, acceptMsg.serialize());
 
             // if everything went like expected, add the state to this peer's segments list
             this.segments.put(parsedMessage.getLid(), segment);
@@ -248,8 +251,18 @@ public class OnionInterfaceImpl implements OnionInterface {
      *
      * @param msg The incoming parsed OnionTunnelRelayParsedMessage message.
      */
-    private void handleTunnelRelay(OnionTunnelRelayParsedMessage msg) {
-        //todo: implement for intermediate hop functionality
+    private void handleTunnelRelay(OnionTunnelRelayParsedMessage msg) throws IOException {
+        // adapt peer's own state first (just so we don't run into extremely quick responses not being able to get handled)
+        TunnelSegment incomingSegment = this.segments.get(msg.getLid());
+        if(incomingSegment != null) {
+            TunnelSegment outgoingSegment = new TunnelSegment(msg.getOutgoingTunnel(), msg.getAddress(), msg.getPort(), Direction.BACKWARD);
+            incomingSegment.setOther(outgoingSegment);
+        } else {
+            this.logger.warn("Received incoming relay message for extending a tunnel with an unknown local identifier. Dropping the packet now.");
+        }
+
+        // send the expected encapsulated message out to the new node and adapt the peer's own state
+        this.client.send(msg.getAddress(), msg.getPort(), msg.getPayload());
     }
 
     /***
@@ -273,14 +286,14 @@ public class OnionInterfaceImpl implements OnionInterface {
                 } else {
                     // if not for us (magic bytes not matching) replace Lid and forward to successor
                     msg.setLid(segment.getLid());
-                    this.client.send(segment.getNextAddress(), segment.getNextPort(), msg);
+                    this.client.send(segment.getNextAddress(), segment.getNextPort(), msg.serialize());
                 }
             } else if (segment.getDirection() == Direction.BACKWARD) {
                 // if direction is BACKWARD, encrypt once and hand to predecessor
                 msg = this.authInterface.encrypt(msg, segment);
                 if(segment.getOther() != null) {
                     msg.setLid(segment.getLid());
-                    this.client.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg);
+                    this.client.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg.serialize());
                 } else {
                     this.logger.warn("Unable to forward transport message backwards through the tunnel due to missing segment.");
                 }
@@ -302,7 +315,13 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param msg The incoming parsed OnionTunnelTeardownParsedMessage message.
      */
     private void handleTunnelTeardown(OnionTunnelTeardownParsedMessage msg) {
-        //todo: Missing Tunnel ID
+        // Remove the matching TunnelSegment from this peer's list and sent a matching teardown message back to the
+        // previous peer.
+        if(this.segments.containsKey(msg.getLid())) {
+            this.segments.remove(msg.getLid());
+        } else {
+            this.logger.warn("Received teardown instruction for unknown local identifier.");
+        }
     }
 
     /***
