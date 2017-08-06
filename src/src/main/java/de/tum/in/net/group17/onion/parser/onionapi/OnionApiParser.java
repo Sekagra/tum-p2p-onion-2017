@@ -19,6 +19,7 @@ public interface OnionApiParser extends Parser {
      *
      * @param requestType The type of the request causing the error.
      * @param tunnelID The ID of the tunnel where the error occured.
+     *
      * @return An ParsedMessage containing the ONION ERROR message.
      */
     ParsedMessage buildOnionErrorMsg(MessageType requestType, int tunnelID) throws ParsingException;
@@ -40,4 +41,13 @@ public interface OnionApiParser extends Parser {
      * @return A ParsedMessage containing the message on success.
      */
     ParsedMessage buildOnionTunnelReadyMsg(int id, byte[] destinationKey) throws ParsingException;
+
+    /**
+     * Create an ONION DATA message.
+     *
+     * @param tunnelID The ID of the tunnel where the error occured.
+     * @param data The raw data to be sent to the call module.
+     * @return An ParsedMessage containing the ONION ERROR message.
+     */
+    ParsedMessage buildOnionDataMsg(int tunnelID, byte[] data) throws ParsingException;
 }

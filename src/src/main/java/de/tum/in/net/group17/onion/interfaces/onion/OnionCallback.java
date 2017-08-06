@@ -1,7 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.onion;
 
-import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelVoiceParsedMessage;
-import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
+import de.tum.in.net.group17.onion.parser.MessageType;
 
 /**
  * Implements callback methods to notify a superordinate module of changes
@@ -21,14 +20,15 @@ public interface OnionCallback {
      *
      * @param tunnelId The ID of the tunnel on which the error has happened. This might be zero if no tunnel was able to
      *                 be established.
+     * @param type The type of the request that resulted in an error.
      */
-    void error(int tunnelId);
+    void error(int tunnelId, MessageType type);
 
     /**
      * Notify the superordinate module of incoming voice data to this peer.
      *
      * @param tunnelId The ID of the tunnel that received data.
-     * @param msg The message containing the data for this tunnel.
+     * @param data The data received for this tunnel.
      */
-    void tunnelData(int tunnelId, OnionTunnelVoiceParsedMessage msg);
+    void tunnelData(int tunnelId, byte[] data);
 }

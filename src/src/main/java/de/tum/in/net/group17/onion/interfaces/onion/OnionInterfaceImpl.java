@@ -11,6 +11,8 @@ import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs2ParsedMessage;
 import de.tum.in.net.group17.onion.parser.onion2onion.*;
+import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
+import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 import io.netty.buffer.ByteBuf;
 import org.apache.log4j.Logger;
 
@@ -55,16 +57,25 @@ public class OnionInterfaceImpl implements OnionInterface {
         this.waitForAccept = new HashMap<>();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void setTunnel(List<Tunnel> tunnel) {
         this.tunnels = tunnel;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void setSegments(Map<Lid, TunnelSegment> segments) {
         this.segments = segments;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void listen(OnionCallback callback)
     {
@@ -86,6 +97,9 @@ public class OnionInterfaceImpl implements OnionInterface {
         });
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void extendTunnel(Tunnel tunnel, Peer peer) throws OnionException, InterruptedException {
         TunnelSegment segment = new TunnelSegment(LidImpl.createRandomLid(), peer.getIpAddress(), peer.getPort(), Direction.FORWARD);
@@ -171,18 +185,18 @@ public class OnionInterfaceImpl implements OnionInterface {
                 try {
                     handleTunnelRelay((OnionTunnelRelayParsedMessage)parsedMessage);
                 } catch (IOException e) {
-                    this.logger.warn("Unable to extend tunnel building towards the targeted peer." + e.getMessage());
+                    this.logger.error("Unable to extend tunnel building towards the targeted peer." + e.getMessage());
                 }
                 break;
             case ONION_TUNNEL_TRANSPORT:
                 try {
                     handleTunnelTransport((OnionTunnelTransportParsedMessage)parsedMessage, senderAddress, senderPort);
                 } catch (InterruptedException e) {
-                    logger.warn("Interrupted during transport message decryption: " + e.getMessage());
+                    logger.error("Interrupted during transport message decryption: " + e.getMessage());
                 } catch (ParsingException e) {
-                    logger.warn("Unable to parse transport message: " + e.getMessage());
+                    logger.error("Unable to parse transport message: " + e.getMessage());
                 } catch(IOException e) {
-                    this.logger.warn("Error during message forwarding, tunnel possibly went down: " + e.getMessage());
+                    this.logger.error("Error during message forwarding, tunnel possibly went down: " + e.getMessage());
                 }
                 //todo: tear down tunnel in case of an exception (that's why they are caught here)
                 break;
@@ -193,7 +207,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 handleTunnelVoice((OnionTunnelVoiceParsedMessage)parsedMessage);
                 break;
             default:
-                logger.warn("Unexpected message type, received type: " + parsedMessage.getType().toString());
+                logger.error("Unexpected message type, received type: " + parsedMessage.getType().toString());
         }
     }
 
@@ -218,11 +232,11 @@ public class OnionInterfaceImpl implements OnionInterface {
             // if everything went like expected, add the state to this peer's segments list
             this.segments.put(parsedMessage.getLid(), segment);
         } catch (InterruptedException e) {
-            logger.warn("Interrupted during session init build: " + e.getMessage());
+            logger.error("Interrupted during session init build: " + e.getMessage());
         } catch (ParsingException e) {
-            logger.warn("Unable to parse message: " + e.getMessage());
+            logger.error("Unable to parse message: " + e.getMessage());
         } catch (IOException e) {
-            logger.warn("Unable to send accept message: " + e.getMessage());
+            logger.error("Unable to send accept message: " + e.getMessage());
         }
     }
 
@@ -241,7 +255,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 this.waitForAccept.notify();
             }
         } else {
-            logger.info("Received unsolicited or late ACCEPT-message from " + senderAddress.getHostAddress() + ":" + Short.toString(senderPort));
+            logger.warn("Received unsolicited or late ACCEPT-message from " + senderAddress.getHostAddress() + ":" + Short.toString(senderPort));
         }
     }
 
@@ -295,7 +309,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                     msg.setLid(segment.getLid());
                     this.client.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg.serialize());
                 } else {
-                    this.logger.warn("Unable to forward transport message backwards through the tunnel due to missing segment.");
+                    this.logger.error("Unable to forward transport message backwards through the tunnel due to missing segment.");
                 }
             }
         } else {
@@ -330,7 +344,36 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param msg The incoming parsed OnionTunnelVoiceParsedMessage message.
      */
     private void handleTunnelVoice(OnionTunnelVoiceParsedMessage msg) {
-        //todo: Missing Tunnel ID
-        //orchestratorCallback.tunnelData();
+        // Determine the tunnel ID matching to this message
+        List<Tunnel> matches = this.tunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid() == msg.getLid()).collect(Collectors.toList());
+        if(matches.size() == 1) {
+            this.orchestratorCallback.tunnelData(matches.get(0).getId(), msg.getData());
+        } else {
+            logger.warn("Received voice message with unknown/ambiguous local identifier. Dropping it.");
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void destroyTunnel(int tunnelId) {
+        //todo: destroy a tunnel we own
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void sendVoiceData(OnionTunnelDataParsedMessage msg) {
+        //todo: encrypt and send voice data for whole tunnel
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void sendCoverData(OnionCoverParsedMessage msg) {
+        //todo: generate encrypt and send cover data for whole tunnel
     }
 }

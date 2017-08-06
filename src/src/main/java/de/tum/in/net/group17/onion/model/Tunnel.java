@@ -16,6 +16,14 @@ public class Tunnel {
     }
 
     /**
+     * Retrieve the ID of this tunnel.
+     * @return The ID of this tunnel.
+     */
+    public int getId() {
+        return this.id;
+    }
+
+    /**
      * Retrieve the list of segments of this tunnel.
      * @return The list of segments inside this tunnel.
      */

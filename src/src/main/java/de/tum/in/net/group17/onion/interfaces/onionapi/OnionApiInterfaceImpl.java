@@ -3,6 +3,7 @@ package de.tum.in.net.group17.onion.interfaces.onionapi;
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.TcpServerInterface;
+import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.onionapi.*;
@@ -62,7 +63,7 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
                         // Remember the client -> If we send a TUNNEL READY message we will create the mapping
                         lastClient = channel;
                     } catch(OnionApiException e) {
-                        logger.warn("Received message on invalid channel: " + e.getMessage());
+                        logger.error("Received message on invalid channel: " + e.getMessage());
                     }
                     break;
                 case ONION_TUNNEL_DESTROY:
@@ -89,22 +90,23 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
      * @inheritDoc
      */
     @Override
-    public void sendIncoming(OnionTunnelIncomingParsedMessage msg) throws OnionApiException {
-        try {
+    public void sendIncoming(int tunnelId, byte[] key) throws OnionApiException {
+        /*try {
             checkChannelState(lastClient);
             lastClient.writeAndFlush(msg.serialize());
         } catch(OnionApiException e) {
             logger.error("No valid client for Onion API. Cannot send ONION TUNNEL INCOMING message!");
             throw new OnionApiException("No valid last client: " + e.getMessage());
-        }
+        }*/
     }
 
 
     /**
      * @inheritDoc
      */
-    public void sendReady(OnionTunnelReadyParsedMessage msg) throws OnionApiException
+    public void sendReady(int tunnelId, byte[] key) throws OnionApiException
     {
+        /*
         // A tunnel is ready -> add the mapping for the last Client that sent us a build message
         try {
             checkChannelState(lastClient);
@@ -114,7 +116,7 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
         } catch (OnionApiException e) {
             logger.error("Could not send ONION TUNNEL READY message as the last client channel is in an invlaid state");
             throw new OnionApiException("Not able to send ONION TUNNEL READY message: " + e.getMessage());
-        }
+        }*/
     }
 
     /**
@@ -123,7 +125,22 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
      * We throw an OnionApiException if no mapping exists for this tunnel ID.
      */
     @Override
-    public void sendError(OnionErrorParsedMessage msg) throws OnionApiException {
+    public void sendError(int tunnelId, MessageType type) throws OnionApiException {
+        try {
+            ParsedMessage packet = this.parser.buildOnionErrorMsg(type, tunnelId);
+        } catch (ParsingException e) {
+            throw new OnionApiException("Unable to build ONION TUNNEL ERROR message: " + e.getMessage());
+        }
+
+        /**
+         *
+         * Tunnel ID might not be set because we specify the tunnel ID and if an error happens during build, whom to
+         * send this back to?!
+         * What about lastClient?
+         *
+         */
+
+        /* OLD CODE
         Channel chn = clients.get(msg.getTunnelId());
         if(chn == null)
             throw new OnionApiException("No mapping for this tunnel ID!");
@@ -138,24 +155,32 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
             clients.remove(msg.getTunnelId());
             chn.close();
             throw new OnionApiException("Cannot send ONION ERROR message!" + e.getMessage());
-        }
+        }*/
     }
 
-    public void sendVoiceData(OnionTunnelDataParsedMessage msg) throws OnionApiException
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void sendVoiceData(int tunnelId, byte[] msg) throws OnionApiException
     {
-        // TODO: Remove duplicated code..
-        Channel chn = clients.get(msg.getTunnelId());
+        ParsedMessage packet = null;
+        try {
+            packet = this.parser.buildOnionDataMsg(tunnelId, msg);
+        } catch (ParsingException e) {
+            throw new OnionApiException("Unable to build ONION TUNNEL DATA message: " + e.getMessage());
+        }
+        Channel chn = clients.get(tunnelId);
         if(chn == null)
             throw new OnionApiException("No mapping for this tunnel ID!");
-
         try {
             // Check if it is possible to send data through the channel.
             checkChannelState(chn);
-            chn.writeAndFlush(Unpooled.buffer().writeBytes(msg.serialize()));
+            chn.writeAndFlush(Unpooled.buffer().writeBytes(packet.serialize()));
         } catch (OnionApiException e) {
-            logger.error("The channel that corresponds to tunnel ID " + msg.getTunnelId() + " is in an invalid state!" +
+            logger.error("The channel that corresponds to tunnel ID " + tunnelId + " is in an invalid state!" +
                     e.getMessage());
-            clients.remove(msg.getTunnelId());
+            clients.remove(tunnelId);
             chn.close();
             throw new OnionApiException("Cannot send ONION TUNNEL DATA message!" + e.getMessage());
         }

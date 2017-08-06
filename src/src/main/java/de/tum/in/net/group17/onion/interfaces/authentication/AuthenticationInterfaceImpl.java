@@ -73,7 +73,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
                 logger.warn("Received SESSION CLOSE message.");
             }
         } catch (ParsingException e) {
-            logger.warn("Could not parse incoming AUTH message: " + e.getMessage());
+            logger.error("Could not parse incoming AUTH message: " + e.getMessage());
         }
     }
 

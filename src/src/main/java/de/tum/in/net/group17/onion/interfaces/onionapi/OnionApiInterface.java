@@ -1,5 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.onionapi;
 
+import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.onionapi.*;
 
 /**
@@ -13,32 +14,38 @@ public interface OnionApiInterface {
     /**
      * Inform the client (The last one that connected to the API) that a new tunnel was established to out peer.
      *
-     * @param msg The message to send to the client.
+     * @param tunnelId The ID of the new tunnel that is incoming to us.
+     * @param key The peer's hostkey as it is requested by ONION TUNNEL INCOMING.
      * @throws OnionApiException If the channel is in an invalid state.
      */
-    void sendIncoming(OnionTunnelIncomingParsedMessage msg) throws OnionApiException;
+    void sendIncoming(int tunnelId, byte[] key) throws OnionApiException;
 
     /**
      * Inform the client that a given tunnel is established.
      *
-     * @param msg The message to send to the client.
+     * @param tunnelId The ID of the new tunnel that is incoming to us.
+     * @param key The peer's hostkey as it is requested by ONION TUNNEL READY.
      * @throws OnionApiException If the channel is in an invalid state.
      */
-    void sendReady(OnionTunnelReadyParsedMessage msg) throws OnionApiException;
+    void sendReady(int tunnelId, byte[] key) throws OnionApiException;
 
     /**
      * Send a error message to one of our clients.
      *
-     * @param msg The message to send.
+     * @param tunnelId The ID of the tunnel on which the error has happened. This might be zero if no tunnel was able to
+     *                 be established.
+     * @param type The type of the request that resulted in an error.
+     *
      * @throws OnionApiException If the channel is in an invalid state.
      */
-    void sendError(OnionErrorParsedMessage msg) throws OnionApiException;
+    void sendError(int tunnelId, MessageType type) throws OnionApiException;
 
     /**
      * Send voice data received on a tunnel to the corresponding CM module.
      *
-     * @param msg The message to send.
+     * @param tunnelId The ID of the tunnel is data is meant for.
+     * @param data The data to forward as voice data.
      * @throws OnionApiException If the channel is in an invalid state.
      */
-    void sendVoiceData(OnionTunnelDataParsedMessage msg) throws OnionApiException;
+    void sendVoiceData(int tunnelId, byte[] data) throws OnionApiException;
 }

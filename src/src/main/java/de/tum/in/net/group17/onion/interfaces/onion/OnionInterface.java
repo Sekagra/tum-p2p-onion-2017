@@ -4,6 +4,8 @@ import de.tum.in.net.group17.onion.model.Lid;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.model.TunnelSegment;
+import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
+import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 
 import java.util.List;
 import java.util.Map;
@@ -39,4 +41,23 @@ public interface OnionInterface {
      * @param peer The peer to make part of the tunnel at the current end.
      */
     void extendTunnel(Tunnel tunnel, Peer peer) throws OnionException, InterruptedException;
+
+    /**
+     * Orders the onion module to destroy a tunnel.
+     *
+     * @param tunnelId The ID of the tunnel to destroy.
+     */
+    void destroyTunnel(int tunnelId);
+
+    /**
+     * Instructs the onion module to send cover traffic.
+     * @param msg The OnionCoverParsedMessage with all necessary data regarding the cover traffic to sent.
+     */
+    void sendVoiceData(OnionTunnelDataParsedMessage msg);
+
+    /**
+     * Instructs the onion module to send cover traffic.
+     * @param msg The OnionCoverParsedMessage with all necessary data regarding the cover traffic to sent.
+     */
+    void sendCoverData(OnionCoverParsedMessage msg);
 }

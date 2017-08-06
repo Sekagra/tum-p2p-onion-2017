@@ -1,6 +1,7 @@
 package de.tum.in.net.group17.onion.interfaces.onionapi;
 
 import com.google.inject.Inject;
+import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.onionapi.*;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -129,25 +130,25 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
     }
 
     @Override
-    public void sendIncoming(OnionTunnelIncomingParsedMessage msg) throws OnionApiException {
-        incomingTunnelIds.add(msg.getTunnelId());
+    public void sendIncoming(int tunnelId, byte[] key)  throws OnionApiException {
+        incomingTunnelIds.add(tunnelId);
     }
 
     @Override
-    public void sendReady(OnionTunnelReadyParsedMessage msg) throws OnionApiException {
-        outgoingTunnelId = msg.getTunnelId(); // Our tunnel is ready for usage
+    public void sendReady(int tunnelId, byte[] key) throws OnionApiException {
+        outgoingTunnelId = tunnelId; // Our tunnel is ready for usage
 
         tunnelEstPending = false;
     }
 
     @Override
-    public void sendError(OnionErrorParsedMessage msg) throws OnionApiException {
+    public void sendError(int tunnelId, MessageType type) throws OnionApiException {
         throw new OnionApiException("ONION ERROR message!"); // This should not happen during testing
     }
 
     @Override
-    public void sendVoiceData(OnionTunnelDataParsedMessage msg) throws OnionApiException {
-        if(Arrays.areEqual(VOICE_DATA.getBytes(), msg.getData()) && !receivedVoice) {
+    public void sendVoiceData(int tunnelId, byte[] data) throws OnionApiException {
+        if(Arrays.areEqual(VOICE_DATA.getBytes(), data) && !receivedVoice) {
             receivedVoice = true;
 
             if(!sender) {

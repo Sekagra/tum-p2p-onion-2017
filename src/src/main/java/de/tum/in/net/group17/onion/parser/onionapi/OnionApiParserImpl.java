@@ -97,6 +97,17 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
     /**
      * @inheritDoc
+     */
+    public ParsedMessage buildOnionDataMsg(int tunnelID, byte[] data) throws ParsingException {
+        int size = 8 + data.length; // Header, TunnelID and key
+        if (size > 65535)
+            throw new ParsingException("Message too large!");
+
+        return new OnionTunnelDataParsedMessage(tunnelID, data);
+    }
+
+    /**
+     * @inheritDoc
      *
      * This implementation throws a ParsingException on every error.
      */

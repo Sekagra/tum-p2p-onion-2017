@@ -5,19 +5,18 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionCallback;
-import de.tum.in.net.group17.onion.interfaces.onion.OnionException;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiCallback;
+import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiException;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingException;
 import de.tum.in.net.group17.onion.interfaces.rps.RandomPeerSamplingInterface;
 import de.tum.in.net.group17.onion.model.*;
-import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelVoiceParsedMessage;
+import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelBuildParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDestroyParsedMessage;
-import de.tum.in.net.group17.onion.parser.rps.RpsPeerParsedMessage;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -75,7 +74,7 @@ public class Orchestrator {
 
         // Init data structures
         this.tunnel = new ArrayList<>();
-        this.segments = new HashMap<Lid, TunnelSegment>();
+        this.segments = new HashMap<>();
 
         // Listen for Onion connections
         this.onionInterface.setTunnel(tunnel);
@@ -89,8 +88,6 @@ public class Orchestrator {
         nextTunnelBuild = () -> buildTunnel();
 
         buildTunnel();
-
-
     }
 
     /**
@@ -102,17 +99,25 @@ public class Orchestrator {
         return new OnionCallback() {
             @Override
             public void tunnelAccepted(int tunnelId) {
-                // todo: Notify the CM via "ONION TUNNEL READY"
+                // todo: how to get the key here?
             }
 
             @Override
-            public void error(int tunnelId) {
-                    // todo: Notify the CM via "ONION ERROR"
+            public void error(int tunnelId, MessageType type) {
+                try {
+                    apiInterface.sendError(tunnelId, type);
+                } catch (OnionApiException e) {
+                    logger.error("Error while notifying the calling module of an error happening when serving one of its requests: " + e.getMessage());
+                }
             }
 
             @Override
-            public void tunnelData(int tunnelId, OnionTunnelVoiceParsedMessage msg) {
-                // todo: Notify the CM via "ONION TUNNEL DATA"
+            public void tunnelData(int tunnelId, byte[] data) {
+                try {
+                    apiInterface.sendVoiceData(tunnelId, data); // Notify the CM via "ONION TUNNEL DATA"
+                } catch (OnionApiException e) {
+                    // todo: terminate tunnel?!
+                }
             }
         };
     }
@@ -132,17 +137,17 @@ public class Orchestrator {
 
             @Override
             public void receivedCoverData(OnionCoverParsedMessage msg) {
-                // todo: Data to forward over a tunnel.
+                onionInterface.sendCoverData(msg);
             }
 
             @Override
             public void receivedVoiceData(OnionTunnelDataParsedMessage msg) {
-                // todo: Cover traffic instruction
+                onionInterface.sendVoiceData(msg);
             }
 
             @Override
             public void receivedDestroy(OnionTunnelDestroyParsedMessage msg) {
-                // todo: Start a destruction sequence for a tunnel.
+                onionInterface.destroyTunnel(msg.getTunnelId());
             }
         };
     }
@@ -192,6 +197,11 @@ public class Orchestrator {
         }
 
         this.tunnel.add(t);
+        try {
+            this.apiInterface.sendReady(t.getId(), destination.getHostkey());
+        } catch (OnionApiException e) {
+            logger.error("Error when notifying calling module of completed tunnel creation: " + e.getMessage());
+        }
     }
 
 }
