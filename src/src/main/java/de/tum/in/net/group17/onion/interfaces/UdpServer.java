@@ -2,13 +2,18 @@ package de.tum.in.net.group17.onion.interfaces;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
+import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Date;
 
 /**
@@ -95,5 +100,17 @@ public class UdpServer {
 
             eventLoopGroup.shutdownGracefully();
         }*/
+    }
+
+    /**
+     * Send out a single UDP datagram message to the specified receiver.
+     *
+     * @param targetIp The IP to send the message to.
+     * @param targetPort The targeted port on the receivers end.
+     * @param data The raw data to send to.
+     * @throws IOException
+     */
+    public void send(InetAddress targetIp, int targetPort, byte[] data) throws IOException {
+        channel.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(data), new InetSocketAddress(targetIp, targetPort)));
     }
 }

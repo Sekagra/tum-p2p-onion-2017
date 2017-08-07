@@ -98,8 +98,15 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         // Set the new arrays to handle the case if we only get a copy of the stored array
         // We encode by adding the number of encryptions in front of the data
         byte[] payload = message.getData();
-        payload[0] += 1;
-        message.setData(payload);
+
+        if(message.forMe()) { // MAGIC in plain
+            byte[] newData = new byte[payload.length + 1];
+            System.arraycopy(payload, 0, newData, 1, payload.length);
+            newData[0] = 1;
+        } else {
+            payload[0] += 1;
+            message.setData(payload);
+        }
 
         return message;
     }
@@ -125,9 +132,12 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         if(((int)payload[0]) < 1)
             throw new RuntimeException("Cannot decrypt. Too small number of previous encryptions!" +
                     " Got: " + (int)payload[0]);
-
-        payload[0] -= 1;
-        message.setData(payload);
+        if((int)payload[0] == 1) { // Last encryption
+            message.setData(Arrays.copyOfRange(payload, 1, payload.length));
+        } else {
+            payload[0] -= 1;
+            message.setData(payload);
+        }
         return message;
     }
 

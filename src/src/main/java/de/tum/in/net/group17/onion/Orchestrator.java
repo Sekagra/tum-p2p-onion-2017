@@ -4,6 +4,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
+import de.tum.in.net.group17.onion.interfaces.TcpServerInterface;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionCallback;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiCallback;
@@ -17,9 +18,12 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelBuildParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDestroyParsedMessage;
+import io.netty.channel.Channel;
 import org.apache.log4j.Logger;
 import org.ini4j.InvalidFileFormatException;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -147,7 +151,9 @@ public class Orchestrator {
             @Override
             public void receivedTunnelBuild(OnionTunnelBuildParsedMessage msg) {
                 // Register a tunnel build to the given destination in the next round
-                nextTunnelBuild = () -> buildTunnel(Peer.fromOnionBuild(msg));
+                //nextTunnelBuild = () -> buildTunnel(Peer.fromOnionBuild(msg));
+                buildTunnel(Peer.fromOnionBuild(msg));
+                // TODO: Add round concept!
             }
 
             @Override

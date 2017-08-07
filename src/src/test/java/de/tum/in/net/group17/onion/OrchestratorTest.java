@@ -39,7 +39,7 @@ public class OrchestratorTest {
     }
 
 
-    @Test(timeout=10000)
+    @Test
     public void testOrchestrator() {
         Throwable[] exc = new Throwable[1];
 
@@ -114,10 +114,10 @@ public class OrchestratorTest {
                 ConfigurationProvider config = null;
                 OnionApiInterfaceMock apiInterface = null;
                 try {
-                    config = new ConfigurationProviderMock(5000,
-                            6000,
-                            7000,
-                            9000,
+                    config = new ConfigurationProviderMock(5001,
+                            6001,
+                            7001,
+                            9001,
                             1,
                             "localhost",
                             "localhost",
@@ -145,10 +145,10 @@ public class OrchestratorTest {
                 ConfigurationProvider config = null;
                 OnionApiInterfaceMock apiInterface = null;
                 try {
-                    config = new ConfigurationProviderMock(5000,
-                            6000,
-                            7000,
-                            9000,
+                    config = new ConfigurationProviderMock(5002,
+                            6002,
+                            7002,
+                            9002,
                             1,
                             "localhost",
                             "localhost",

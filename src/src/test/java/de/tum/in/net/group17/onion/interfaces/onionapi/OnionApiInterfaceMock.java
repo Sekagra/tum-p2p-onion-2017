@@ -48,7 +48,7 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
     public OnionApiInterfaceMock() throws IOException {
         endpointKey = getEndpointKey();
         endpointIp = Inet4Address.getByName("localhost");
-        port = 6001;
+        port = 6002;
 
         this.sender = false;
         this.intermediate = false;

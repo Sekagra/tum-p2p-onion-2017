@@ -88,13 +88,13 @@ public class OnionTunnelTransportParsedMessage extends OnionToOnionParsedMessage
         if(!forMe())
             throw new IllegalStateException("This packet is not supposed for this peer." +
                     " Therefore, the inner packet is just garbage!");
-        if(this.data.length != MAX_INNER_SIZE)
+        if(this.data.length - MAGIC.length != MAX_INNER_SIZE) // Strip the MAGIC
             throw new ParsingException("Invalid data length!");
         ByteBuffer buffer = ByteBuffer.wrap(this.data);
         buffer.order(ByteOrder.BIG_ENDIAN);
 
-        short size = buffer.getShort(); // Data contains another packet -> First two byte are the length
-        return Arrays.copyOfRange(this.data, 0, size);
+        short size = buffer.getShort(MAGIC.length); // Data contains another packet -> First two byte are the length
+        return Arrays.copyOfRange(this.data, MAGIC.length, size + MAGIC.length);
     }
 
     /**

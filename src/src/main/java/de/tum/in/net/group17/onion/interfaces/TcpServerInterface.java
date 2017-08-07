@@ -24,10 +24,6 @@ public abstract class TcpServerInterface {
         this.logger = Logger.getLogger(OnionApiInterface.class);
     }
 
-    public Channel getChannel() {
-        return channel;
-    }
-
     /**
      * Start listening to incoming requests on the specified port for this server interface.
      */

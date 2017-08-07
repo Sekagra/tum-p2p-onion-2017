@@ -49,9 +49,9 @@ public class RandomPeerSamplingInterfaceMock implements RandomPeerSamplingInterf
         }
 
         peers = new Peer[]{
-                new Peer(hostkey, Inet4Address.getByName("localhost"), (short)8887),
-                new Peer(hostkey, Inet4Address.getByName("localhost"), (short)8888),
-                new Peer(hostkey, Inet4Address.getByName("localhost"), (short)8889),
+                new Peer(hostkey, Inet4Address.getByName("localhost"), (short)6001),
+                new Peer(hostkey, Inet4Address.getByName("localhost"), (short)6002),
+                new Peer(hostkey, Inet4Address.getByName("localhost"), (short)6000),
         };
     }
 
