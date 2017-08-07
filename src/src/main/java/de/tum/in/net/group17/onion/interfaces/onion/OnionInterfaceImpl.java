@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 public class OnionInterfaceImpl implements OnionInterface {
     private ConfigurationProvider config;
     private OnionToOnionParser parser;
+    private InetAddress listenAddress;
     private int port;
     private UdpServer server;
     private UdpClient client;
@@ -50,6 +51,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         this.logger = Logger.getLogger(OnionInterface.class);
         this.parser = parser;
         this.config = config;
+        this.listenAddress = config.getOnionP2PHost();
         this.port = this.config.getOnionP2PPort();
         this.server = new UdpServer();
         this.client = new UdpClient();
@@ -82,7 +84,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         orchestratorCallback = callback;
 
         this.logger.info("Starting to listen for incoming Onion connections on port " + this.port);
-        this.server.listen(this.port, (ctx, packet) -> {
+        this.server.listen(this.listenAddress, this.port, (ctx, packet) -> {
             final ByteBuf bb = packet.content();
             byte[] buf = new byte[bb.readableBytes()];
             bb.readBytes(buf);

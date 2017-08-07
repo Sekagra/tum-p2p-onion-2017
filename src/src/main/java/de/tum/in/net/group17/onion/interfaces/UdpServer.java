@@ -8,6 +8,7 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
+import java.net.InetAddress;
 import java.util.Date;
 
 /**
@@ -29,7 +30,7 @@ public class UdpServer {
      * @param port The port to be listening on.
      * @param handler The message handler for the unparsed.
      */
-    public void listen(final int port, final UdpMessageHandler handler) {
+    public void listen(InetAddress addr, final int port, final UdpMessageHandler handler) {
         final NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
 
         System.out.println("UDP Server starting to listen.");
@@ -84,7 +85,7 @@ public class UdpServer {
                             p.addLast("handler", inboundHandler);
                         }
                     });
-            this.channel = b.bind(port).sync().channel();
+            this.channel = b.bind(addr, port).sync().channel();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } /*finally {

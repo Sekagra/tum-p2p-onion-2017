@@ -8,6 +8,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.apache.log4j.Logger;
 
+import java.net.InetAddress;
+
 /**
  * Base class for all interfaces used for serving functionality to other modules, thus essentially acting as a server only.
  * (this is the case for the interface towards the UI/CM module).
@@ -17,7 +19,6 @@ import org.apache.log4j.Logger;
 public abstract class TcpServerInterface {
     private Logger logger;
     private Channel channel;
-    private Channel lastClient;
 
     public TcpServerInterface() {
         this.logger = Logger.getLogger(OnionApiInterface.class);
@@ -26,12 +27,11 @@ public abstract class TcpServerInterface {
     public Channel getChannel() {
         return channel;
     }
-    public Channel getLastClientChannel() { return this.lastClient; }
 
     /**
      * Start listening to incoming requests on the specified port for this server interface.
      */
-    public void listen(int port) {
+    public void listen(InetAddress addr, int port) {
         EventLoopGroup entryGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -41,7 +41,7 @@ public abstract class TcpServerInterface {
                     .childHandler(new ServerChannelInitializer(() -> getHandler()));
 
             // Bind and start to accept incoming connections.
-            this.channel = b.bind(port).sync().channel();
+            this.channel = b.bind(addr, port).sync().channel();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } /*finally {
