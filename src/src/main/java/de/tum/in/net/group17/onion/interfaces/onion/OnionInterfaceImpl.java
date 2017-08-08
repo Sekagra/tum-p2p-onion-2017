@@ -18,9 +18,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -35,7 +33,8 @@ public class OnionInterfaceImpl implements OnionInterface {
     private UdpServer server;
     private AuthenticationInterface authInterface;
 
-    private List<Tunnel> tunnels;
+    private List<Tunnel> startedTunnels;
+    private Map<Integer, TunnelSegment> incomingTunnels;
     private Map<Lid, TunnelSegment> segments;
 
     private Map<Lid, OnionTunnelAcceptParsedMessage> waitForAccept;
@@ -60,8 +59,9 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @inheritDoc
      */
     @Override
-    public void setTunnel(List<Tunnel> tunnel) {
-        this.tunnels = tunnel;
+    public void setTunnels(List<Tunnel> created, Map<Integer, TunnelSegment> received) {
+        this.startedTunnels = created;
+        this.incomingTunnels = received;
     }
 
     /**
@@ -217,6 +217,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             case ONION_TUNNEL_VOICE:
                 handleTunnelVoice((OnionTunnelVoiceParsedMessage)parsedMessage);
                 break;
+            //todo: new message type for message suggesting a peer is the end of a tunnel; add state to incomingTunnels
             default:
                 logger.error("Unexpected message type, received type: " + parsedMessage.getType().toString());
         }
@@ -349,7 +350,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 }
             }
         } else {
-            List<Tunnel> matches = this.tunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid() == lid).collect(Collectors.toList());
+            List<Tunnel> matches = this.startedTunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid() == lid).collect(Collectors.toList());
             if(matches.size() == 1) {
                 // decrypt the complete onion as this message is for us
                 this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, matches.get(0)).getInnerPacket()), senderAddress, senderPort);
@@ -381,7 +382,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     private void handleTunnelVoice(OnionTunnelVoiceParsedMessage msg) {
         // Determine the tunnel ID matching to this message
-        List<Tunnel> matches = this.tunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid() == msg.getLid()).collect(Collectors.toList());
+        List<Tunnel> matches = this.startedTunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid() == msg.getLid()).collect(Collectors.toList());
         if(matches.size() == 1) {
             this.orchestratorCallback.tunnelData(matches.get(0).getId(), msg.getData());
         } else {
@@ -394,7 +395,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     @Override
     public void destroyTunnel(int tunnelId) {
-        //todo: destroy a tunnel we own
+        // todo: for last peer issuing the teardown, we do not have stored startedTunnels beside our own :(
     }
 
     /**
@@ -402,7 +403,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     @Override
     public void sendVoiceData(OnionTunnelDataParsedMessage msg) {
-        //todo: encrypt and send voice data for whole tunnel
+        this.sendVoiceData(msg.getTunnelId(), msg.getData());
     }
 
     /**
@@ -410,6 +411,56 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     @Override
     public void sendCoverData(OnionCoverParsedMessage msg) {
-        //todo: generate encrypt and send cover data for whole tunnel
+        // create random cover data
+        byte[] coverData = new byte[msg.getCoverSize()];
+        new Random().nextBytes(coverData);
+
+        // there can only be one tunnel if we send cover traffic
+        if(this.startedTunnels.size() > 0) {
+            this.sendVoiceData(this.startedTunnels.get(0).getId(), coverData);
+        } else if(this.incomingTunnels.size() > 0) {
+            this.sendVoiceData(this.incomingTunnels.keySet().iterator().next(), coverData);
+        } else {
+            this.logger.error("No tunnel to send cover traffic through!");
+        }
+    }
+
+    private void sendVoiceData(int tunnelId, byte[] data) {
+        // expect a matching tunnel ID in either the list of created or incoming tunnels
+        Optional<Tunnel> tunnel = this.startedTunnels.stream().filter(t -> t.getId() == tunnelId && t.getSegments().size() > 0).findAny();
+        TunnelSegment firstSegment;
+        try {
+            if(tunnel.isPresent()) {
+                // tunnel started by us
+                firstSegment = tunnel.get().getSegments().get(0);
+            } else if(this.incomingTunnels.containsKey(tunnelId)) {
+                // tunnel we are an endpoint to
+                firstSegment = this.incomingTunnels.get(tunnelId);
+            } else {
+                this.logger.error("Unable to send data on unknown tunnel with ID: " + tunnelId);
+                return;
+            }
+
+            // create the voice messages and handle each one
+            List<ParsedMessage> voicePackets = this.parser.buildOnionTunnelVoiceMsgs(firstSegment.getLid().serialize(), data);
+            for (ParsedMessage voicePacket : voicePackets) {
+                ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), voicePacket);
+                // encrypt accordingly
+                if(tunnel.isPresent()) {
+                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel.get());
+                } else {
+                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, firstSegment);
+                }
+
+                // send message
+                this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), transportPacket.serialize());
+            }
+        } catch (ParsingException e) {
+            this.logger.error("Unable to build required voice or transport data packet to send out a voice message: " + e.getMessage());
+        } catch (InterruptedException e) {
+            this.logger.error("Unable to encrypt a message via the authentication module: " + e.getMessage());
+        } catch (IOException e) {
+            this.logger.error("Unable to send message to next peer: " + e.getMessage());
+        }
     }
 }

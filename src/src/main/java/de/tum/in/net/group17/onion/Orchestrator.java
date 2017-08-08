@@ -4,7 +4,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
-import de.tum.in.net.group17.onion.interfaces.TcpServerInterface;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionCallback;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiCallback;
@@ -18,12 +17,9 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelBuildParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDestroyParsedMessage;
-import io.netty.channel.Channel;
 import org.apache.log4j.Logger;
 import org.ini4j.InvalidFileFormatException;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +46,12 @@ public class Orchestrator {
     /**
      * List of tunnels this peer has started.
      */
-    private List<Tunnel> tunnel;
+    private List<Tunnel> startedTunnels;
+
+    /**
+     * List of tunnels we received as an endpoint.
+     */
+    private Map<Integer, TunnelSegment> incomingTunnels;
 
     /**
      * List of segments, two for each time this hop is an intermediate hop.
@@ -94,18 +95,19 @@ public class Orchestrator {
         assert configProvider != null;
 
         // Init data structures
-        this.tunnel = new ArrayList<>();
+        this.startedTunnels = new ArrayList<>();
+        this.incomingTunnels = new HashMap<>();
         this.segments = new HashMap<>();
 
         // Listen for Onion connections
-        this.onionInterface.setTunnel(tunnel);
+        this.onionInterface.setTunnels(startedTunnels, incomingTunnels);
         this.onionInterface.setSegments(segments);
         this.onionInterface.listen(getOnionCallback());
 
         // Listen for requests from the Calling Module
         this.apiInterface.listen(getOnionApiCallback());
 
-        // Start with a delegate issuing the build of a random tunnel
+        // Start with a delegate issuing the build of a random startedTunnels
         nextTunnelBuild = () -> buildTunnel();
     }
 
@@ -135,7 +137,7 @@ public class Orchestrator {
                 try {
                     apiInterface.sendVoiceData(tunnelId, data); // Notify the CM via "ONION TUNNEL DATA"
                 } catch (OnionApiException e) {
-                    // todo: terminate tunnel?!
+                    // todo: terminate startedTunnels?!
                 }
             }
         };
@@ -150,7 +152,7 @@ public class Orchestrator {
         return new OnionApiCallback() {
             @Override
             public void receivedTunnelBuild(OnionTunnelBuildParsedMessage msg) {
-                // Register a tunnel build to the given destination in the next round
+                // Register a startedTunnels build to the given destination in the next round
                 //nextTunnelBuild = () -> buildTunnel(Peer.fromOnionBuild(msg));
                 buildTunnel(Peer.fromOnionBuild(msg));
                 // TODO: Add round concept!
@@ -174,7 +176,7 @@ public class Orchestrator {
     }
 
     /**
-     * Build a tunnel over several intermediate hops to a random destination.
+     * Build a startedTunnels over several intermediate hops to a random destination.
      */
     private void buildTunnel() {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
@@ -182,16 +184,16 @@ public class Orchestrator {
             Peer peer = this.rpsInterface.queryRandomPeer();
             buildTunnel(peer);
         } catch (RandomPeerSamplingException e) {
-            logger.error("Unable to get random peer as cover tunnel destination: " + e.getMessage());
+            logger.error("Unable to get random peer as cover startedTunnels destination: " + e.getMessage());
         }
     }
 
     /**
-     * Build a tunnel over several intermediate hops to the given destination.
-     * @param destination The peer that acts as a destination for the new tunnel.
+     * Build a startedTunnels over several intermediate hops to the given destination.
+     * @param destination The peer that acts as a destination for the new startedTunnels.
      */
     private void buildTunnel(Peer destination) {
-        Tunnel t = new Tunnel(this.tunnel.size());
+        Tunnel t = new Tunnel(this.startedTunnels.size());
 
         // get random intermediate hops to destination
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
@@ -205,7 +207,7 @@ public class Orchestrator {
             try {
                 this.onionInterface.extendTunnel(t, p);
             } catch (Exception e) {
-                logger.error("Unable to create tunnel: " + e.getMessage());
+                logger.error("Unable to create startedTunnels: " + e.getMessage());
                 return;
             }
         }
@@ -213,15 +215,15 @@ public class Orchestrator {
         try {
             this.onionInterface.extendTunnel(t, destination);
         } catch (Exception e) {
-            logger.error("Unable to create tunnel: " + e.getMessage());
+            logger.error("Unable to create startedTunnels: " + e.getMessage());
             return;
         }
 
-        this.tunnel.add(t);
+        this.startedTunnels.add(t);
         try {
             this.apiInterface.sendReady(t.getId(), destination.getHostkey());
         } catch (OnionApiException e) {
-            logger.error("Error when notifying calling module of completed tunnel creation: " + e.getMessage());
+            logger.error("Error when notifying calling module of completed startedTunnels creation: " + e.getMessage());
         }
     }
 

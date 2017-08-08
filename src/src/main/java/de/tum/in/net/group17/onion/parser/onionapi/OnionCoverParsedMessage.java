@@ -33,6 +33,14 @@ public class OnionCoverParsedMessage extends ParsedMessage {
     }
 
     /**
+     * Retrieve the size of cover data that this message wants to create.
+     * @return The cover data size.
+     */
+    public short getCoverSize() {
+        return this.coverSize;
+    }
+
+    /**
      * @inheritDoc
      */
     public short getSize() {

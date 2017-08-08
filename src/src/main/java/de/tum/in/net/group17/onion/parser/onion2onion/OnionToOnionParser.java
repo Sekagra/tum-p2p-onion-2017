@@ -4,6 +4,8 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.Parser;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 
+import java.util.List;
+
 /**
  * Created by Marko Dorfhuber(PraMiD) on 28.05.17.
  *
@@ -76,4 +78,15 @@ public interface OnionToOnionParser extends Parser {
      * @return A OnionTunnelVoiceParsedMessage containing the given payload.
      */
     ParsedMessage buildOnionTunnelVoiceMsg(byte[] incomingLidRaw, byte[] payload) throws ParsingException;
+
+    /**
+     * Build a list of ONION_TUNNEL_VOICE messages containing the given payload split over multiple messages if it is
+     * too large to be included in a single packet.
+     *
+     * @param incomingLidRaw The LID of the incoming tunnel in the perspective of the receiving host.
+     * @param payload The payload that shall be contained in the voice messages.
+     *                The length of the payload does not matter and can be arbitrarily large.
+     * @return A list of OnionTunnelVoiceParsedMessage containing the given payload split over all messages in order.
+     */
+    List<ParsedMessage> buildOnionTunnelVoiceMsgs(byte[] incomingLidRaw, byte[] payload) throws ParsingException;
 }

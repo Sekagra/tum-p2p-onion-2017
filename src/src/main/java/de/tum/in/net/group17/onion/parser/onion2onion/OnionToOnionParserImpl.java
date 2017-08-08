@@ -14,6 +14,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -110,7 +112,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
      */
     @Override
     public ParsedMessage buildOnionTunnelVoiceMsg(byte[] incomingLidRaw, byte[] payload) throws ParsingException {
-        if(payload.length + 4 > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE)
+        if(payload.length + 4 + lidLen > OnionTunnelTransportParsedMessage.MAX_INNER_SIZE)
             throw new ParsingException("Payload too long!");
 
         return new OnionTunnelVoiceParsedMessage(LidImpl.deserialize(incomingLidRaw), payload);
@@ -268,5 +270,23 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
             this.lid = lid;
             this.data = data;
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public List<ParsedMessage> buildOnionTunnelVoiceMsgs(byte[] incomingLidRaw, byte[] payload) throws ParsingException {
+        List<ParsedMessage> result = new ArrayList<>();
+        int partSize = OnionTunnelTransportParsedMessage.MAX_INNER_SIZE - lidLen - 4; // subtract header
+
+        int start = 0;
+        while (start < payload.length) {
+            int end = Math.min(payload.length, start + partSize);
+            result.add(this.buildOnionTunnelVoiceMsg(incomingLidRaw, Arrays.copyOfRange(payload, start, end)));
+            start += partSize;
+        }
+
+        return result;
     }
 }
