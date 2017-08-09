@@ -91,11 +91,11 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
      * @inheritDoc
      */
     @Override
-    public void sendIncoming(int tunnelId, byte[] key) throws OnionApiException {
+    public void sendIncoming(int tunnelId) throws OnionApiException {
         try {
             checkChannelState(lastClient); // We inform the last client that connected to the onion module
             clients.put(tunnelId, lastClient); // Add a mapping for the new tunnel
-            lastClient.writeAndFlush(parser.buildOnionTunnelIncomingMsg(tunnelId, key).serialize());
+            lastClient.writeAndFlush(parser.buildOnionTunnelIncomingMsg(tunnelId).serialize());
         } catch(OnionApiException e) {
             throw new OnionApiException("No valid last client: " + e.getMessage());
         } catch(ParsingException e) {

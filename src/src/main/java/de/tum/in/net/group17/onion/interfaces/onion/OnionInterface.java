@@ -61,4 +61,11 @@ public interface OnionInterface {
      * @param msg The OnionCoverParsedMessage with all necessary data regarding the cover traffic to sent.
      */
     void sendCoverData(OnionCoverParsedMessage msg);
+
+    /**
+     * Send the established message type over the given tunnel.
+     *
+     * @param tunnel The tunnel to send the established message over.
+     */
+    void sendEstablished(Tunnel tunnel) throws OnionException;
 }

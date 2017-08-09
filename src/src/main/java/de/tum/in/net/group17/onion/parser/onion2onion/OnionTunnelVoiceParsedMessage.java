@@ -42,7 +42,7 @@ public class OnionTunnelVoiceParsedMessage extends OnionToOnionParsedMessage {
      */
     @Override
     public byte[] serialize() {
-        ByteBuffer buffer = buildHeader();
+        ByteBuffer buffer = super.serializeBase();
         buffer.put(data);
         return buffer.array();
     }
@@ -52,7 +52,7 @@ public class OnionTunnelVoiceParsedMessage extends OnionToOnionParsedMessage {
      */
     @Override
     public short getSize() {
-        return (short)(4 + data.length);
+        return (short)(super.getSizeBase() + data.length);
     }
 
     /**

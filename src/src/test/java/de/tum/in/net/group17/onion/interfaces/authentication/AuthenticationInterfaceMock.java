@@ -103,6 +103,7 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
             byte[] newData = new byte[payload.length + 1];
             System.arraycopy(payload, 0, newData, 1, payload.length);
             newData[0] = 1;
+            message.setData(newData);
         } else {
             payload[0] += 1;
             message.setData(payload);
@@ -119,7 +120,7 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         if(payload[0] != (byte)tunnel.getSegments().size())
             throw new RuntimeException("Number of encryptions does not match number of hops in the tunnel!" +
                     "Expected: " + tunnel.getSegments().size() + ". Got: " + (int)payload[0]);
-        message.setData(Arrays.copyOfRange(payload, 1, payload.length - 1));
+        message.setData(Arrays.copyOfRange(payload, 1, payload.length));
 
         return message;
     }

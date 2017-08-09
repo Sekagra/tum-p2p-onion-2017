@@ -75,9 +75,8 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                                 );
                         c.setAccessible(true);
                         OnionTunnelBuildParsedMessage msg = c.newInstance(port, endpointIp, endpointKey);
-                        callbacks.receivedTunnelBuild(msg);
-
                         tunnelEstPending = true;
+                        callbacks.receivedTunnelBuild(msg);
                     } catch (Exception e) {
                         throw new RuntimeException("Cannot create ONION TUNNEL BUILD message! " + e.getMessage());
                     }
@@ -89,21 +88,21 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                                 );
                         c.setAccessible(true);
                         OnionTunnelDataParsedMessage msg = c.newInstance(outgoingTunnelId, VOICE_DATA.getBytes());
-                        callbacks.receivedVoiceData(msg);
                         sentVoice = true;
+                        callbacks.receivedVoiceData(msg);
                     } catch (Exception e) {
                         throw new RuntimeException("Cannot create ONION TUNNEL VOICE message! " + e.getMessage());
                     }
-                } else if(!sentCover && sender && !receivedVoice) {
+                } else if(!sentCover && sender && receivedVoice) {
                     try {
                         Constructor<OnionCoverParsedMessage> c =
                                 OnionCoverParsedMessage.class.getDeclaredConstructor(
                                         short.class
                                 );
                         c.setAccessible(true);
-                        OnionCoverParsedMessage msg = c.newInstance(10);
-                        callbacks.receivedCoverData(msg);
+                        OnionCoverParsedMessage msg = c.newInstance((short)10);
                         sentCover = true;
+                        callbacks.receivedCoverData(msg);
                     } catch (Exception e) {
                         throw new RuntimeException("Cannot create ONION COVER message! " + e.getMessage());
                     }
@@ -116,7 +115,6 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                         c.setAccessible(true);
                         OnionTunnelDestroyParsedMessage msg = c.newInstance(outgoingTunnelId);
                         callbacks.receivedDestroy(msg);
-
                         this.cancel();
                     } catch (Exception e) {
                         throw new RuntimeException("Cannot create ONION TUNNEL DESTROY message! " + e.getMessage());
@@ -130,7 +128,8 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
     }
 
     @Override
-    public void sendIncoming(int tunnelId, byte[] key)  throws OnionApiException {
+    public void sendIncoming(int tunnelId)  throws OnionApiException {
+        outgoingTunnelId = tunnelId;
         incomingTunnelIds.add(tunnelId);
     }
 
@@ -175,7 +174,7 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                                     short.class
                             );
                     c.setAccessible(true);
-                    OnionCoverParsedMessage message = c.newInstance(10);
+                    OnionCoverParsedMessage message = c.newInstance((short)10);
                     callbacks.receivedCoverData(message);
                     sentCover = true;
                 } catch (Exception e) {

@@ -76,24 +76,12 @@ public class OnionApiParserImplTest {
 
     @Test
     public void testBuildOnionTunnelIncoming() throws ParsingException {
-        ParsedMessage generated = prs.buildOnionTunnelIncomingMsg(0x01010101, derKey);
+        ParsedMessage generated = prs.buildOnionTunnelIncomingMsg(0x01010101);
         ByteBuffer buf = ByteBuffer.wrap(generated.serialize());
-        byte[] containedKey = new byte[derKey.length];
 
         Assert.assertEquals(MessageType.ONION_TUNNEL_INCOMING.getValue(), generated.getType().getValue());
         Assert.assertEquals(generated.serialize().length, buf.getShort());
         Assert.assertEquals(0x01010101, buf.getInt(4));
-
-        buf.position(8);
-        buf.get(containedKey);
-        Assert.assertArrayEquals(derKey, containedKey);
-    }
-
-    @Test(expected=ParsingException.class)
-    public void testInvalidSourceKey() throws ParsingException {
-        byte[] invalidKey = new byte[derKey.length];
-        Arrays.fill(invalidKey, (byte) 0);
-        prs.buildOnionTunnelIncomingMsg(0x01010101, invalidKey);
     }
 
     @Test

@@ -95,7 +95,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             byte[] buf = new byte[bb.readableBytes()];
             bb.readBytes(buf);
 
-            logger.error("Received on: " + this.port);
+            logger.debug("Received on " + this.port);
 
             try {
                 ParsedMessage parsed = parser.parseMsg(buf);
@@ -227,7 +227,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 handleTunnelVoice((OnionTunnelVoiceParsedMessage)parsedMessage);
                 break;
             case ONION_TUNNEL_ESTABLISHED:
-                //todo: new message type for message suggesting a peer is the end of a tunnel; add state to incomingTunnels
+                this.orchestratorCallback.tunnelIncoming(segments.get(((OnionToOnionParsedMessage)parsedMessage).getLid()));
                 break;
             default:
                 logger.error("Unexpected message type, received type: " + parsedMessage.getType().toString());
@@ -343,26 +343,26 @@ public class OnionInterfaceImpl implements OnionInterface {
                     this.handleReceiving(this.parser.parseMsg(msg.getInnerPacket()), senderAddress, senderPort);   // reinvoke handling for inner packet
                 } else {
                     // if not for us (magic bytes not matching) replace Lid and forward to successor
-                    msg.setLid(segment.getLid());
-                    this.server.send(segment.getNextAddress(), segment.getNextPort(), msg.serialize());
+                    msg.setLid(segment.getOther().getLid());
+                    this.server.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg.serialize());
                 }
             } else if (segment.getDirection() == Direction.BACKWARD) {
                 // if direction is BACKWARD, encrypt once and hand to predecessor
                 msg = this.authInterface.encrypt(msg, segment);
                 if(segment.getOther() != null) {
-                    msg.setLid(segment.getLid());
+                    msg.setLid(segment.getOther().getLid());
                     this.server.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg.serialize());
                 } else {
                     this.logger.error("Unable to forward transport message backwards through the tunnel due to missing segment.");
                 }
             }
         } else {
-            List<Tunnel> matches = this.startedTunnels.stream()
-                    .filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid() == lid)
-                    .collect(Collectors.toList());
-            if(matches.size() == 1) {
+            Optional<Tunnel> tunnel = this.startedTunnels.stream()
+                    .filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid().equals(lid))
+                    .findAny();
+            if(tunnel.isPresent()) {
                 // decrypt the complete onion as this message is for us
-                this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, matches.get(0)).getInnerPacket()), senderAddress, senderPort);
+                this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, tunnel.get()).getInnerPacket()), senderAddress, senderPort);
             } else {
                 logger.warn("Received transport message with unknown/ambiguous local identifier. Dropping it.");
             }
@@ -382,11 +382,11 @@ public class OnionInterfaceImpl implements OnionInterface {
         }
 
         // Possible necessity to remove incomingTunnel state
-        this.incomingTunnels.values().removeIf(ts -> ts.getLid() == msg.getLid());
+        this.incomingTunnels.values().removeIf(ts -> ts.getLid().equals(msg.getLid()));
 
         // If we receive a tunnel teardown as the tunnel originator here, the tunnel endpoint has issued it
         Optional<Tunnel> tunnel = this.startedTunnels.stream()
-                .filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(t.getSegments().size() - 1).getLid() == msg.getLid())
+                .filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(t.getSegments().size() - 1).getLid().equals(msg.getLid()))
                 .findAny();
         if(tunnel.isPresent()) {
             this.destroyTunnel(tunnel.get().getId());
@@ -400,9 +400,13 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     private void handleTunnelVoice(OnionTunnelVoiceParsedMessage msg) {
         // Determine the tunnel ID matching to this message
-        List<Tunnel> matches = this.startedTunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid() == msg.getLid()).collect(Collectors.toList());
-        if(matches.size() == 1) {
-            this.orchestratorCallback.tunnelData(matches.get(0).getId(), msg.getData());
+        Optional<Tunnel> tunnel = this.startedTunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(t.getSegments().size() - 1).getLid().equals(msg.getLid())).findAny();
+        Optional<Map.Entry<Integer, TunnelSegment>> entry = this.incomingTunnels.entrySet().stream().filter(es -> es.getValue().getLid().equals(msg.getLid())).findAny();
+
+        if(tunnel.isPresent()) {
+            this.orchestratorCallback.tunnelData(tunnel.get().getId(), msg.getData());
+        } else if(entry.isPresent()) {
+            this.orchestratorCallback.tunnelData(entry.get().getKey(), msg.getData());
         } else {
             logger.warn("Received voice message with unknown/ambiguous local identifier. Dropping it.");
         }
@@ -420,9 +424,11 @@ public class OnionInterfaceImpl implements OnionInterface {
             if(tunnel.isPresent()) {
                 // tunnel started by us
                 firstSegment = tunnel.get().getSegments().get(0);
+                this.startedTunnels.remove(tunnel.get());
             } else if(this.incomingTunnels.containsKey(tunnelId)) {
                 // tunnel we are an endpoint to
                 firstSegment = this.incomingTunnels.get(tunnelId);
+                this.incomingTunnels.remove(tunnelId);
             } else {
                 this.logger.error("Unable to send tear down tunnel with ID: " + tunnelId);
                 return;
@@ -489,20 +495,22 @@ public class OnionInterfaceImpl implements OnionInterface {
         // expect a matching tunnel ID in either the list of created or incoming tunnels
         Optional<Tunnel> tunnel = this.startedTunnels.stream().filter(t -> t.getId() == tunnelId && t.getSegments().size() > 0).findAny();
         TunnelSegment firstSegment;
+        TunnelSegment lastSegment;
         try {
             if(tunnel.isPresent()) {
                 // tunnel started by us
                 firstSegment = tunnel.get().getSegments().get(0);
+                lastSegment = tunnel.get().getSegments().get(tunnel.get().getSegments().size() - 1);
             } else if(this.incomingTunnels.containsKey(tunnelId)) {
                 // tunnel we are an endpoint to
-                firstSegment = this.incomingTunnels.get(tunnelId);
+                firstSegment = lastSegment = this.incomingTunnels.get(tunnelId);
             } else {
                 this.logger.error("Unable to send data on unknown tunnel with ID: " + tunnelId);
                 return;
             }
 
             // create the voice messages and handle each one
-            List<ParsedMessage> voicePackets = this.parser.buildOnionTunnelVoiceMsgs(firstSegment.getLid().serialize(), data);
+            List<ParsedMessage> voicePackets = this.parser.buildOnionTunnelVoiceMsgs(lastSegment.getLid().serialize(), data);
             for (ParsedMessage voicePacket : voicePackets) {
                 ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), voicePacket);
                 // encrypt accordingly
@@ -519,6 +527,29 @@ public class OnionInterfaceImpl implements OnionInterface {
             this.logger.error("Unable to encrypt a message via the authentication module: " + e.getMessage());
         } catch (IOException e) {
             this.logger.error("Unable to send message to next peer: " + e.getMessage());
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void sendEstablished(Tunnel tunnel) throws OnionException {
+        if(!tunnel.getSegments().isEmpty()) {
+            try {
+                ParsedMessage msg = this.parser.buildOnionTunnelEstablishedMsg(tunnel.getSegments().get(tunnel.getSegments().size() - 1).getLid().serialize());
+                ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(tunnel.getSegments().get(0).getLid().serialize(), msg);
+                transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel);
+                this.server.send(tunnel.getSegments().get(0).getNextAddress(), tunnel.getSegments().get(0).getNextPort(), transportPacket.serialize());
+            } catch (ParsingException e) {
+                throw new OnionException("Unable to build established message or transport data packet to send over tunnel: " + e.getMessage());
+            } catch (InterruptedException e) {
+                throw new OnionException("Unable to encrypt a message via the authentication module: " + e.getMessage());
+            } catch (IOException e) {
+                throw new OnionException("Unable to send established message to next peer: " + e.getMessage());
+            }
+        } else {
+            this.logger.error("Cannot send established on empty tunnel.");
         }
     }
 }

@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionCallback;
+import de.tum.in.net.group17.onion.interfaces.onion.OnionException;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiCallback;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiException;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class orchestrates the flow of data between various interfaces.
@@ -42,6 +44,8 @@ public class Orchestrator {
     private ConfigurationProvider configProvider;
 
     private Runnable nextTunnelBuild;
+
+    private final AtomicInteger tunnelId = new AtomicInteger();
 
     /**
      * List of tunnels this peer has started.
@@ -119,11 +123,6 @@ public class Orchestrator {
     private OnionCallback getOnionCallback() {
         return new OnionCallback() {
             @Override
-            public void tunnelAccepted(int tunnelId) {
-                // todo: how to get the key here?
-            }
-
-            @Override
             public void error(int tunnelId, MessageType type) {
                 try {
                     apiInterface.sendError(tunnelId, type);
@@ -138,6 +137,17 @@ public class Orchestrator {
                     apiInterface.sendVoiceData(tunnelId, data); // Notify the CM via "ONION TUNNEL DATA"
                 } catch (OnionApiException e) {
                     // todo: terminate startedTunnels?!
+                }
+            }
+
+            @Override
+            public void tunnelIncoming(TunnelSegment segment) {
+                int tunnelId = getNextTunnelId();
+                try {
+                    apiInterface.sendIncoming(tunnelId);
+                    incomingTunnels.put(tunnelId, segment);
+                } catch (OnionApiException e) {
+                    logger.error("Unable to send ONION TUNNEL INCOMING message to connect CM: " + e.getMessage());
                 }
             }
         };
@@ -193,7 +203,8 @@ public class Orchestrator {
      * @param destination The peer that acts as a destination for the new startedTunnels.
      */
     private void buildTunnel(Peer destination) {
-        Tunnel t = new Tunnel(this.startedTunnels.size());
+        Tunnel t = new Tunnel(getNextTunnelId());
+        this.startedTunnels.add(t);
 
         // get random intermediate hops to destination
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
@@ -207,7 +218,7 @@ public class Orchestrator {
             try {
                 this.onionInterface.extendTunnel(t, p);
             } catch (Exception e) {
-                logger.error("Unable to create startedTunnels: " + e.getMessage());
+                logger.error("Unable to create tunnel: " + e.getMessage());
                 return;
             }
         }
@@ -215,16 +226,35 @@ public class Orchestrator {
         try {
             this.onionInterface.extendTunnel(t, destination);
         } catch (Exception e) {
-            logger.error("Unable to create startedTunnels: " + e.getMessage());
+            logger.error("Unable to create tunnel: " + e.getMessage());
+            this.startedTunnels.remove(t);
             return;
         }
 
-        this.startedTunnels.add(t);
+        try {
+            this.onionInterface.sendEstablished(t);
+        } catch (OnionException e) {
+            this.logger.error("Error when sending the final established method over the tunnel: " + e.getMessage());
+            this.startedTunnels.remove(t);
+            return;
+        }
+
         try {
             this.apiInterface.sendReady(t.getId(), destination.getHostkey());
         } catch (OnionApiException e) {
-            logger.error("Error when notifying calling module of completed startedTunnels creation: " + e.getMessage());
+            this.logger.error("Error when notifying calling module of completed startedTunnels creation: " + e.getMessage());
+            this.startedTunnels.remove(t);
+            return;
         }
+    }
+
+    /**
+     * Get next tunnel ID from atomic integer.
+     *
+     * @return The next usable tunnel ID.
+     */
+    private int getNextTunnelId() {
+        return tunnelId.getAndIncrement();
     }
 
 }

@@ -1,5 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.onion;
 
+import de.tum.in.net.group17.onion.model.TunnelSegment;
 import de.tum.in.net.group17.onion.parser.MessageType;
 
 /**
@@ -8,13 +9,6 @@ import de.tum.in.net.group17.onion.parser.MessageType;
  * Created by Christoph Rudolf on 17.07.17.
  */
 public interface OnionCallback {
-    /**
-     * Notify the superordinate module that a new tunnel being built with this peer as a hop has been accepted.
-     *
-     * @param tunnelId The ID of the new tunnel.
-     */
-    void tunnelAccepted(int tunnelId);
-
     /**
      * Notify the superordinate module of an error that has occurred while serving a request from the CM module.
      *
@@ -31,4 +25,11 @@ public interface OnionCallback {
      * @param data The data received for this tunnel.
      */
     void tunnelData(int tunnelId, byte[] data);
+
+    /**
+     * Notify the superorindate module of an incoming new tunnel.
+     *
+     * @param segment A reference to the TunnelSegment that matches in the incoming tunnel.
+     */
+    void tunnelIncoming(TunnelSegment segment);
 }

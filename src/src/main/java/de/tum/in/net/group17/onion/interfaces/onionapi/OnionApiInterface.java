@@ -15,10 +15,10 @@ public interface OnionApiInterface {
      * Inform the client (The last one that connected to the API) that a new tunnel was established to out peer.
      *
      * @param tunnelId The ID of the new tunnel that is incoming to us.
-     * @param key The peer's hostkey as it is requested by ONION TUNNEL INCOMING.
+     *
      * @throws OnionApiException If the channel is in an invalid state.
      */
-    void sendIncoming(int tunnelId, byte[] key) throws OnionApiException;
+    void sendIncoming(int tunnelId) throws OnionApiException;
 
     /**
      * Inform the client that a given tunnel is established.
