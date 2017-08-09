@@ -447,6 +447,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             // send all teardown messages
             for(ParsedMessage transportPacket : transportPackets) {
                 this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), transportPacket.serialize());
+                Thread.sleep(333);
             }
         } catch (ParsingException e) {
             this.logger.error("Unable to build required teardown or transport data packet to send out a teardown message: " + e.getMessage());
