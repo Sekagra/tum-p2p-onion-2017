@@ -367,11 +367,14 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     private void handleTunnelTeardown(OnionTunnelTeardownParsedMessage msg) {
         // Remove the matching TunnelSegment from this peer's list and sent a matching teardown message back to the
-        // previous peer.
-        if(this.segments.containsKey(msg.getLid())) {
+        // previous peer if this message comes from the tunnel builder.
+        TunnelSegment segment = this.segments.get(msg.getLid());
+        if(segment != null && segment.getDirection() == Direction.FORWARD) {
             this.segments.remove(msg.getLid());
+            //todo: send forward in tunnel
         } else {
-            this.logger.warn("Received teardown instruction for unknown local identifier.");
+            this.logger.error("Received plain teardown instruction from tunnel end, dropping it.");
+
         }
     }
 
@@ -395,7 +398,42 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     @Override
     public void destroyTunnel(int tunnelId) {
-        // todo: for last peer issuing the teardown, we do not have stored startedTunnels beside our own :(
+        // Determine direction and send it accordingly
+        Optional<Tunnel> tunnel = this.startedTunnels.stream().filter(t -> t.getId() == tunnelId && t.getSegments().size() > 0).findAny();
+        TunnelSegment firstSegment;
+        try {
+            if(tunnel.isPresent()) {
+                // tunnel started by us
+                firstSegment = tunnel.get().getSegments().get(0);
+            } else if(this.incomingTunnels.containsKey(tunnelId)) {
+                // tunnel we are an endpoint to
+                firstSegment = this.incomingTunnels.get(tunnelId);
+            } else {
+                this.logger.error("Unable to send tear down tunnel with ID: " + tunnelId);
+                return;
+            }
+
+            // create the teardown message and encrypt it accordingly
+            ParsedMessage teardownPacket = this.parser.buildOnionTunnelTeardownMsg(firstSegment.getLid().serialize());
+            ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), teardownPacket);
+            if(tunnel.isPresent()) {
+                transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel.get());
+            } else {
+                transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, firstSegment);
+            }
+            this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), transportPacket.serialize());
+
+            /** todo: Note: we cannot iteratively destroy the tunnel without feedback from the teardown process.
+             *  Sending all tear downs at once will likely result in their wrong delivery order so that peers have
+             *  already removed their state regarding the LID and are unable to forward/encrpyt. Switch to recursive?
+             */
+        } catch (ParsingException e) {
+            this.logger.error("Unable to build required teardown or transport data packet to send out a teardown message: " + e.getMessage());
+        } catch (InterruptedException e) {
+            this.logger.error("Unable to encrypt a message via the authentication module: " + e.getMessage());
+        } catch (IOException e) {
+            this.logger.error("Unable to send message to next peer: " + e.getMessage());
+        }
     }
 
     /**
@@ -451,8 +489,6 @@ public class OnionInterfaceImpl implements OnionInterface {
                 } else {
                     transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, firstSegment);
                 }
-
-                // send message
                 this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), transportPacket.serialize());
             }
         } catch (ParsingException e) {
