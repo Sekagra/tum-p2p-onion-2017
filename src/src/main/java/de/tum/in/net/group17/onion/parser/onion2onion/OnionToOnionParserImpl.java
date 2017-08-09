@@ -120,6 +120,14 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
 
     /**
      * @inheritDoc
+     */
+    @Override
+    public ParsedMessage buildOnionTunnelEstablishedMsg(byte[] lidRaw) throws ParsingException {
+        return new OnionTunnelEstablishedParsedMessage(LidImpl.deserialize(lidRaw));
+    }
+
+    /**
+     * @inheritDoc
      *
      * This implementation throws a ParsingError on every error!
      */
@@ -145,6 +153,9 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
             case ONION_TUNNEL_VOICE:
                 content = parseIncomingOnionMessage(data, 1, MessageType.ONION_TUNNEL_VOICE);
                 return new OnionTunnelVoiceParsedMessage(content.lid, content.data);
+            case ONION_TUNNEL_ESTABLISHED:
+                content = parseIncomingOnionMessage(data, 0, MessageType.ONION_TUNNEL_ESTABLISHED);
+                return new OnionTunnelEstablishedParsedMessage(content.lid);
             default:
                 throw new ParsingException("Not able to parse message. Type: " + extractType(data).getValue() + "!");
         }

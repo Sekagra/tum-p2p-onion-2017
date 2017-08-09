@@ -5,6 +5,9 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.util.concurrent.DefaultEventExecutor;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
 
 import java.util.function.Supplier;
 
@@ -15,6 +18,9 @@ import java.util.function.Supplier;
 public class ServerChannelInitializer extends ChannelInitializer<SocketChannel> {
     private Supplier<ChannelHandler> handlerSupplier;
 
+    private final int WORKERS = 4;
+    private EventExecutorGroup workerPool = new DefaultEventExecutorGroup(WORKERS);
+
     public ServerChannelInitializer(Supplier<ChannelHandler> handlerSupplier) {
         this.handlerSupplier = handlerSupplier;
     }
@@ -23,6 +29,6 @@ public class ServerChannelInitializer extends ChannelInitializer<SocketChannel> 
     protected void initChannel(SocketChannel socketChannel) throws Exception {
         ChannelPipeline pipeline = socketChannel.pipeline();
         pipeline.addLast("framer", new LengthFieldBasedFrameDecoder(65535, 0, 2, -2, 0));
-        pipeline.addLast("handler", this.handlerSupplier.get());
+        pipeline.addLast(workerPool, "handler", this.handlerSupplier.get());
     }
 }

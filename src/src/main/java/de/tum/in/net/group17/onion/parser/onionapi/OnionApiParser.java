@@ -28,10 +28,9 @@ public interface OnionApiParser extends Parser {
      * Create a OnionTunnelIncoming message containing the given parameters.
      *
      * @param id ID of the tunnel.
-     * @param sourceKey Key of the source host.
      * @return A ParsedMessage of creation was successful.
      */
-    ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey) throws ParsingException;
+    ParsedMessage buildOnionTunnelIncomingMsg(int id) throws ParsingException;
 
     /**
      * Create a OnionParseObject containing a ONION TUNNEL READY message with the given parameters.

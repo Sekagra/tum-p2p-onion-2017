@@ -45,26 +45,8 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      * The host key is checked for validity.
      * This implementation throws a ParsingException on every error.
      */
-    public ParsedMessage buildOnionTunnelIncomingMsg(int id, byte[] sourceKey) throws ParsingException {
-        ASN1Primitive key;
-
-        try {
-            key = new ASN1InputStream(new ByteArrayInputStream(sourceKey)).readObject().toASN1Primitive();
-        } catch(IOException e) {
-            throw new ParsingException("Invalid source key.");
-        }
-
-        try {
-            // Check the encoded version is more save => Maybe changes in length during the conversion
-            int size = 8 + key.getEncoded().length; // Header, TunnelID and key
-            if (size > 65535)
-                throw new ParsingException("Message too large!");
-        } catch(IOException e) {
-            // This should never happen..
-            throw new ParsingException("Invalid source key.");
-        }
-
-        return new OnionTunnelIncomingParsedMessage(id, key);
+    public ParsedMessage buildOnionTunnelIncomingMsg(int id) throws ParsingException {
+        return new OnionTunnelIncomingParsedMessage(id);
     }
 
     /**

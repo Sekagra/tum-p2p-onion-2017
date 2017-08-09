@@ -262,30 +262,28 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     private void handleTunnelAccept(OnionTunnelAcceptParsedMessage msg, InetAddress senderAddress, short senderPort) throws OnionException {
         if(this.waitForAccept.containsKey(msg.getLid())) {
-            if(!segments.containsKey(msg.getLid())) {
-                this.waitForAccept.put(msg.getLid(), msg);
-                synchronized (this.waitForAccept) {
-                    this.waitForAccept.notify();
-                }
-            } else {
-                // The relayHandler sent the init message -> Send accept through the tunnel
-                TunnelSegment outgoingSegment = segments.get(msg.getLid());
-                TunnelSegment incomingSegment = outgoingSegment.getOther();
-                try {
-                    ParsedMessage relayAnswer = this.parser.buildOnionTunnelTransferMsgPlain(incomingSegment.getLid().serialize(), msg);
-                    relayAnswer = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)relayAnswer, incomingSegment);
-                    this.server.send(incomingSegment.getNextAddress(), incomingSegment.getNextPort(), relayAnswer.serialize());
-                } catch (IOException e) {
-                    throw new OnionException("Error sending the packet to initiate the a tunnel: " + e.getMessage());
-                } catch (ParsingException e) {
-                    throw new OnionException("Error parsing the ONION TUNNEL TRANSFER message containing the relay answer :" +
-                            e.getMessage());
-                } catch (InterruptedException e) {
-                    throw new OnionException("Interrupted while encrypting accept message: " + e.getMessage());
-                }
+            this.waitForAccept.put(msg.getLid(), msg);
+            synchronized (this.waitForAccept) {
+                this.waitForAccept.notify();
+            }
+        } else if(segments.containsKey(msg.getLid())) { // Intermediate hop + accept => Answer to relay-init
+            // The relayHandler sent the init message -> Send accept through the tunnel
+            TunnelSegment outgoingSegment = segments.get(msg.getLid());
+            TunnelSegment incomingSegment = outgoingSegment.getOther();
+            try {
+                ParsedMessage relayAnswer = this.parser.buildOnionTunnelTransferMsgPlain(incomingSegment.getLid().serialize(), msg);
+                relayAnswer = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)relayAnswer, incomingSegment);
+                this.server.send(incomingSegment.getNextAddress(), incomingSegment.getNextPort(), relayAnswer.serialize());
+            } catch (IOException e) {
+                throw new OnionException("Error sending the packet to initiate the a tunnel: " + e.getMessage());
+            } catch (ParsingException e) {
+                throw new OnionException("Error parsing the ONION TUNNEL TRANSFER message containing the relay answer :" +
+                        e.getMessage());
+            } catch (InterruptedException e) {
+                throw new OnionException("Interrupted while encrypting accept message: " + e.getMessage());
             }
         } else {
-            logger.warn("Received unsolicited or late ACCEPT-message from " + senderAddress.getHostAddress() + ":" + Short.toString(senderPort) + "LID: " + msg.getLid().serialize());
+            logger.warn("Received unsolicited or late ACCEPT-message from " + senderAddress.getHostAddress() + ":" + Short.toString(senderPort));
         }
     }
 
@@ -308,12 +306,10 @@ public class OnionInterfaceImpl implements OnionInterface {
             return;
         }
 
+        this.segments.put(outgoingSegment.getLid(), outgoingSegment);
+
         // send the expected encapsulated message out to the new node and adapt the peer's own state
         this.server.send(msg.getAddress(), msg.getPort(), msg.getPayload());
-
-        this.segments.put(outgoingSegment.getLid(), outgoingSegment);
-        // Wait for a response being there or timeout
-        this.waitForAccept.put(outgoingSegment.getLid(), null);
     }
 
     /***

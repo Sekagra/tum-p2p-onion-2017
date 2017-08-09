@@ -89,4 +89,12 @@ public interface OnionToOnionParser extends Parser {
      * @return A list of OnionTunnelVoiceParsedMessage containing the given payload split over all messages in order.
      */
     List<ParsedMessage> buildOnionTunnelVoiceMsgs(byte[] incomingLidRaw, byte[] payload) throws ParsingException;
+
+    /**
+     * Build a new ONION_TUNNEL_ESTABLISHED message containing the given LID.
+     *
+     * @param lidRaw LID of the last tunnel segment.
+     * @return A OnionTunnelEstablishedParsedMessage containing the given LID.
+     */
+    ParsedMessage buildOnionTunnelEstablishedMsg(byte[] lidRaw) throws ParsingException;
 }
