@@ -56,6 +56,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         this.logger = Logger.getLogger(OnionInterface.class);
         this.parser = parser;
         this.config = config;
+        this.segments = new HashMap<>();
         this.listenAddress = config.getOnionP2PHost();
         this.port = this.config.getOnionP2PPort();
         this.server = new UdpServer();
@@ -70,14 +71,6 @@ public class OnionInterfaceImpl implements OnionInterface {
     public void setTunnels(Map<Integer, Tunnel> started, Map<Integer, TunnelSegment> incoming) {
         this.startedTunnels = started;
         this.incomingTunnels = incoming;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    @Override
-    public void setSegments(Map<Lid, TunnelSegment> segments) {
-        this.segments = segments;
     }
 
     /**
@@ -110,8 +103,16 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @inheritDoc
      */
     @Override
+    public void setSegments(Map<Lid, TunnelSegment> segments) {
+        this.segments = segments;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void extendTunnel(Tunnel tunnel, Peer peer) throws OnionException, InterruptedException {
-        TunnelSegment newSegment = new TunnelSegment(LidImpl.createRandomLid(), peer.getIpAddress(), peer.getPort(), Direction.FORWARD);
+        TunnelSegment newSegment = new TunnelSegment(LidImpl.createRandomLid(), peer, Direction.FORWARD);
 
         // Create the init message
         ParsedMessage msg;
@@ -220,7 +221,11 @@ public class OnionInterfaceImpl implements OnionInterface {
                 //todo: tear down tunnel in case of an exception (that's why they are caught here)
                 break;
             case ONION_TUNNEL_TEARDOWN:
-                handleTunnelTeardown((OnionTunnelTeardownParsedMessage)parsedMessage);
+                try {
+                    handleTunnelTeardown((OnionTunnelTeardownParsedMessage)parsedMessage);
+                } catch (ParsingException e) {
+                    logger.warn("Error when trying to close a session: " + e.getMessage());
+                }
                 break;
             case ONION_TUNNEL_VOICE:
                 handleTunnelVoice((OnionTunnelVoiceParsedMessage)parsedMessage);
@@ -373,15 +378,21 @@ public class OnionInterfaceImpl implements OnionInterface {
      *
      * @param msg The incoming parsed OnionTunnelTeardownParsedMessage message.
      */
-    private void handleTunnelTeardown(OnionTunnelTeardownParsedMessage msg) {
+    private void handleTunnelTeardown(OnionTunnelTeardownParsedMessage msg) throws ParsingException {
         // If we receive a tunnel teardown for a tunnel we are an intermediate hop for, tear it down
         TunnelSegment segment = this.segments.get(msg.getLid());
         if(segment != null && segment.getDirection() == Direction.FORWARD) {
             this.segments.remove(msg.getLid());
+            if(segment.getOther() != null) {
+                this.segments.remove(segment.getOther());
+            }
+            this.authInterface.closeSession(segment.getSessionId());
         }
 
         // Possible necessity to remove incomingTunnel state
-        this.incomingTunnels.values().removeIf(ts -> ts.getLid().equals(msg.getLid()));
+        if(this.incomingTunnels.values().removeIf(ts -> ts.getLid().equals(msg.getLid()))) {
+            return;
+        }
 
         // If we receive a tunnel teardown as the tunnel originator here, the tunnel endpoint has issued it
         Optional<Tunnel> tunnel = this.startedTunnels.values().stream()
@@ -423,11 +434,9 @@ public class OnionInterfaceImpl implements OnionInterface {
             if(tunnel != null) {
                 // tunnel started by us
                 firstSegment = tunnel.getSegments().get(0);
-                this.startedTunnels.remove(tunnel);
             } else if(this.incomingTunnels.containsKey(tunnelId)) {
                 // tunnel we are an endpoint to
                 firstSegment = this.incomingTunnels.get(tunnelId);
-                this.incomingTunnels.remove(tunnelId);
             } else {
                 this.logger.error("Unable to send tear down tunnel with ID: " + tunnelId);
                 return;
@@ -441,6 +450,11 @@ public class OnionInterfaceImpl implements OnionInterface {
                     ParsedMessage teardownPacket = this.parser.buildOnionTunnelTeardownMsg(segment.getLid().serialize());
                     ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), teardownPacket);
                     transportPackets.add(this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel));
+
+                    // close the session associated with the segment
+                    authInterface.closeSession(segment.getSessionId());
+
+                    // remove the segment
                     tunnel.getSegments().remove(i);
                 }
             } else {    // Case for a teardown being issued by the end of the tunnel
@@ -454,6 +468,9 @@ public class OnionInterfaceImpl implements OnionInterface {
                 this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), transportPacket.serialize());
                 Thread.sleep(333);
             }
+
+            // notify caller
+            this.orchestratorCallback.tunnelDestroyed(tunnelId);
         } catch (ParsingException e) {
             this.logger.error("Unable to build required teardown or transport data packet to send out a teardown message: " + e.getMessage());
         } catch (InterruptedException e) {

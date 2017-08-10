@@ -102,15 +102,15 @@ public class Orchestrator {
         this.segments = new HashMap<>();
 
         // Listen for Onion connections
-        this.onionInterface.setTunnels(startedTunnels, incomingTunnels);
-        this.onionInterface.setSegments(segments);
+        this.onionInterface.setTunnels(this.startedTunnels, this.incomingTunnels);
+        this.onionInterface.setSegments(this.segments);
         this.onionInterface.listen(getOnionCallback());
 
         // Listen for requests from the Calling Module
         this.apiInterface.listen(getOnionApiCallback());
 
-        // Start with a delegate issuing the build of a random startedTunnels
-        nextTunnelBuild = () -> buildTunnel();
+        // Start with a delegate issuing the build of a random tunnel
+        nextTunnelBuild = () -> setupTunnel();
     }
 
     /**
@@ -134,7 +134,7 @@ public class Orchestrator {
                 try {
                     apiInterface.sendVoiceData(tunnelId, data); // Notify the CM via "ONION TUNNEL DATA"
                 } catch (OnionApiException e) {
-                    // todo: terminate startedTunnels?!
+                    // todo: terminate tunnel?!
                 }
             }
 
@@ -148,6 +148,12 @@ public class Orchestrator {
                     logger.error("Unable to send ONION TUNNEL INCOMING message to connect CM: " + e.getMessage());
                 }
             }
+
+            @Override
+            public void tunnelDestroyed(int tunnelId) {
+                startedTunnels.remove(tunnelId);
+                incomingTunnels.remove(tunnelId);
+            }
         };
     }
 
@@ -160,9 +166,9 @@ public class Orchestrator {
         return new OnionApiCallback() {
             @Override
             public void receivedTunnelBuild(OnionTunnelBuildParsedMessage msg) {
-                // Register a startedTunnels build to the given destination in the next round
-                //nextTunnelBuild = () -> buildTunnel(Peer.fromOnionBuild(msg));
-                buildTunnel(Peer.fromOnionBuild(msg));
+                // Register a tunnel build to the given destination in the next round
+                //nextTunnelBuild = () -> setupTunnel(Peer.fromOnionBuild(msg));
+                setupTunnel(Peer.fromOnionBuild(msg));
                 // TODO: Add round concept!
             }
 
@@ -179,31 +185,59 @@ public class Orchestrator {
             @Override
             public void receivedDestroy(OnionTunnelDestroyParsedMessage msg) {
                 onionInterface.destroyTunnel(msg.getTunnelId());
+                // Clean up of tunnels
+                startedTunnels.remove(msg.getTunnelId());
+                incomingTunnels.remove(msg.getTunnelId());
             }
         };
     }
 
     /**
-     * Build a startedTunnels over several intermediate hops to a random destination.
+     * Setup a tunnel over several intermediate hops to a random destination.
      */
-    private void buildTunnel() {
+    private void setupTunnel() {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
         try {
             Peer peer = this.rpsInterface.queryRandomPeer();
-            buildTunnel(peer);
+            setupTunnel(peer);
         } catch (RandomPeerSamplingException e) {
-            logger.error("Unable to get random peer as cover startedTunnels destination: " + e.getMessage());
+            logger.error("Unable to get random peer as cover tunnel destination: " + e.getMessage());
         }
     }
 
     /**
-     * Build a startedTunnels over several intermediate hops to the given destination.
-     * @param destination The peer that acts as a destination for the new startedTunnels.
+     * Setup a startedTunnels over several intermediate hops to the given destination.
+     * @param destination The peer that acts as a destination for the new tunnel.
      */
-    private void buildTunnel(Peer destination) {
+    private void setupTunnel(Peer destination) {
         Tunnel t = new Tunnel(getNextTunnelId());
         this.startedTunnels.put(t.getId(), t);
 
+        buildTunnel(t, destination);
+
+        try {
+            this.onionInterface.sendEstablished(t);
+        } catch (OnionException e) {
+            this.logger.error("Error when sending the final established message over the tunnel: " + e.getMessage());
+            this.startedTunnels.remove(t);
+            return;
+        }
+
+        try {
+            this.apiInterface.sendReady(t.getId(), destination.getHostkey());
+        } catch (OnionApiException e) {
+            this.logger.error("Error when notifying calling module of completed tunnel creation: " + e.getMessage());
+            this.startedTunnels.remove(t);
+            return;
+        }
+    }
+
+    /**
+     * Concrete building into a currently empty Tunnel data structure.
+     * @param t The tunnel to build into.
+     * @param destination The peer that acts as a destination for the new tunnel.
+     */
+    private void buildTunnel(Tunnel t, Peer destination) {
         // get random intermediate hops to destination
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
             Peer p = null;
@@ -228,21 +262,32 @@ public class Orchestrator {
             this.startedTunnels.remove(t);
             return;
         }
+    }
 
-        try {
-            this.onionInterface.sendEstablished(t);
-        } catch (OnionException e) {
-            this.logger.error("Error when sending the final established method over the tunnel: " + e.getMessage());
-            this.startedTunnels.remove(t);
-            return;
-        }
+    /**
+     * Refresh all existing previously started tunnels for the new round.
+     */
+    public void refreshTunnels() {
+        for (Tunnel t : this.startedTunnels.values()) {
+            Tunnel tunnel = new Tunnel(t.getId());
 
-        try {
-            this.apiInterface.sendReady(t.getId(), destination.getHostkey());
-        } catch (OnionApiException e) {
-            this.logger.error("Error when notifying calling module of completed startedTunnels creation: " + e.getMessage());
-            this.startedTunnels.remove(t);
-            return;
+            // build new Tunnel with same tunnel ID and last peer as the old one
+            TunnelSegment segment = tunnel.getSegments().get(tunnel.getSegments().size() - 1);
+            buildTunnel(tunnel, new Peer(segment.getHostkey(), segment.getNextAddress(), segment.getNextPort()));
+
+            // replace the tunnel instance in the startedTunnels map
+            this.startedTunnels.put(t.getId(), tunnel);
+
+            // todo: new Map for mapping of old and new Lids
+
+            // send established with two local identifiers to mark switching process
+            try {
+                // this.onionInterface.sendEstablished(t);  //todo: new sendestablished
+            } catch (OnionException e) {
+                this.logger.error("Error when sending the established message to mark the refresh of a tunnel: " + e.getMessage());
+                this.startedTunnels.remove(t);
+                return;
+            }
         }
     }
 

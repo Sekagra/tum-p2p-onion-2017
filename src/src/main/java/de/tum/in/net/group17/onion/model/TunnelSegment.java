@@ -13,6 +13,7 @@ public class TunnelSegment {
     private short nextPort;
     private short sessionId;
     private Direction direction;
+    private byte[] hostkey;
 
     public TunnelSegment(Lid lid, InetAddress nextAddress, short nextPort, Direction direction) {
         Lid = lid;
@@ -21,8 +22,17 @@ public class TunnelSegment {
         this.direction = direction;
     }
 
+    public TunnelSegment(Lid lid, Peer peer, Direction direction) {
+        this(lid, peer.getIpAddress(), peer.getPort(), direction);
+        this.hostkey = peer.getHostkey();
+    }
+
     public de.tum.in.net.group17.onion.model.Lid getLid() {
         return Lid;
+    }
+
+    public byte[] getHostkey() {
+        return hostkey;
     }
 
     public TunnelSegment getOther() {

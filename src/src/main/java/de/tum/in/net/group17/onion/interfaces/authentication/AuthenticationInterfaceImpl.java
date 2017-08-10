@@ -91,6 +91,12 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         return waitForSessionResponse(requestId, AuthSessionHs1ParsedMessage.class);
     }
 
+    @Override
+    public void closeSession(short sessionId) throws ParsingException {
+        ParsedMessage packet = this.parser.buildSessionClose(sessionId);
+        this.sendMessage(packet.serialize());
+    }
+
     /**
      * @inheritDoc
      */

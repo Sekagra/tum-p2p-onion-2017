@@ -27,9 +27,15 @@ public interface OnionCallback {
     void tunnelData(int tunnelId, byte[] data);
 
     /**
-     * Notify the superorindate module of an incoming new tunnel.
+     * Notify the superordinate module of an incoming new tunnel.
      *
      * @param segment A reference to the TunnelSegment that matches in the incoming tunnel.
      */
     void tunnelIncoming(TunnelSegment segment);
+
+    /**
+     * Notify the superordinate module of a successful tunnel teardown.
+     * @param tunnelId The ID of the tunnel that has been teared down.
+     */
+    void tunnelDestroyed(int tunnelId);
 }

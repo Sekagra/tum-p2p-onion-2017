@@ -23,6 +23,12 @@ public interface AuthenticationInterface {
     AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException;
 
     /**
+     * Notify the auth module that a given session can be closed now.
+     * @param sessionId The ID of the session to close.
+     */
+    void closeSession(short sessionId) throws ParsingException;
+
+    /**
      * Forward a received handshake initiation packet to the Onion module.
      * @param payload The handshake payload given by the peers authentication module in AUTH SESSION HS1.
      */
