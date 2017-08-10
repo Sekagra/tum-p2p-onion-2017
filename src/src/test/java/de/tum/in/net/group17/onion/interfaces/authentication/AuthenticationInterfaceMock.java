@@ -45,6 +45,11 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
     }
 
     @Override
+    public void closeSession(short sessionId) throws ParsingException {
+        sessions.remove(new Short(sessionId));
+    }
+
+    @Override
     public AuthSessionHs2ParsedMessage forwardIncomingHandshake1(byte[] payload) throws ParsingException, InterruptedException {
         // TODO: May return Auth Error in this case
         if(!Arrays.equals(TEST_PAYLOAD.getBytes(),  payload))
@@ -76,13 +81,13 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
     }
 
     @Override
-    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
         // Set the new arrays to handle the case if we only get a copy of the stored array
         // We encode by adding the number of encryptions in front of the data
         byte[] payload = message.getData();
         byte[] newData = new byte[payload.length + 1];
         System.arraycopy(payload, 0, newData, 1, payload.length);
-        newData[0] = (byte)tunnel.getSegments().size();
+        newData[0] = (byte)segments.size();
         message.setData(newData);
 
         return message;
@@ -108,13 +113,13 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
     }
 
     @Override
-    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
         // Set the new arrays to handle the case if we only get a copy of the stored array
         byte[] payload = message.getData();
 
-        if(payload[0] != (byte)tunnel.getSegments().size())
+        if(payload[0] != (byte)segments.size())
             throw new RuntimeException("Number of encryptions does not match number of hops in the tunnel!" +
-                    "Expected: " + tunnel.getSegments().size() + ". Got: " + (int)payload[0]);
+                    "Expected: " + segments.size() + ". Got: " + (int)payload[0]);
         message.setData(Arrays.copyOfRange(payload, 1, payload.length));
 
         return message;

@@ -174,7 +174,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
     }
 
     private ParsedMessage parseIncomingEstablishedMessage(byte[] data) throws ParsingException {
-        GenericMsgContent content = parseIncomingOnionMessage(data, LidImpl.LENGTH, MessageType.ONION_TUNNEL_ESTABLISHED);
+        GenericMsgContent content = parseIncomingOnionMessage(data, 0, MessageType.ONION_TUNNEL_ESTABLISHED);
 
         if(data.length == LidImpl.LENGTH + 4) { // Without 'switch'
             return new OnionTunnelEstablishedParsedMessage(content.lid);

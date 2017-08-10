@@ -64,7 +64,8 @@ public class OnionTunnelEstablishedParsedMessage extends OnionToOnionParsedMessa
     @Override
     public byte[] serialize() {
         ByteBuffer buf = super.serializeBase();
-        buf.put(lidOld.serialize());
+        if(lidOld != null)
+            buf.put(lidOld.serialize());
         return buf.array();
     }
 
