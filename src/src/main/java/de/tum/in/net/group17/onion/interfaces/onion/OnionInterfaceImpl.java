@@ -349,6 +349,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                     // if not for us (magic bytes not matching) replace Lid and forward to successor
                     msg.setLid(segment.getOther().getLid());
                     this.server.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg.serialize());
+                    segment.updateLastDataSeen();
                 }
             } else if (segment.getDirection() == Direction.BACKWARD) {
                 // if direction is BACKWARD, encrypt once and hand to predecessor
@@ -356,6 +357,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 if(segment.getOther() != null) {
                     msg.setLid(segment.getOther().getLid());
                     this.server.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg.serialize());
+                    segment.updateLastDataSeen();
                 } else {
                     this.logger.error("Unable to forward transport message backwards through the tunnel due to missing segment.");
                 }
@@ -367,6 +369,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             if(tunnel.isPresent()) {
                 // decrypt the complete onion as this message is for us
                 this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, tunnel.get()).getInnerPacket()), senderAddress, senderPort);
+                tunnel.get().getSegments().get(0).updateLastDataSeen();
             } else {
                 logger.warn("Received transport message with unknown/ambiguous local identifier. Dropping it.");
             }
@@ -536,6 +539,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                     transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, firstSegment);
                 }
                 this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), transportPacket.serialize());
+                firstSegment.updateLastDataSeen();
             }
         } catch (ParsingException e) {
             this.logger.error("Unable to build required voice or transport data packet to send out a voice message: " + e.getMessage());

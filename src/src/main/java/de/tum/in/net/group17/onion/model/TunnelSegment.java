@@ -1,6 +1,7 @@
 package de.tum.in.net.group17.onion.model;
 
 import java.net.InetAddress;
+import java.time.LocalDateTime;
 
 /**
  * This class represents a segment of a tunnel as it is present for all cases in which a host is an intermediate hop.
@@ -14,6 +15,7 @@ public class TunnelSegment {
     private short sessionId;
     private Direction direction;
     private byte[] hostkey;
+    private LocalDateTime lastDataSeen;
 
     public TunnelSegment(Lid lid, InetAddress nextAddress, short nextPort, Direction direction) {
         Lid = lid;
@@ -61,5 +63,13 @@ public class TunnelSegment {
 
     public void setSessionId(short sessionId) {
         this.sessionId = sessionId;
+    }
+
+    public LocalDateTime getLastDataSeen() {
+        return this.lastDataSeen;
+    }
+
+    public void updateLastDataSeen() {
+        lastDataSeen = LocalDateTime.now();
     }
 }
