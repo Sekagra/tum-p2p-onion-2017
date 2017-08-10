@@ -53,7 +53,7 @@ public class Orchestrator {
     /**
      * List of tunnels we received as an endpoint.
      */
-    private Map<Integer, TunnelSegment> incomingTunnels;
+    private Map<Integer, Tunnel> incomingTunnels;
 
     /**
      * List of segments, two for each time this hop is an intermediate hop.
@@ -143,7 +143,9 @@ public class Orchestrator {
                 int tunnelId = getNextTunnelId();
                 try {
                     apiInterface.sendIncoming(tunnelId);
-                    incomingTunnels.put(tunnelId, segment);
+                    Tunnel tunnel = new Tunnel(tunnelId);
+                    tunnel.addSegment(segment);
+                    incomingTunnels.put(tunnelId, tunnel);
                 } catch (OnionApiException e) {
                     logger.error("Unable to send ONION TUNNEL INCOMING message to connect CM: " + e.getMessage());
                 }
@@ -184,7 +186,15 @@ public class Orchestrator {
 
             @Override
             public void receivedDestroy(OnionTunnelDestroyParsedMessage msg) {
-                onionInterface.destroyTunnel(msg.getTunnelId());
+                try {
+                    onionInterface.destroyTunnelById(msg.getTunnelId());
+                } catch (OnionException e) {
+                    try {
+                        apiInterface.sendError(msg.getTunnelId(), MessageType.ONION_TUNNEL_DESTROY);
+                    } catch (OnionApiException e1) {
+                        logger.error("Unable to contact call module.");
+                    }
+                }
                 // Clean up of tunnels
                 startedTunnels.remove(msg.getTunnelId());
                 incomingTunnels.remove(msg.getTunnelId());

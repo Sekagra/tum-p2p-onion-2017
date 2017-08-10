@@ -28,7 +28,7 @@ public interface OnionInterface {
      * @param started The list of tunnels this peer created.
      * @param incoming The list of tunnels this peer is an endpoint on.
      */
-    void setTunnels(Map<Integer, Tunnel> started, Map<Integer, TunnelSegment> incoming);
+    void setTunnels(Map<Integer, Tunnel> started, Map<Integer, Tunnel> incoming);
 
     /**
      * Set the map with tunnel segments for all cases in which this peer is an intermediate hop.
@@ -44,11 +44,11 @@ public interface OnionInterface {
     void extendTunnel(Tunnel tunnel, Peer peer) throws OnionException, InterruptedException;
 
     /**
-     * Orders the onion module to destroy a tunnel.
+     * Orders the onion module to destroy a tunnel with a given ID.
      *
      * @param tunnelId The ID of the tunnel to destroy.
      */
-    void destroyTunnel(int tunnelId);
+    void destroyTunnelById(int tunnelId) throws OnionException;
 
     /**
      * Instructs the onion module to send cover traffic.

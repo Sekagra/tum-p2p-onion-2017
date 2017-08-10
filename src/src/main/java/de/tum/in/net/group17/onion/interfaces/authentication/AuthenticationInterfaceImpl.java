@@ -14,9 +14,7 @@ import de.tum.in.net.group17.onion.parser.authentication.*;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelTransportParsedMessage;
 import org.apache.log4j.Logger;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -151,9 +149,17 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @inheritDoc
      */
     @Override
-    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
+        return encrypt(message, Arrays.asList(new TunnelSegment[] { segment } ));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
         int requestId = this.requestCounter.getAndAdd(1);
-        short[] sessionIds = Shorts.toArray(tunnel.getSegments().stream().map(x -> x.getSessionId()).collect(Collectors.toList()));
+        short[] sessionIds = Shorts.toArray(segments.stream().map(x -> x.getSessionId()).collect(Collectors.toList()));
         ParsedMessage packet = this.parser.buildLayerEncrypt(requestId, sessionIds, message.getData());
 
         this.results.put(requestId, null);
@@ -166,39 +172,19 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @inheritDoc
      */
     @Override
-    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, Tunnel tunnel) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
+        return decrypt(message, Arrays.asList(new TunnelSegment[] { segment } ));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
         // build the message
         int requestId = this.requestCounter.getAndAdd(1);
-        short[] sessionIds = Shorts.toArray(tunnel.getSegments().stream().map(x -> x.getSessionId()).collect(Collectors.toList()));
+        short[] sessionIds = Shorts.toArray(segments.stream().map(x -> x.getSessionId()).collect(Collectors.toList()));
         ParsedMessage packet = this.parser.buildLayerDecrypt(requestId, sessionIds, message.getData());
-
-        this.results.put(requestId, null);
-        sendMessage(packet.serialize());
-
-        return waitForCryptResponse(requestId, message);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    @Override
-    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
-        int requestId = this.requestCounter.getAndAdd(1);
-        ParsedMessage packet = this.parser.buildLayerEncrypt(requestId, new short[]{segment.getSessionId()}, message.getData());
-
-        this.results.put(requestId, null);
-        sendMessage(packet.serialize());
-
-        return waitForCryptResponse(requestId, message);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    @Override
-    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
-        int requestId = this.requestCounter.getAndAdd(1);
-        ParsedMessage packet = this.parser.buildLayerDecrypt(requestId, new short[]{segment.getSessionId()}, message.getData());
 
         this.results.put(requestId, null);
         sendMessage(packet.serialize());
