@@ -68,4 +68,13 @@ public interface OnionInterface {
      * @param tunnel The tunnel to send the established message over.
      */
     void sendEstablished(Tunnel tunnel) throws OnionException;
+
+    /**
+     * Send the established message type with two local identifiers that indicates the refresh of a previous established
+     * tunnel. This is sent through the new tunnel.
+     *
+     * @param newTunnel The new tunnel that will be used for ongoing communication.
+     * @param oldTunnel The tunnel that has been previously used for communication.
+     */
+    void sendEstablished(Tunnel newTunnel, Tunnel oldTunnel) throws OnionException;
 }

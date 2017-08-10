@@ -572,4 +572,32 @@ public class OnionInterfaceImpl implements OnionInterface {
             this.logger.error("Cannot send established on empty tunnel.");
         }
     }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public void sendEstablished(Tunnel newTunnel, Tunnel oldTunnel) throws OnionException {
+
+        // todo: new Map for mapping of old and new Lids
+
+        if(!oldTunnel.getSegments().isEmpty() && !newTunnel.getSegments().isEmpty()) {
+            try {
+                TunnelSegment lastNewTunnelSegment = newTunnel.getSegments().get(newTunnel.getSegments().size() - 1);
+                TunnelSegment lastOldTunnelSegment = oldTunnel.getSegments().get(oldTunnel.getSegments().size() - 1);
+                ParsedMessage msg = this.parser.buildOnionTunnelEstablishedMsg(lastNewTunnelSegment.getLid().serialize(), lastOldTunnelSegment.getLid().serialize());
+                ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(lastNewTunnelSegment.getLid().serialize(), msg);
+                transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, newTunnel);
+                this.server.send(lastNewTunnelSegment.getNextAddress(), lastNewTunnelSegment.getNextPort(), transportPacket.serialize());
+            } catch (ParsingException e) {
+                throw new OnionException("Unable to build established message or transport data packet to send over tunnel: " + e.getMessage());
+            } catch (InterruptedException e) {
+                throw new OnionException("Unable to encrypt a message via the authentication module: " + e.getMessage());
+            } catch (IOException e) {
+                throw new OnionException("Unable to send established message to next peer: " + e.getMessage());
+            }
+        } else {
+            this.logger.error("Cannot send established for empty tunnels.");
+        }
+    }
 }

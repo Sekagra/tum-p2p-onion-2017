@@ -278,11 +278,9 @@ public class Orchestrator {
             // replace the tunnel instance in the startedTunnels map
             this.startedTunnels.put(t.getId(), tunnel);
 
-            // todo: new Map for mapping of old and new Lids
-
             // send established with two local identifiers to mark switching process
             try {
-                // this.onionInterface.sendEstablished(t);  //todo: new sendestablished
+                this.onionInterface.sendEstablished(tunnel, t);
             } catch (OnionException e) {
                 this.logger.error("Error when sending the established message to mark the refresh of a tunnel: " + e.getMessage());
                 this.startedTunnels.remove(t);
