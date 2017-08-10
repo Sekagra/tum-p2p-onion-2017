@@ -25,10 +25,10 @@ public interface OnionInterface {
 
     /**
      * Set the list of tunnels this peer has created or received
-     * @param created The list of tunnels this peer created.
-     * @param received The list of tunnels this peer is an endpoint on.
+     * @param started The list of tunnels this peer created.
+     * @param incoming The list of tunnels this peer is an endpoint on.
      */
-    void setTunnels(List<Tunnel> created, Map<Integer, TunnelSegment> received);
+    void setTunnels(Map<Integer, Tunnel> started, Map<Integer, TunnelSegment> incoming);
 
     /**
      * Set the map with tunnel segments for all cases in which this peer is an intermediate hop.

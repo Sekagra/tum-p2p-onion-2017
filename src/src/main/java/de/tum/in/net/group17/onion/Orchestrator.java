@@ -22,9 +22,7 @@ import org.apache.log4j.Logger;
 import org.ini4j.InvalidFileFormatException;
 
 import java.nio.file.NoSuchFileException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -50,7 +48,7 @@ public class Orchestrator {
     /**
      * List of tunnels this peer has started.
      */
-    private List<Tunnel> startedTunnels;
+    private Map<Integer, Tunnel> startedTunnels;
 
     /**
      * List of tunnels we received as an endpoint.
@@ -99,7 +97,7 @@ public class Orchestrator {
         assert configProvider != null;
 
         // Init data structures
-        this.startedTunnels = new ArrayList<>();
+        this.startedTunnels = new HashMap<>();
         this.incomingTunnels = new HashMap<>();
         this.segments = new HashMap<>();
 
@@ -204,7 +202,7 @@ public class Orchestrator {
      */
     private void buildTunnel(Peer destination) {
         Tunnel t = new Tunnel(getNextTunnelId());
-        this.startedTunnels.add(t);
+        this.startedTunnels.put(t.getId(), t);
 
         // get random intermediate hops to destination
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {

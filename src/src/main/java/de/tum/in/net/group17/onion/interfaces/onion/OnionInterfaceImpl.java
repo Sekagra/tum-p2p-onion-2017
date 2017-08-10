@@ -35,7 +35,7 @@ public class OnionInterfaceImpl implements OnionInterface {
     /**
      * List of tunnels we have started; complete encryption + FORWARD
      */
-    private List<Tunnel> startedTunnels;
+    private Map<Integer, Tunnel> startedTunnels;
 
     /**
      * List of tunnels we are an endpoint to; there is only a single segment and a tunnel ID known in this case
@@ -67,9 +67,9 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @inheritDoc
      */
     @Override
-    public void setTunnels(List<Tunnel> created, Map<Integer, TunnelSegment> received) {
-        this.startedTunnels = created;
-        this.incomingTunnels = received;
+    public void setTunnels(Map<Integer, Tunnel> started, Map<Integer, TunnelSegment> incoming) {
+        this.startedTunnels = started;
+        this.incomingTunnels = incoming;
     }
 
     /**
@@ -356,7 +356,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 }
             }
         } else {
-            Optional<Tunnel> tunnel = this.startedTunnels.stream()
+            Optional<Tunnel> tunnel = this.startedTunnels.values().stream()
                     .filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid().equals(lid))
                     .findAny();
             if(tunnel.isPresent()) {
@@ -384,7 +384,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         this.incomingTunnels.values().removeIf(ts -> ts.getLid().equals(msg.getLid()));
 
         // If we receive a tunnel teardown as the tunnel originator here, the tunnel endpoint has issued it
-        Optional<Tunnel> tunnel = this.startedTunnels.stream()
+        Optional<Tunnel> tunnel = this.startedTunnels.values().stream()
                 .filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(t.getSegments().size() - 1).getLid().equals(msg.getLid()))
                 .findAny();
         if(tunnel.isPresent()) {
@@ -399,7 +399,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     private void handleTunnelVoice(OnionTunnelVoiceParsedMessage msg) {
         // Determine the tunnel ID matching to this message
-        Optional<Tunnel> tunnel = this.startedTunnels.stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(t.getSegments().size() - 1).getLid().equals(msg.getLid())).findAny();
+        Optional<Tunnel> tunnel = this.startedTunnels.values().stream().filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(t.getSegments().size() - 1).getLid().equals(msg.getLid())).findAny();
         Optional<Map.Entry<Integer, TunnelSegment>> entry = this.incomingTunnels.entrySet().stream().filter(es -> es.getValue().getLid().equals(msg.getLid())).findAny();
 
         if(tunnel.isPresent()) {
@@ -417,13 +417,13 @@ public class OnionInterfaceImpl implements OnionInterface {
     @Override
     public void destroyTunnel(int tunnelId) {
         // Determine direction and send it accordingly
-        Optional<Tunnel> tunnel = this.startedTunnels.stream().filter(t -> t.getId() == tunnelId && t.getSegments().size() > 0).findAny();
+        Tunnel tunnel = this.startedTunnels.get(tunnelId);
         TunnelSegment firstSegment;
         try {
-            if(tunnel.isPresent()) {
+            if(tunnel != null) {
                 // tunnel started by us
-                firstSegment = tunnel.get().getSegments().get(0);
-                this.startedTunnels.remove(tunnel.get());
+                firstSegment = tunnel.getSegments().get(0);
+                this.startedTunnels.remove(tunnel);
             } else if(this.incomingTunnels.containsKey(tunnelId)) {
                 // tunnel we are an endpoint to
                 firstSegment = this.incomingTunnels.get(tunnelId);
@@ -435,13 +435,13 @@ public class OnionInterfaceImpl implements OnionInterface {
 
             // create the teardown messages and encrypt them accordingly
             List<ParsedMessage> transportPackets = new ArrayList<>();
-            if(tunnel.isPresent()) {    // actual teardown being started by the tunnel initiator
-                for(int i=tunnel.get().getSegments().size() - 1; i >= 0; i--){
-                    TunnelSegment segment = tunnel.get().getSegments().get(i);
+            if(tunnel != null) {    // actual teardown being started by the tunnel initiator
+                for(int i=tunnel.getSegments().size() - 1; i >= 0; i--){
+                    TunnelSegment segment = tunnel.getSegments().get(i);
                     ParsedMessage teardownPacket = this.parser.buildOnionTunnelTeardownMsg(segment.getLid().serialize());
                     ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), teardownPacket);
-                    transportPackets.add(this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel.get()));
-                    tunnel.get().getSegments().remove(i);
+                    transportPackets.add(this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel));
+                    tunnel.getSegments().remove(i);
                 }
             } else {    // Case for a teardown being issued by the end of the tunnel
                 ParsedMessage teardownPacket = this.parser.buildOnionTunnelTeardownMsg(firstSegment.getLid().serialize());
@@ -492,14 +492,14 @@ public class OnionInterfaceImpl implements OnionInterface {
 
     private void sendVoiceData(int tunnelId, byte[] data) {
         // expect a matching tunnel ID in either the list of created or incoming tunnels
-        Optional<Tunnel> tunnel = this.startedTunnels.stream().filter(t -> t.getId() == tunnelId && t.getSegments().size() > 0).findAny();
+        Tunnel tunnel = this.startedTunnels.get(tunnelId);
         TunnelSegment firstSegment;
         TunnelSegment lastSegment;
         try {
-            if(tunnel.isPresent()) {
+            if(tunnel != null) {
                 // tunnel started by us
-                firstSegment = tunnel.get().getSegments().get(0);
-                lastSegment = tunnel.get().getSegments().get(tunnel.get().getSegments().size() - 1);
+                firstSegment = tunnel.getSegments().get(0);
+                lastSegment = tunnel.getSegments().get(tunnel.getSegments().size() - 1);
             } else if(this.incomingTunnels.containsKey(tunnelId)) {
                 // tunnel we are an endpoint to
                 firstSegment = lastSegment = this.incomingTunnels.get(tunnelId);
@@ -513,8 +513,8 @@ public class OnionInterfaceImpl implements OnionInterface {
             for (ParsedMessage voicePacket : voicePackets) {
                 ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), voicePacket);
                 // encrypt accordingly
-                if(tunnel.isPresent()) {
-                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel.get());
+                if(tunnel != null) {
+                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel);
                 } else {
                     transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, firstSegment);
                 }

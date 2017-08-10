@@ -1,7 +1,5 @@
 package de.tum.in.net.group17.onion.parser;
 
-import sun.plugin2.message.Message;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
