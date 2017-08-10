@@ -6,6 +6,7 @@ import de.tum.in.net.group17.onion.parser.onionapi.*;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.util.Arrays;
+import org.junit.runner.manipulation.NoTestsRemainException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,6 +22,8 @@ import java.util.TimerTask;
  * Created by Marko Dorfhuber(PraMiD) on 31.07.17.
  */
 public class OnionApiInterfaceMock implements OnionApiInterface {
+    public boolean testRunnerReady = true;
+
     private static final int INTERVAL_MS = 1000;
     private static final int DELAY_MS = 1000;
     private static final String VOICE_DATA = "VOICE";
@@ -115,10 +118,11 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                         c.setAccessible(true);
                         OnionTunnelDestroyParsedMessage msg = c.newInstance(outgoingTunnelId);
                         callbacks.receivedDestroy(msg);
-                        this.cancel();
+                        Thread.sleep(300); // Wait until tunnel is destroyed
                     } catch (Exception e) {
                         throw new RuntimeException("Cannot create ONION TUNNEL DESTROY message! " + e.getMessage());
                     }
+                    throw new RuntimeException("TESTS COMPLETED!");
                 }
             }
         };

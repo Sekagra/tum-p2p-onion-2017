@@ -11,6 +11,8 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParser;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParserImpl;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.rules.Timeout;
+import org.junit.runner.manipulation.NoTestsRemainException;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -28,6 +30,7 @@ public class OrchestratorTest {
     private static Injector senderInjector, receiverInjector, ihInjector;
 
     private static Orchestrator sender, ih, receiver;
+    private static OnionApiInterfaceMock senderCM, ihCM, receiverCM;
 
     @BeforeClass
     public static void initPeers() throws Exception {
@@ -39,9 +42,11 @@ public class OrchestratorTest {
     }
 
 
-    @Test
-    public void testOrchestrator() {
+
+    @Test(timeout = 10000)
+    public void testOrchestrator() throws InterruptedException {
         Throwable[] exc = new Throwable[1];
+        exc[0] = null;
 
         ih.start();
         receiver.start();
@@ -57,22 +62,23 @@ public class OrchestratorTest {
         Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
         Set<Thread> testThreads = new HashSet<>();
         for (Thread t : threadSet) {
+            t.setUncaughtExceptionHandler(handler);
             if(t.getName().startsWith("Timer-"))
                 testThreads.add(t);
         }
 
-        for(Thread t : testThreads)
-            t.setUncaughtExceptionHandler(handler);
+        receiverCM.testRunnerReady = true;
+        ihCM.testRunnerReady = true;
+        senderCM.testRunnerReady = true;
 
-        for(Thread t : testThreads)
-            try {
-                t.join();
-            } catch (InterruptedException e) {
-                fail("Interrupted!");
-            }
-
-        if(exc[0] != null)
+        while(exc[0] == null)
+        {
+            Thread.sleep(100);
+        }
+        if(!"TESTS COMPLETED!".equals(exc[0].getMessage())) {
+            exc[0].printStackTrace();
             fail(exc[0].getMessage());
+        }
     }
 
     public static void createInjectors() throws NoSuchFieldException, IllegalAccessException, UnknownHostException {
@@ -101,6 +107,7 @@ public class OrchestratorTest {
                 }
 
                 apiInterface.setSender();
+                senderCM = apiInterface;
                 bind(ConfigurationProvider.class).toInstance(config);
                 bind(OnionApiParser.class).to(OnionApiParserImpl.class);
                 bind(OnionApiInterface.class).toInstance(apiInterface);
@@ -132,6 +139,7 @@ public class OrchestratorTest {
                     assertTrue("Unable to create receiver onion api interface! " + e.getMessage(), false);
                 }
 
+                ihCM = apiInterface;
                 bind(ConfigurationProvider.class).toInstance(config);
                 bind(OnionApiParser.class).to(OnionApiParserImpl.class);
                 bind(OnionApiInterface.class).toInstance(apiInterface);
@@ -164,6 +172,7 @@ public class OrchestratorTest {
                 }
 
                 apiInterface.setIntermediate();
+                receiverCM = apiInterface;
                 bind(ConfigurationProvider.class).toInstance(config);
                 bind(OnionApiParser.class).to(OnionApiParserImpl.class);
                 bind(OnionApiInterface.class).toInstance(apiInterface);

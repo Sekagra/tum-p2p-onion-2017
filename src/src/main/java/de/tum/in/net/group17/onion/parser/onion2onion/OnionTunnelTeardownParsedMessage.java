@@ -13,7 +13,7 @@ import java.nio.ByteBuffer;
  */
 public class OnionTunnelTeardownParsedMessage extends OnionToOnionParsedMessage {
     /**
-     * Create a new ONION_TUNNEL_TEARDONW message after checking all parameters.
+     * Create a new ONION_TUNNEL_TEARDOWN message after checking all parameters.
      * This object may only be created by a OnionToOnionParser.
      *
      * @param incomingLid The LID of the tunnel between the initiator and the receiver.
