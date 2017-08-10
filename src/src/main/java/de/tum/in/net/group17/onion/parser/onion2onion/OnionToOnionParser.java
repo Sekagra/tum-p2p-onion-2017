@@ -97,4 +97,13 @@ public interface OnionToOnionParser extends Parser {
      * @return A OnionTunnelEstablishedParsedMessage containing the given LID.
      */
     ParsedMessage buildOnionTunnelEstablishedMsg(byte[] lidRaw) throws ParsingException;
+
+    /**
+     * Build a new ONION_TUNNEL_ESTABLISHED message to switch from an old tunnel to a new one.
+     *
+     * @param lidRawNew The LID of the new tunnel.
+     * @param lidRawOld The LID of the old tunnel.
+     * @return A OnionTunnelEstablishedParsedMessage containing the old and new LID.
+     */
+    ParsedMessage buildOnionTunnelEstablishedMsg(byte[] lidRawNew, byte[] lidRawOld) throws ParsingException;
 }

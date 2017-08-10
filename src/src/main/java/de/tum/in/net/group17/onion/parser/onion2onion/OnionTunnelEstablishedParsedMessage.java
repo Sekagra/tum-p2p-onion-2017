@@ -1,7 +1,10 @@
 package de.tum.in.net.group17.onion.parser.onion2onion;
 
 import de.tum.in.net.group17.onion.model.Lid;
+import de.tum.in.net.group17.onion.model.LidImpl;
 import de.tum.in.net.group17.onion.parser.MessageType;
+
+import java.nio.ByteBuffer;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 08.08.17.
@@ -10,14 +13,28 @@ import de.tum.in.net.group17.onion.parser.MessageType;
  * Objects of this type shall only be created by an Onion Parser after checking all parameters.
  */
 public class OnionTunnelEstablishedParsedMessage extends OnionToOnionParsedMessage {
+    private Lid lidOld;
+
     /**
-     * Create a net ONION TUNNEL ESTABLISH message for the given LID.
-     * Objects of this type shall only be created by OnionToOnion Parsers after checking all parameters.
+     * Create a new ONION TUNNEL ESTABLISHED message for a new tunnel.
+     * Objects of this type shall only be created by an OnionToOnion parser.
      *
-     * @param lid The LID of the fully established tunnel on the last hop.
+     * @param lidNew The Lid of the newly established tunnel.
      */
-    OnionTunnelEstablishedParsedMessage(Lid lid) {
-        super(lid);
+    OnionTunnelEstablishedParsedMessage(Lid lidNew) {
+        this(lidNew, null);
+    }
+
+    /**
+     * Create a new ONION TUNNEL ESTABLISHED used to switch from an old tunnel to a new one.
+     * Objects of this type shall only be created by an OnionToOnion parser.
+     *
+     * @param lidNew Lid of the new tunnel.
+     * @param lidOld Lid of the old tunnel.
+     */
+    OnionTunnelEstablishedParsedMessage(Lid lidNew, Lid lidOld) {
+        super(lidNew);
+        this.lidOld = lidOld;
     }
 
     /**
@@ -25,7 +42,9 @@ public class OnionTunnelEstablishedParsedMessage extends OnionToOnionParsedMessa
      */
     @Override
     public byte[] serialize() {
-        return super.serializeBase().array();
+        ByteBuffer buf = super.serializeBase();
+        buf.put(lidOld.serialize());
+        return buf.array();
     }
 
     /**
@@ -33,7 +52,7 @@ public class OnionTunnelEstablishedParsedMessage extends OnionToOnionParsedMessa
      */
     @Override
     public short getSize() {
-        return super.getSizeBase();
+        return (short)(super.getSizeBase() + (lidOld == null ? 0 : LidImpl.LENGTH));
     }
 
     /**

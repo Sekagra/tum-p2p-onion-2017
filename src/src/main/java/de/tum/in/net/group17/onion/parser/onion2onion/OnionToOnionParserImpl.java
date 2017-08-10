@@ -133,6 +133,14 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
 
     /**
      * @inheritDoc
+     */
+    @Override
+    public ParsedMessage buildOnionTunnelEstablishedMsg(byte[] lidRawNew, byte[] lidRawOld) throws ParsingException {
+        return new OnionTunnelEstablishedParsedMessage(LidImpl.deserialize(lidRawNew), LidImpl.deserialize(lidRawOld));
+    }
+
+    /**
+     * @inheritDoc
      *
      * This implementation throws a ParsingError on every error!
      */
@@ -159,10 +167,27 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
                 content = parseIncomingOnionMessage(data, 1, MessageType.ONION_TUNNEL_VOICE);
                 return new OnionTunnelVoiceParsedMessage(content.lid, content.data);
             case ONION_TUNNEL_ESTABLISHED:
-                content = parseIncomingOnionMessage(data, 0, MessageType.ONION_TUNNEL_ESTABLISHED);
-                return new OnionTunnelEstablishedParsedMessage(content.lid);
+                return parseIncomingEstablishedMessage(data);
             default:
                 throw new ParsingException("Not able to parse message. Type: " + extractType(data).getValue() + "!");
+        }
+    }
+
+    private ParsedMessage parseIncomingEstablishedMessage(byte[] data) throws ParsingException {
+        GenericMsgContent content = parseIncomingOnionMessage(data, LidImpl.LENGTH, MessageType.ONION_TUNNEL_ESTABLISHED);
+
+        if(data.length == LidImpl.LENGTH + 4) { // Without 'switch'
+            return new OnionTunnelEstablishedParsedMessage(content.lid);
+        } else if(data.length == 2*LidImpl.LENGTH + 4) {
+            ByteBuffer buffer = ByteBuffer.wrap(content.data);
+            byte[] lidRawOld = new byte[LidImpl.LENGTH];
+
+            buffer.order(ByteOrder.BIG_ENDIAN);
+            buffer.get(lidRawOld, 4 + LidImpl.LENGTH, LidImpl.LENGTH);
+
+            return new OnionTunnelEstablishedParsedMessage(content.lid, LidImpl.deserialize(lidRawOld));
+        } else {
+            throw new ParsingException("Invalid size for a ONION TUNNEL ESTABLISHED message: " + data.length);
         }
     }
 
