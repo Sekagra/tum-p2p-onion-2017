@@ -3,6 +3,7 @@ package de.tum.in.net.group17.onion.parser.onion2onion;
 import de.tum.in.net.group17.onion.model.Lid;
 import de.tum.in.net.group17.onion.model.LidImpl;
 import de.tum.in.net.group17.onion.parser.MessageType;
+import sun.plugin.dom.exception.InvalidStateException;
 
 import java.nio.ByteBuffer;
 
@@ -35,6 +36,26 @@ public class OnionTunnelEstablishedParsedMessage extends OnionToOnionParsedMessa
     OnionTunnelEstablishedParsedMessage(Lid lidNew, Lid lidOld) {
         super(lidNew);
         this.lidOld = lidOld;
+    }
+
+    /**
+     * Returns true if this ONION TUNNEL ESTABLISHED message is used in a tunnel refresh.
+     *
+     * @return true if used for tunnel refresh.
+     */
+    public boolean isRefresh() {
+        return lidOld != null;
+    }
+
+    /**
+     * Get the old LID in the tunnel refresh message.
+     *
+     * @return The LID of the refreshed tunnel.
+     */
+    public Lid getLidOld() {
+        if(!isRefresh())
+            throw new InvalidStateException("Message not used for tunnel refresh.");
+        return this.lidOld;
     }
 
     /**

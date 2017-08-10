@@ -3,15 +3,10 @@ package de.tum.in.net.group17.onion.interfaces.authentication;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.model.TunnelSegment;
-import de.tum.in.net.group17.onion.model.results.RequestResult;
-import de.tum.in.net.group17.onion.parser.MessageType;
-import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs2ParsedMessage;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelTransportParsedMessage;
-import org.bouncycastle.util.*;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.lang.reflect.Constructor;
 import java.util.*;

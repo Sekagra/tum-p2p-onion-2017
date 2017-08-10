@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of the Onion to Onion interface via UDP.
