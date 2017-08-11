@@ -20,6 +20,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
+    @Override
     public ParsedMessage buildSessionStart(int requestId, byte[] hostkey) throws ParsingException {
         int size = 12 + hostkey.length;
         ASN1Primitive key;
@@ -38,6 +39,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
+    @Override
     public ParsedMessage buildSessionIncoming1(int requestId, byte[] payload) throws ParsingException {
         if(14 + payload.length > 65536)
             throw new ParsingException("Message too large!");
@@ -48,6 +50,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
+    @Override
     public ParsedMessage buildSessionIncoming2(int requestId, short sessionId, byte[] payload) throws ParsingException {
         int size = 12 + payload.length;
         if(size > 65535)
@@ -59,6 +62,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
+    @Override
     public ParsedMessage buildLayerEncrypt(int requestId, short[] sessionIds, byte[] payload) throws ParsingException {
         checkSizeCryptMessage(requestId, sessionIds, payload);
 
@@ -68,6 +72,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
+    @Override
     public ParsedMessage buildLayerDecrypt(int requestId, short[] sessionIds, byte[] payload) throws ParsingException {
         checkSizeCryptMessage(requestId, sessionIds, payload);
 
@@ -77,6 +82,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
+    @Override
     public ParsedMessage buildSessionClose(short sessionId) throws ParsingException {
         return new AuthSessionCloseParsedMessage(sessionId);
     }
@@ -84,43 +90,29 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException {
-        return buildCipherCryptMessage(MessageType.AUTH_CIPHER_ENCRYPT, stillEncrypted, requestId, payload);
+    @Override
+    public ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, short sessionId, byte[] payload) throws ParsingException {
+        if(payload == null || payload.length < 1)
+            throw new ParsingException("Illegal payload for encryption/decryption!");
+
+        if(12 + payload.length > 65536)
+            throw new ParsingException("Payload too long to build an AUTH CIPHER message!");
+
+        return new AuthCipherEncryptParsedMessage(stillEncrypted, requestId, sessionId, payload);
     }
 
     /**
      * @inheritDoc
      */
-    public ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException {
-        return buildCipherCryptMessage(MessageType.AUTH_CIPHER_DECRYPT, stillEncrypted, requestId, payload);
-    }
-
-    /**
-     * Create a new AUTH_CIPHER_EN-/DECRYPT message with the given parameters.
-     * This method throws a ParsingException if an error occurs.
-     *
-     * @param type Either an AUTH_CIPHER_ENCRYPT or an AUTH_CIPHER_DECRYPT message.
-     * @param stillEncrypted Flag that indicates if the message is encrypted the first time (encryption mode)
-     *                       or is still encrypted after removing the last layer of encryption (decryption mode)
-     * @param requestId The request ID that shall be used.
-     * @param payload The payload that shall be en-/decrypted.
-     *
-     * @return Either an AuthCipherEncryptParsedMessage or an AuthCipherDecryptParsedMessage after checking
-     *          all parameters.
-     */
-    private ParsedMessage buildCipherCryptMessage(MessageType type, boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException
-    {
+    @Override
+    public ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, short sessionId, byte[] payload) throws ParsingException {
         if(payload == null || payload.length < 1)
             throw new ParsingException("Illegal payload for encryption/decryption!");
 
-        // TODO: Change the size in all classes to match the ONION message size
         if(12 + payload.length > 65536)
             throw new ParsingException("Payload too long to build an AUTH CIPHER message!");
 
-        if(type == MessageType.AUTH_CIPHER_ENCRYPT)
-            return new AuthCipherEncryptParsedMessage(stillEncrypted, requestId, payload);
-        else // Private message -> Do not check if type is invalid
-            return new AuthCipherDecryptParsedMessage(stillEncrypted, requestId, payload);
+        return new AuthCipherEncryptParsedMessage(stillEncrypted, requestId, sessionId, payload);
     }
 
     /**
@@ -183,12 +175,14 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     private ParsedMessage parseCryptResponse(MessageType type, byte[] message) throws ParsingException {
         ByteBuffer buffer;
-        byte[] payload;
+        int flagsArea;
         int requestId;
+        byte[] payload;
 
         checkType(message, type); // Will throw a parsing exception on any error
 
         buffer = ByteBuffer.wrap(message);
+        flagsArea = buffer.getInt(4);
         requestId = buffer.getInt(8);
         payload = new byte[message.length - 12];
         buffer.position(12);
@@ -202,7 +196,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
             case AUTH_CIPHER_ENCRYPT_RESP:
                 return new AuthCipherEncryptResParsedMessage(requestId, payload);
             case AUTH_CIPHER_DECRYPT_RESP:
-                return new AuthCipherDecryptResParsedMessage(requestId, payload);
+                return new AuthCipherDecryptResParsedMessage((flagsArea & 0x00000001) != 0, requestId, payload);
         }
 
         return (type == MessageType.AUTH_LAYER_ENCRYPT_RESP ?

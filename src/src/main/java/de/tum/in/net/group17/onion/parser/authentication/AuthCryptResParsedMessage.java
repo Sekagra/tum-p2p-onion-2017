@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by Marko Dorfhuber(PraMiD) on 06.06.17.
  */
-public abstract class AuthLayerCryptResParsedMessage extends AuthParsedMessage {
+public abstract class AuthCryptResParsedMessage extends AuthParsedMessage {
     private byte[] payload;
 
     /**
@@ -15,7 +15,7 @@ public abstract class AuthLayerCryptResParsedMessage extends AuthParsedMessage {
      * @param requestId The used request ID.
      * @param payload The encrypted payload.
      */
-    protected AuthLayerCryptResParsedMessage(int requestId, byte[] payload) {
+    protected AuthCryptResParsedMessage(int requestId, byte[] payload) {
         super(requestId);
         this.payload = payload;
     }
@@ -26,12 +26,20 @@ public abstract class AuthLayerCryptResParsedMessage extends AuthParsedMessage {
     public byte[] serialize() {
         ByteBuffer buffer = buildHeader();
 
-        buffer.putInt(0);
+        buffer.putInt(getFlagsArea());
         buffer.putInt(requestId);
         buffer.put(payload);
 
         return buffer.array();
     }
+
+    /**
+     * Get the bits we have to set in the flags area.
+     * (AUTH CIPHER DECRYPT uses one bit)
+     *
+     * @return The flags area of this message type.
+     */
+    protected abstract int getFlagsArea();
 
     /**
      * @inheritDoc

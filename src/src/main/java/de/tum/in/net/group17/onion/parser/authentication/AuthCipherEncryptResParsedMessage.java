@@ -8,7 +8,7 @@ import de.tum.in.net.group17.onion.parser.MessageType;
  * Represents an AUTH CIPHER ENCRYPT RESP message.
  * Objects of this class may only be created by an AuthenticationParsed after checking all parameters.
  */
-public class AuthCipherEncryptResParsedMessage extends AuthLayerCryptResParsedMessage {
+public class AuthCipherEncryptResParsedMessage extends AuthCryptResParsedMessage {
     /**
      * Create a new AUTH CIPHER ENCRYPT RESP message.
      * Objects of this class may only be created by an AuthenticationParser after checking all parameters.
@@ -18,6 +18,11 @@ public class AuthCipherEncryptResParsedMessage extends AuthLayerCryptResParsedMe
      */
     AuthCipherEncryptResParsedMessage(int requestId, byte[] payload) {
         super(requestId, payload);
+    }
+
+    @Override
+    protected int getFlagsArea() {
+        return 0;
     }
 
     /**

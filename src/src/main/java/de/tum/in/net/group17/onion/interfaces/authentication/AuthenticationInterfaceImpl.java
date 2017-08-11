@@ -7,7 +7,6 @@ import de.tum.in.net.group17.onion.interfaces.TcpClientInterface;
 import de.tum.in.net.group17.onion.model.TunnelSegment;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
-import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.*;
@@ -210,7 +209,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
 
         if (this.results.get(requestId).isReturned())
             try {
-                AuthLayerCryptResParsedMessage response = (AuthLayerCryptResParsedMessage) this.results.remove(requestId).getResult();
+                AuthCryptResParsedMessage response = (AuthCryptResParsedMessage) this.results.remove(requestId).getResult();
                 message.setData(response.getPayload());
                 return message;
             } catch (ClassCastException e) {

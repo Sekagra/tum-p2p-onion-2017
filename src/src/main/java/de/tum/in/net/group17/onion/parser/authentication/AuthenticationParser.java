@@ -60,11 +60,12 @@ public interface AuthenticationParser extends Parser {
      *
      * @param stillEncrypted Flag that indicates if the message is encrypted the first time.
      * @param requestId The request ID that shall be used.
+     * @param sessionId The session ID used for decryption.
      * @param payload The payload that shall be encrypted.
      *
      * @return An AuthCipherEncryptParsedMessage that is conform to the specification.
      */
-    ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException;
+    ParsedMessage buildCipherEncrypt(boolean stillEncrypted, int requestId, short sessionId, byte[] payload) throws ParsingException;
 
     /**
      * Create a new AUTH_CIPHER_DECRYPT message with the given parameters.
@@ -72,11 +73,12 @@ public interface AuthenticationParser extends Parser {
      * @param stillEncrypted Flag that indicates if the message is still encrypted after removing
      *                       the last layer of encryption.
      * @param requestId The request ID that shall be used.
+     * @param sessionId The session ID used for decryption.
      * @param payload The payload that shall be decrypted.
      *
      * @return An AuthCipherDecryptParsedMessage that is conform to the specification.
      */
-    ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, byte[] payload) throws ParsingException;
+    ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, short sessionId, byte[] payload) throws ParsingException;
 
     /**
      * Build the message to close a session held by the authentication module.

@@ -12,9 +12,9 @@ public class AuthCipherEncryptParsedMessage extends AuthCipherCryptParsedMessage
     /**
      * @inheritDoc
      */
-    public AuthCipherEncryptParsedMessage(boolean stillEncrypted, int requestId, byte[] payload)
+    public AuthCipherEncryptParsedMessage(boolean stillEncrypted, int requestId, short sessionId, byte[] payload)
     {
-        super(stillEncrypted, requestId, payload);
+        super(stillEncrypted, requestId, sessionId, payload);
     }
 
     /**
