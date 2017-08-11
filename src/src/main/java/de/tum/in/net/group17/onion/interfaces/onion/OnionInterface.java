@@ -1,5 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.onion;
 
+import de.tum.in.net.group17.onion.interfaces.authentication.AuthException;
 import de.tum.in.net.group17.onion.model.Lid;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
@@ -54,13 +55,13 @@ public interface OnionInterface {
      * Instructs the onion module to send cover traffic.
      * @param msg The OnionCoverParsedMessage with all necessary data regarding the cover traffic to sent.
      */
-    void sendVoiceData(OnionTunnelDataParsedMessage msg);
+    void sendVoiceData(OnionTunnelDataParsedMessage msg) throws OnionException;
 
     /**
      * Instructs the onion module to send cover traffic.
      * @param msg The OnionCoverParsedMessage with all necessary data regarding the cover traffic to sent.
      */
-    void sendCoverData(OnionCoverParsedMessage msg);
+    void sendCoverData(OnionCoverParsedMessage msg) throws OnionException;
 
     /**
      * Send the established message type over the given tunnel.

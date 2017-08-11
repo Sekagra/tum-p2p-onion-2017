@@ -3,6 +3,7 @@ package de.tum.in.net.group17.onion.interfaces.onion;
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.UdpServer;
+import de.tum.in.net.group17.onion.interfaces.authentication.AuthException;
 import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterface;
 import de.tum.in.net.group17.onion.model.*;
 import de.tum.in.net.group17.onion.parser.MessageType;
@@ -159,6 +160,8 @@ public class OnionInterfaceImpl implements OnionInterface {
                 }
             } catch (ParsingException e) {
                 throw new OnionException("Error building the packet to initiate the a tunnel: " + e.getMessage());
+            } catch (AuthException e) {
+                throw new OnionException("Error while encrypting ONION TUNNEL TRANSFER message.");
             }
         } else {
             try {
@@ -228,6 +231,8 @@ public class OnionInterfaceImpl implements OnionInterface {
                     logger.error("Unable to parse transport message: " + e.getMessage());
                 } catch(IOException e) {
                     this.logger.error("Error during message forwarding, tunnel possibly went down: " + e.getMessage());
+                } catch (AuthException e) {
+                    this.logger.warn("Error during encrypt or decrypt of packet. Dropping the packet!");
                 }
                 //todo: tear down tunnel in case of an exception (that's why they are caught here)
                 break;
@@ -316,6 +321,8 @@ public class OnionInterfaceImpl implements OnionInterface {
                         e.getMessage());
             } catch (InterruptedException e) {
                 throw new OnionException("Interrupted while encrypting accept message: " + e.getMessage());
+            } catch (AuthException e) {
+                throw new OnionException("Error while encrypting ONION TUNNEL TRANSFER message");
             }
         } else {
             logger.warn("Received unsolicited or late ACCEPT-message from " + senderAddress.getHostAddress() + ":" + Short.toString(senderPort));
@@ -354,7 +361,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param senderPort The remote port of the sender of this datagram.
      */
     private void handleTunnelTransport(OnionTunnelTransportParsedMessage msg, InetAddress senderAddress, short senderPort)
-            throws IOException, ParsingException, InterruptedException {
+            throws IOException, ParsingException, InterruptedException, AuthException {
         Lid lid = msg.getLid();
 
         // check Lid in TunnelSegment list (case: intermediate hop or receiver)
@@ -421,7 +428,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 .filter(t -> !t.getSegments().isEmpty() && t.getSegments().get(t.getSegments().size() - 1).getLid().equals(msg.getLid()))
                 .findAny();
         if(tunnel.isPresent()) {
-            this.destroyTunnelById(tunnel.get().getId());
+                this.destroyTunnelById(tunnel.get().getId());
         } else {
             this.logger.warn("Received unsolicited teardown with unknown local identifier: " + msg);
         }
@@ -492,7 +499,11 @@ public class OnionInterfaceImpl implements OnionInterface {
             // check if this LID is part of toBeDestroyed, decrypt and forward it accordingly
             Tunnel tunnel = this.toBeDestroyed.get(msg.getLid());
             if(tunnel != null) {
-                this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt((OnionTunnelTransportParsedMessage) msg, tunnel.getSegments()).getInnerPacket()), senderAddress, senderPort);
+                try {
+                    this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt((OnionTunnelTransportParsedMessage) msg, tunnel.getSegments()).getInnerPacket()), senderAddress, senderPort);
+                } catch (AuthException e) {
+                    this.logger.warn("Error during decrypt of packet received on switched out tunnel. Dropping packet!");
+                }
             } else {
                 // check if this LID has an old LID associated with it in toBeDestroyed (associated via Tunnel ID)
 
@@ -507,7 +518,11 @@ public class OnionInterfaceImpl implements OnionInterface {
                             .findAny();
                     if(entry.isPresent()) {
                         // Note: The first data with a new lid removes the intermediate mapping and issues a teardown on the old tunnel
-                        this.destroyTunnel(tunnel);
+                        try {
+                            this.destroyTunnel(tunnel);
+                        } catch (OnionException e) {
+                            this.logger.warn("Could not destroy switched out tunnel: " + e.getMessage());
+                        }
                     }
                 }
             }
@@ -549,7 +564,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      * Destroy a concrete tunnel given by a Tunnel-instance.
      * @param tunnel The tunnel instance to destroy.
      */
-    private void destroyTunnel(Tunnel tunnel) {
+    private void destroyTunnel(Tunnel tunnel) throws OnionException {
         TunnelSegment firstSegment = tunnel.getSegments().get(0);
         List<ParsedMessage> transportPackets = new ArrayList<>();
 
@@ -578,6 +593,8 @@ public class OnionInterfaceImpl implements OnionInterface {
             this.logger.error("Unable to encrypt a message via the authentication module: " + e.getMessage());
         } catch (IOException e) {
             this.logger.error("Unable to send message to next peer: " + e.getMessage());
+        } catch (AuthException e) {
+            throw new OnionException("Error during encryption of ONION TUNNEL TEARDOWN message: " + e.getMessage());
         }
     }
 
@@ -585,7 +602,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @inheritDoc
      */
     @Override
-    public void sendVoiceData(OnionTunnelDataParsedMessage msg) {
+    public void sendVoiceData(OnionTunnelDataParsedMessage msg) throws OnionException {
         this.sendVoiceData(msg.getTunnelId(), msg.getData());
     }
 
@@ -593,7 +610,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @inheritDoc
      */
     @Override
-    public void sendCoverData(OnionCoverParsedMessage msg) {
+    public void sendCoverData(OnionCoverParsedMessage msg) throws OnionException {
         // create random cover data
         byte[] coverData = new byte[msg.getCoverSize()];
         new Random().nextBytes(coverData);
@@ -608,7 +625,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         }
     }
 
-    private void sendVoiceData(int tunnelId, byte[] data) {
+    private void sendVoiceData(int tunnelId, byte[] data) throws OnionException {
         // expect a matching tunnel ID in either the list of created or incoming tunnels
         Tunnel tunnel = this.startedTunnels.get(tunnelId);
         TunnelSegment firstSegment;
@@ -645,6 +662,8 @@ public class OnionInterfaceImpl implements OnionInterface {
             this.logger.error("Unable to encrypt a message via the authentication module: " + e.getMessage());
         } catch (IOException e) {
             this.logger.error("Unable to send message to next peer: " + e.getMessage());
+        } catch (AuthException e) {
+            throw new OnionException("Cannot encrypt ONION TUNNEL TRANSPORT package: " + e.getMessage());
         }
     }
 
@@ -665,6 +684,8 @@ public class OnionInterfaceImpl implements OnionInterface {
                 throw new OnionException("Unable to encrypt a message via the authentication module: " + e.getMessage());
             } catch (IOException e) {
                 throw new OnionException("Unable to send established message to next peer: " + e.getMessage());
+            } catch (AuthException e) {
+                throw new OnionException("Cannot encrypt established message: " + e.getMessage());
             }
         } else {
             this.logger.error("Cannot send established on empty tunnel.");
@@ -694,6 +715,8 @@ public class OnionInterfaceImpl implements OnionInterface {
                 throw new OnionException("Unable to encrypt a message via the authentication module: " + e.getMessage());
             } catch (IOException e) {
                 throw new OnionException("Unable to send established message to next peer: " + e.getMessage());
+            } catch (AuthException e) {
+                throw new OnionException("Cannot encrypt established message during tunnel switching: " + e.getMessage());
             }
         } else {
             this.logger.error("Cannot send established for empty tunnels.");

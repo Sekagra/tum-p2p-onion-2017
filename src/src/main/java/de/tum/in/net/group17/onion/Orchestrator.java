@@ -4,6 +4,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
+import de.tum.in.net.group17.onion.interfaces.authentication.AuthException;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionCallback;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionException;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
@@ -73,7 +74,7 @@ public class Orchestrator {
 
         try {
             // Setup the dependency injection with Guice
-            Injector injector = Guice.createInjector(new ProductionInjector(args[0]));
+            Injector injector = Guice.createInjector(new ProductionInjector(args[1]));
             Orchestrator orchestrator = injector.getInstance(Orchestrator.class);
             orchestrator.start();
         } catch (NoSuchFileException e) {
@@ -176,12 +177,27 @@ public class Orchestrator {
 
             @Override
             public void receivedCoverData(OnionCoverParsedMessage msg) {
-                onionInterface.sendCoverData(msg);
+                try {
+                    onionInterface.sendCoverData(msg);
+                } catch (OnionException e) {
+                    logger.error("Cannot send cover data on tunnel! It is not possible to send an ONION ERROR as CM " +
+                            "did not send us the tunnel we should send cover traffic on... Error: " + e.getMessage());
+                }
             }
 
             @Override
             public void receivedVoiceData(OnionTunnelDataParsedMessage msg) {
-                onionInterface.sendVoiceData(msg);
+                try {
+                    onionInterface.sendVoiceData(msg);
+                } catch (OnionException e) {
+                    logger.error("Cannot send data received by CM on tunnel: " + msg.getTunnelId() +
+                            "; Error: " + e.getMessage());
+                    try {
+                        apiInterface.sendError(msg.getTunnelId(), msg.getType());
+                    } catch (OnionApiException e1) {
+                        logger.error("Cannot send error to CM module..: " + e1.getMessage());
+                    }
+                }
             }
 
             @Override

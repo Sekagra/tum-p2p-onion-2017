@@ -56,15 +56,15 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         try {
             ParsedMessage parsed = this.parser.parseMsg(data);
             if (parsed instanceof AuthParsedMessage) {
-                int requestID = ((AuthParsedMessage) parsed).getRequestId();
-                RequestResult res = results.get(requestID);
+                int requestId = ((AuthParsedMessage) parsed).getRequestId();
+                RequestResult res = results.get(requestId);
                 if (res != null) {
                     logger.debug("Received message from authentication module: " + parsed.getClass().getName());
                     res.setReturned(true);
                     res.setResult(parsed);
                     this.results.notifyAll();
                 } else {
-                    logger.warn("Received message without callback mapping: " + requestID);
+                    logger.warn("Received message without callback mapping: " + requestId);
                 }
             } else {
                 logger.warn("Received SESSION CLOSE message.");
@@ -148,7 +148,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @inheritDoc
      */
     @Override
-    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException, AuthException {
         int requestId = this.requestCounter.getAndAdd(1);
 
         ParsedMessage packet = this.parser.buildCipherEncrypt(isCipher, requestId, segment.getSessionId(), message.getData());
@@ -163,7 +163,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @inheritDoc
      */
     @Override
-    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException, AuthException {
         int requestId = this.requestCounter.getAndAdd(1);
         /**
          * Get session IDs in reverse order cause the specification says:
@@ -186,7 +186,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @inheritDoc
      */
     @Override
-    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException, AuthException {
         int requestId = this.requestCounter.getAndAdd(1);
 
         ParsedMessage packet = this.parser.buildCipherDecrypt(requestId, segment.getSessionId(), message.getData());
@@ -201,7 +201,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @inheritDoc
      */
     @Override
-    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException, AuthException {
         // build the message
         int requestId = this.requestCounter.getAndAdd(1);
 
@@ -232,7 +232,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @throws ParsingException Exception in case anything is wrong with the packet layouts.
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
-    private OnionTunnelTransportParsedMessage waitForCryptResponse(int requestId, OnionTunnelTransportParsedMessage message) throws ParsingException, InterruptedException {
+    private OnionTunnelTransportParsedMessage waitForCryptResponse(int requestId, OnionTunnelTransportParsedMessage message) throws ParsingException, InterruptedException, AuthException {
         // wait for the response
         synchronized (this.results) {
             while (!this.results.get(requestId).isReturned())
@@ -248,9 +248,11 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
                 case AUTH_CIPHER_DECRYPT_RESP:
                     message.setData(((AuthCryptResParsedMessage)response).getPayload());
                     return message;
-                    break;
                 case AUTH_ERROR:
                     //todo: Throw ApiException as this packet cannot be sent further
+                    throw new AuthException("Received AUTH ERROR: " + ((AuthErrorParsedMessage)response).getRequestId());
+                default:
+                    throw new AuthException("Unknown message type.");
             }
         } else {
             throw new ParsingException("Did not receive a response from the auth module to an issued session layer decrypt.");

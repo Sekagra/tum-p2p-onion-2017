@@ -54,7 +54,7 @@ public interface AuthenticationInterface {
      * @throws ParsingException Exception in case anything is wrong with the packet layouts.
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
-    OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException;
+    OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException, AuthException;
 
     /**
      * Order the authentication module to encrypt data for a single layer.
@@ -66,7 +66,7 @@ public interface AuthenticationInterface {
      * @throws ParsingException Exception in case anything is wrong with the packet layouts.
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
-    OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException;
+    OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException, AuthException;
 
     /**
      * Order the authentication module to decrypt data for a single layer (used by intermediate hops).
@@ -78,7 +78,7 @@ public interface AuthenticationInterface {
      * @throws ParsingException Exception in case anything is wrong with the packet layouts.
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
-    OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException;
+    OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException, AuthException;
 
     /**
      * Order the authentication module to decrypt data for a single layer.
@@ -90,5 +90,5 @@ public interface AuthenticationInterface {
      * @throws ParsingException Exception in case anything is wrong with the packet layouts.
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
-    OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException;
+    OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException, AuthException;
 }

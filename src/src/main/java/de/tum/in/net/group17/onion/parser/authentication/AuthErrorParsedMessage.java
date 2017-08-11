@@ -49,7 +49,7 @@ public class AuthErrorParsedMessage extends AuthParsedMessage {
      *
      * @return The contained request ID.
      */
-    public int getRequestID() {
+    public int getRequestId() {
         return requestId;
     }
 }

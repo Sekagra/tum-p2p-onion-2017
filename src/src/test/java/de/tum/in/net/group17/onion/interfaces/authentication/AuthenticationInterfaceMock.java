@@ -97,7 +97,7 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
     }
 
     @Override
-    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException, AuthException {
         // Set the new arrays to handle the case if we only get a copy of the stored array
         // We encode by adding the number of encryptions in front of the data
         byte[] payload = message.getData();
@@ -134,7 +134,7 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
             throw new RuntimeException("Wrong encryption, found "
                     + getLidFingerprint(lid1) + ", " + getLidFingerprint(lid2)
                     + " and expected "
-                    + getLidFingerprint(segments.get(0).getLid().serialize()) + ", " getLidFingerprint(segments.get(1).getLid().serialize()));
+                    + getLidFingerprint(segments.get(0).getLid().serialize()) + ", " + getLidFingerprint(segments.get(1).getLid().serialize()));
         } else {
             throw new RuntimeException("The mock can only deal with exactly two tunnel segments.");
         }

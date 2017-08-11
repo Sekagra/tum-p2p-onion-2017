@@ -1,8 +1,6 @@
 package de.tum.in.net.group17.onion;
 
 import com.google.inject.AbstractModule;
-import de.tum.in.net.group17.onion.config.ConfigurationProvider;
-import de.tum.in.net.group17.onion.config.ConfigurationProviderImpl;
 import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterface;
 import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterfaceImpl;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
@@ -28,8 +26,6 @@ import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParserImpl;
 public class ParserUnitTestInjector extends AbstractModule {
     @Override
     protected void configure() {
-        bind(ConfigurationProvider.class).to(ConfigurationProviderImpl.class);
-
         // bind interfaces to other modules to their implementations
         bind(AuthenticationInterface.class).to(AuthenticationInterfaceImpl.class);
         bind(OnionInterface.class).to(OnionInterfaceImpl.class);

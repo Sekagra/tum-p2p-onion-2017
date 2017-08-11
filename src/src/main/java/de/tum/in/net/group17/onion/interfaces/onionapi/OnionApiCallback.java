@@ -1,5 +1,7 @@
 package de.tum.in.net.group17.onion.interfaces.onionapi;
 
+import de.tum.in.net.group17.onion.interfaces.authentication.AuthException;
+import de.tum.in.net.group17.onion.interfaces.onion.OnionException;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelBuildParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
