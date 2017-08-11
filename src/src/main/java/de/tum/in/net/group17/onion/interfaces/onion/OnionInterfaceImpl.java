@@ -98,7 +98,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             byte[] buf = new byte[bb.readableBytes()];
             bb.readBytes(buf);
 
-            logger.debug("Received on " + this.port);
+            logger.debug("Received on " + this.port + " with size " + buf.length);
 
             try {
                 ParsedMessage parsed = parser.parseMsg(buf);

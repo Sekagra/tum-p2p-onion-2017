@@ -4,7 +4,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
-import de.tum.in.net.group17.onion.interfaces.authentication.AuthException;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionCallback;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionException;
 import de.tum.in.net.group17.onion.interfaces.onion.OnionInterface;
@@ -23,8 +22,12 @@ import org.apache.log4j.Logger;
 import org.ini4j.InvalidFileFormatException;
 
 import java.nio.file.NoSuchFileException;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -51,6 +54,8 @@ public class Orchestrator {
      */
     private Map<Integer, Tunnel> startedTunnels;
 
+    private Tunnel coverTunnel;
+
     /**
      * List of tunnels we received as an endpoint.
      */
@@ -62,6 +67,9 @@ public class Orchestrator {
     private Map<Lid, TunnelSegment> segments;
 
     private static Logger logger = Logger.getRootLogger();
+
+    private TimerTask roundTask;
+    private Timer roundTimer;
 
     public static void main(String[] args) {
         logger.info("Starting up!");
@@ -112,6 +120,36 @@ public class Orchestrator {
 
         // Start with a delegate issuing the build of a random tunnel
         nextTunnelBuild = () -> setupTunnel();
+
+        roundTimer = new Timer();
+        roundTask = getRoundTask();
+        roundTimer.schedule(this.roundTask, 3000, this.configProvider.getRoundInterval().getSeconds() * 1000);
+    }
+
+    private TimerTask getRoundTask() {
+        return new TimerTask() {
+            @Override
+            public void run() {
+                // Teardown the cover tunnel if a real tunnel is being build this round
+                if(nextTunnelBuild != null && coverTunnel != null) {
+                    try {
+                        onionInterface.destroyTunnelById(coverTunnel.getId());
+                        coverTunnel = null;
+                    } catch (OnionException e) {
+                        logger.warn("Error during cover tunnel teardown: " + e.getMessage());
+                    }
+                }
+
+                refreshTunnels();
+
+                // Build a new tunnel after refreshing old ones
+                if(nextTunnelBuild != null) {
+                    nextTunnelBuild.run();
+                }
+
+                cleanupOldStates();
+            }
+        };
     }
 
     /**
@@ -214,6 +252,12 @@ public class Orchestrator {
                 // Clean up of tunnels
                 startedTunnels.remove(msg.getTunnelId());
                 incomingTunnels.remove(msg.getTunnelId());
+
+                // TODO: Change if cover tunnel has to be build immediately
+                // Issue new cover tunnel build for new round
+                if(startedTunnels.isEmpty()) {
+                    nextTunnelBuild = () -> setupTunnel();
+                }
             }
         };
     }
@@ -225,7 +269,7 @@ public class Orchestrator {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
         try {
             Peer peer = this.rpsInterface.queryRandomPeer();
-            setupTunnel(peer);
+            this.coverTunnel = setupTunnel(peer);
         } catch (RandomPeerSamplingException e) {
             logger.error("Unable to get random peer as cover tunnel destination: " + e.getMessage());
         }
@@ -235,7 +279,7 @@ public class Orchestrator {
      * Setup a startedTunnels over several intermediate hops to the given destination.
      * @param destination The peer that acts as a destination for the new tunnel.
      */
-    private void setupTunnel(Peer destination) {
+    private Tunnel setupTunnel(Peer destination) {
         Tunnel t = new Tunnel(getNextTunnelId());
         this.startedTunnels.put(t.getId(), t);
 
@@ -247,7 +291,7 @@ public class Orchestrator {
         } catch (OnionException e) {
             this.logger.error("Error when sending the final established message over the tunnel: " + e.getMessage());
             this.startedTunnels.remove(t);
-            return;
+            return null;
         } catch (InterruptedException e) {
             this.logger.warn("Interrupted while timeout after sending established!");
         }
@@ -257,8 +301,11 @@ public class Orchestrator {
         } catch (OnionApiException e) {
             this.logger.error("Error when notifying calling module of completed tunnel creation: " + e.getMessage());
             this.startedTunnels.remove(t);
-            return;
+            return null;
         }
+
+        this.nextTunnelBuild = null;
+        return t;
     }
 
     /**
@@ -327,4 +374,24 @@ public class Orchestrator {
         return tunnelId.getAndIncrement();
     }
 
+    private void cleanupOldStates() {
+        // Clean all segments for which we are an intermediate hop
+        for(Lid lid : this.segments.keySet()) {
+            if(Duration.between(segments.get(lid).getLastDataSeen(), LocalDateTime.now()).
+                    compareTo(configProvider.getRoundInterval()) > 0) {
+                // No data seen for a whole round
+                segments.remove(lid);
+            }
+        }
+
+        for(Integer tunnelId : this.incomingTunnels.keySet()) {
+            if(incomingTunnels.get(tunnelId).getSegments().isEmpty()) {
+                incomingTunnels.remove(tunnelId);
+            } else if(Duration.between(incomingTunnels.get(tunnelId).getSegments().get(0).getLastDataSeen(),
+                    LocalDateTime.now()).compareTo(configProvider.getRoundInterval()) > 0) {
+                // No data seen in tunnel for one whole round
+                incomingTunnels.remove(tunnelId);
+            }
+        }
+    }
 }
