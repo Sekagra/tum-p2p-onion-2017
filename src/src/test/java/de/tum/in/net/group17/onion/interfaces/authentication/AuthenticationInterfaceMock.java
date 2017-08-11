@@ -1,5 +1,6 @@
 package de.tum.in.net.group17.onion.interfaces.authentication;
 
+import de.tum.in.net.group17.onion.model.LidImpl;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.model.Tunnel;
 import de.tum.in.net.group17.onion.model.TunnelSegment;
@@ -9,12 +10,9 @@ import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs2ParsedMes
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelTransportParsedMessage;
 
 import java.lang.reflect.Constructor;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.Arrays;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 01.08.17.
@@ -69,7 +67,6 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         }
     }
 
-
     @Override
     public void forwardIncomingHandshake2(short sessionId, byte[] payload) throws ParsingException {
         if(!sessions.contains(sessionId))
@@ -85,27 +82,33 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         // Set the new arrays to handle the case if we only get a copy of the stored array
         // We encode by adding the number of encryptions in front of the data
         byte[] payload = message.getData();
-        byte[] newData = new byte[payload.length + 1];
-        System.arraycopy(payload, 0, newData, 1, payload.length);
-        newData[0] = (byte)segments.size();
+        byte[] newData = new byte[payload.length + 2 * LidImpl.LENGTH];
+        System.arraycopy(payload, 0, newData, 2 * LidImpl.LENGTH, payload.length);
+        if(segments.size() == 2) {
+            System.arraycopy(segments.get(0).getLid(), 0, newData, 0, LidImpl.LENGTH);
+            System.arraycopy(segments.get(1).getLid(), 0, newData, LidImpl.LENGTH, LidImpl.LENGTH);
+        } else {
+            throw new RuntimeException("The mock can only deal with exactly two tunnel segments.");
+        }
+
         message.setData(newData);
 
         return message;
     }
 
     @Override
-    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException {
         // Set the new arrays to handle the case if we only get a copy of the stored array
         // We encode by adding the number of encryptions in front of the data
         byte[] payload = message.getData();
 
         if(message.forMe()) { // MAGIC in plain
-            byte[] newData = new byte[payload.length + 1];
-            System.arraycopy(payload, 0, newData, 1, payload.length);
-            newData[0] = 1;
+            byte[] newData = new byte[payload.length + 2 * LidImpl.LENGTH];
+            System.arraycopy(payload, 0, newData, 2 * LidImpl.LENGTH, payload.length);
+            System.arraycopy(segment.getLid(), 0, newData, 0, LidImpl.LENGTH);
             message.setData(newData);
         } else {
-            payload[0] += 1;
+            System.arraycopy(segment.getLid(), 0, payload, LidImpl.LENGTH, LidImpl.LENGTH);
             message.setData(payload);
         }
 
@@ -117,32 +120,65 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         // Set the new arrays to handle the case if we only get a copy of the stored array
         byte[] payload = message.getData();
 
-        if(payload[0] != (byte)segments.size())
-            throw new RuntimeException("Number of encryptions does not match number of hops in the tunnel!" +
-                    "Expected: " + segments.size() + ". Got: " + (int)payload[0]);
-        message.setData(Arrays.copyOfRange(payload, 1, payload.length));
+        if(segments.size() == 2) {
+            // expect first segment at pos 0, and second segment at pos LidImpl.LENGTH
+            byte[] lid1 = Arrays.copyOfRange(message.getData(), 0, LidImpl.LENGTH);
+            byte[] lid2 = Arrays.copyOfRange(message.getData(), LidImpl.LENGTH, 2*LidImpl.LENGTH);
+            if(Arrays.equals(lid1, segments.get(0).getLid().serialize())) {
+                if(Arrays.equals(lid2, segments.get(1).getLid().serialize())) {
+                    message.setData(Arrays.copyOfRange(message.getData(), 2 * LidImpl.LENGTH, message.getData().length));
+                    return message;
+                }
+            }
 
-        return message;
+            throw new RuntimeException("Wrong encryption, found "
+                    + getLidFingerprint(lid1) + ", " + getLidFingerprint(lid2)
+                    + " and expected "
+                    + getLidFingerprint(segments.get(0).getLid().serialize()) + ", " getLidFingerprint(segments.get(1).getLid().serialize()));
+        } else {
+            throw new RuntimeException("The mock can only deal with exactly two tunnel segments.");
+        }
     }
 
     @Override
     public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
-        // Set the new arrays to handle the case if we only get a copy of the stored array
-        byte[] payload = message.getData();
+        byte[] lid1 = Arrays.copyOfRange(message.getData(), 0, LidImpl.LENGTH);
+        byte[] lid2 = Arrays.copyOfRange(message.getData(), LidImpl.LENGTH, 2*LidImpl.LENGTH);
 
-        if(((int)payload[0]) < 1)
-            throw new RuntimeException("Cannot decrypt. Too small number of previous encryptions!" +
-                    " Got: " + (int)payload[0]);
-        if((int)payload[0] == 1) { // Last encryption
-            message.setData(Arrays.copyOfRange(payload, 1, payload.length));
+        // check if first Lid Block is empty and compare to second one, remove it
+        if(getLidFingerprint(lid1) == 0) {
+            if(Arrays.equals(lid2, segment.getLid().serialize())) {
+                message.setData(Arrays.copyOfRange(message.getData(), 2 * LidImpl.LENGTH, message.getData().length));
+            } else {
+                throw new RuntimeException("Wrong encryption, found "
+                        + getLidFingerprint(lid2)
+                        + " and expected "
+                        + getLidFingerprint(segment.getLid().serialize()));
+            }
         } else {
-            payload[0] -= 1;
-            message.setData(payload);
+            // otherwise compare to first and take it away
+            byte[] payload = message.getData();
+            if(Arrays.equals(lid1, segment.getLid().serialize())) {
+                for(int i=0; i < 16; i++) {
+                    payload[i] = 0x0;
+                }
+                message.setData(payload);
+            } else {
+                throw new RuntimeException("Wrong encryption, found "
+                        + getLidFingerprint(lid2)
+                        + " and expected "
+                        + getLidFingerprint(segment.getLid().serialize()));
+            }
         }
         return message;
     }
 
     private int getRndInt() {
         return (new Random()).nextInt();
+    }
+
+    private int getLidFingerprint(byte[] rawLid) {
+        ByteBuffer wrapped = ByteBuffer.wrap(Arrays.copyOfRange(rawLid, 0, 4));
+        return wrapped.getInt();
     }
 }
