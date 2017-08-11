@@ -105,14 +105,14 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      * @inheritDoc
      */
     @Override
-    public ParsedMessage buildCipherDecrypt(boolean stillEncrypted, int requestId, short sessionId, byte[] payload) throws ParsingException {
+    public ParsedMessage buildCipherDecrypt(int requestId, short sessionId, byte[] payload) throws ParsingException {
         if(payload == null || payload.length < 1)
             throw new ParsingException("Illegal payload for encryption/decryption!");
 
         if(12 + payload.length > 65536)
             throw new ParsingException("Payload too long to build an AUTH CIPHER message!");
 
-        return new AuthCipherEncryptParsedMessage(stillEncrypted, requestId, sessionId, payload);
+        return new AuthCipherDecryptParsedMessage(requestId, sessionId, payload);
     }
 
     /**
