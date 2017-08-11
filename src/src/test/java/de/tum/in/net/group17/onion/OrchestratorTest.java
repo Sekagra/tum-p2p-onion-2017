@@ -71,8 +71,7 @@ public class OrchestratorTest {
         ihCM.testRunnerReady = true;
         senderCM.testRunnerReady = true;
 
-        while(exc[0] == null)
-        {
+        while(exc[0] == null) {
             Thread.sleep(100);
         }
         if(!"TESTS COMPLETED!".equals(exc[0].getMessage())) {

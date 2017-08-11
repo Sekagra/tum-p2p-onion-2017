@@ -243,10 +243,13 @@ public class Orchestrator {
 
         try {
             this.onionInterface.sendEstablished(t);
+            Thread.sleep(333);
         } catch (OnionException e) {
             this.logger.error("Error when sending the final established message over the tunnel: " + e.getMessage());
             this.startedTunnels.remove(t);
             return;
+        } catch (InterruptedException e) {
+            this.logger.warn("Interrupted while timeout after sending established!");
         }
 
         try {

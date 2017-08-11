@@ -84,9 +84,11 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         byte[] payload = message.getData();
         byte[] newData = new byte[payload.length + 2 * LidImpl.LENGTH];
         System.arraycopy(payload, 0, newData, 2 * LidImpl.LENGTH, payload.length);
-        if(segments.size() == 2) {
-            System.arraycopy(segments.get(0).getLid(), 0, newData, 0, LidImpl.LENGTH);
-            System.arraycopy(segments.get(1).getLid(), 0, newData, LidImpl.LENGTH, LidImpl.LENGTH);
+        if(segments.size() == 1) {
+            System.arraycopy(segments.get(0).getLid().serialize(), 0, newData, LidImpl.LENGTH, LidImpl.LENGTH);
+        } else if(segments.size() == 2) {
+                System.arraycopy(segments.get(0).getLid().serialize(), 0, newData, 0, LidImpl.LENGTH);
+                System.arraycopy(segments.get(1).getLid().serialize(), 0, newData, LidImpl.LENGTH, LidImpl.LENGTH);
         } else {
             throw new RuntimeException("The mock can only deal with exactly two tunnel segments.");
         }
@@ -105,10 +107,10 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         if(message.forMe()) { // MAGIC in plain
             byte[] newData = new byte[payload.length + 2 * LidImpl.LENGTH];
             System.arraycopy(payload, 0, newData, 2 * LidImpl.LENGTH, payload.length);
-            System.arraycopy(segment.getLid(), 0, newData, 0, LidImpl.LENGTH);
+            System.arraycopy(segment.getLid().serialize(), 0, newData, LidImpl.LENGTH, LidImpl.LENGTH);
             message.setData(newData);
         } else {
-            System.arraycopy(segment.getLid(), 0, payload, LidImpl.LENGTH, LidImpl.LENGTH);
+            System.arraycopy(segment.getLid().serialize(), 0, payload, 0, LidImpl.LENGTH);
             message.setData(payload);
         }
 
@@ -120,14 +122,18 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         // Set the new arrays to handle the case if we only get a copy of the stored array
         byte[] payload = message.getData();
 
-        if(segments.size() == 2) {
+        if(segments.size() <= 2) {
             // expect first segment at pos 0, and second segment at pos LidImpl.LENGTH
             byte[] lid1 = Arrays.copyOfRange(message.getData(), 0, LidImpl.LENGTH);
             byte[] lid2 = Arrays.copyOfRange(message.getData(), LidImpl.LENGTH, 2*LidImpl.LENGTH);
-            if(Arrays.equals(lid1, segments.get(0).getLid().serialize())) {
-                if(Arrays.equals(lid2, segments.get(1).getLid().serialize())) {
-                    message.setData(Arrays.copyOfRange(message.getData(), 2 * LidImpl.LENGTH, message.getData().length));
-                    return message;
+            if(getLidFingerprint(lid1) == 0 || Arrays.equals(lid1, segments.get(0).getLid().serialize())) {
+                try {
+                    if (Arrays.equals(lid2, segments.get((getLidFingerprint(lid1) == 0) ? 0 : 1).getLid().serialize())) {
+                        message.setData(Arrays.copyOfRange(message.getData(), 2 * LidImpl.LENGTH, message.getData().length));
+                        return message;
+                    }
+                } catch(IndexOutOfBoundsException e) {
+                    throw e;
                 }
             }
 

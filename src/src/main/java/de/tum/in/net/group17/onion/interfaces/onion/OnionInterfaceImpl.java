@@ -379,7 +379,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 }
             } else if (segment.getDirection() == Direction.BACKWARD) {
                 // if direction is BACKWARD, encrypt once and hand to predecessor
-                msg = this.authInterface.encrypt(msg, segment, true);
+                msg = this.authInterface.encrypt(msg, segment.getOther(), true);
                 if(segment.getOther() != null) {
                     msg.setLid(segment.getOther().getLid());
                     this.server.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg.serialize());
