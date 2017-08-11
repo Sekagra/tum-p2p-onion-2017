@@ -44,17 +44,17 @@ public interface AuthenticationInterface {
     void forwardIncomingHandshake2(short sessionId, byte[] payload) throws ParsingException;
 
     /**
-     * Order the authentication module to decrypt data for a single layer.
+     * Order the authentication module to decrypt data for a single layer (used by intermediate hops).
      * @param message Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
      * @param segment A segment for which this message has to be layer-encrypted once.
+     * @param isCipher Flag to specify whether or not we are the cipher or plain data not.
      *
      * @return The incoming message but with decrypted data.
      *
      * @throws ParsingException Exception in case anything is wrong with the packet layouts.
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
-    OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException;
-
+    OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException;
 
     /**
      * Order the authentication module to encrypt data for a single layer.
@@ -69,7 +69,7 @@ public interface AuthenticationInterface {
     OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException;
 
     /**
-     * Order the authentication module to decrypt data for a single layer.
+     * Order the authentication module to decrypt data for a single layer (used by intermediate hops).
      * @param message Plain OnionTunnelTransportParsedMessage to be decrypted with all sessions in the given tunnel.
      * @param segment A segment for which this message has to be layer-decrypted once.
      *

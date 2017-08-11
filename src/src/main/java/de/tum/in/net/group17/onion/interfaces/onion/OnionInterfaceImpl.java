@@ -307,7 +307,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             TunnelSegment incomingSegment = outgoingSegment.getOther();
             try {
                 ParsedMessage relayAnswer = this.parser.buildOnionTunnelTransferMsgPlain(incomingSegment.getLid().serialize(), msg);
-                relayAnswer = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)relayAnswer, incomingSegment);
+                relayAnswer = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)relayAnswer, incomingSegment, false);
                 this.server.send(incomingSegment.getNextAddress(), incomingSegment.getNextPort(), relayAnswer.serialize());
             } catch (IOException e) {
                 throw new OnionException("Error sending the packet to initiate the a tunnel: " + e.getMessage());
@@ -331,20 +331,19 @@ public class OnionInterfaceImpl implements OnionInterface {
     private void handleTunnelRelay(OnionTunnelRelayParsedMessage msg) throws IOException {
         // adapt peer's own state first (just so we don't run into extremely quick responses not being able to get handled)
         TunnelSegment incomingSegment = this.segments.get(msg.getLid());
-        TunnelSegment outgoingSegment = null;
         if(incomingSegment != null) {
-            outgoingSegment = new TunnelSegment(msg.getOutgoingTunnel(), msg.getAddress(), msg.getPort(), Direction.BACKWARD);
+            TunnelSegment outgoingSegment = new TunnelSegment(msg.getOutgoingTunnel(), msg.getAddress(), msg.getPort(), Direction.BACKWARD);
             incomingSegment.setOther(outgoingSegment);
             outgoingSegment.setOther(incomingSegment);
+
+            this.segments.put(outgoingSegment.getLid(), outgoingSegment);
+
+            // send the expected encapsulated message out to the new node and adapt the peer's own state
+            this.server.send(msg.getAddress(), msg.getPort(), msg.getPayload());
         } else {
             this.logger.warn("Received incoming relay message for extending a tunnel with an unknown local identifier. Dropping the packet now.");
             return;
         }
-
-        this.segments.put(outgoingSegment.getLid(), outgoingSegment);
-
-        // send the expected encapsulated message out to the new node and adapt the peer's own state
-        this.server.send(msg.getAddress(), msg.getPort(), msg.getPayload());
     }
 
     /***
@@ -373,7 +372,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 }
             } else if (segment.getDirection() == Direction.BACKWARD) {
                 // if direction is BACKWARD, encrypt once and hand to predecessor
-                msg = this.authInterface.encrypt(msg, segment);
+                msg = this.authInterface.encrypt(msg, segment, true);
                 if(segment.getOther() != null) {
                     msg.setLid(segment.getOther().getLid());
                     this.server.send(segment.getOther().getNextAddress(), segment.getOther().getNextPort(), msg.serialize());
@@ -635,7 +634,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 if(tunnel != null) {
                     transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel.getSegments());
                 } else {
-                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, firstSegment);
+                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, firstSegment, false);
                 }
                 this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), transportPacket.serialize());
                 firstSegment.updateLastDataSeen();

@@ -148,8 +148,15 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @inheritDoc
      */
     @Override
-    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
-        return encrypt(message, Arrays.asList(new TunnelSegment[] { segment } ));
+    public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException {
+        int requestId = this.requestCounter.getAndAdd(1);
+
+        ParsedMessage packet = this.parser.buildCipherEncrypt(isCipher, requestId, segment.getSessionId(), message.getData());
+
+        this.results.put(requestId, null);
+        sendMessage(packet.serialize());
+
+        return waitForCryptResponse(requestId, message);
     }
 
     /**
@@ -158,7 +165,15 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     @Override
     public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
         int requestId = this.requestCounter.getAndAdd(1);
-        short[] sessionIds = Shorts.toArray(segments.stream().map(x -> x.getSessionId()).collect(Collectors.toList()));
+        /**
+         * Get session IDs in reverse order cause the specification says:
+         * "The layered encryption is then to be done by first encrypting the payload with the session
+         * key corresponding to session ID 1, followed by with that of session ID 2 and so on."
+         * ... and the first/inner encryption has to be done with the session key of the tunnel end
+         */
+        List<Short> sessionList = segments.stream().map(x -> x.getSessionId()).collect(Collectors.toList());
+        Collections.reverse(sessionList);
+        short[] sessionIds = Shorts.toArray(sessionList);
         ParsedMessage packet = this.parser.buildLayerEncrypt(requestId, sessionIds, message.getData());
 
         this.results.put(requestId, null);
@@ -172,7 +187,14 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      */
     @Override
     public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
-        return decrypt(message, Arrays.asList(new TunnelSegment[] { segment } ));
+        int requestId = this.requestCounter.getAndAdd(1);
+
+        ParsedMessage packet = this.parser.buildCipherDecrypt(requestId, segment.getSessionId(), message.getData());
+
+        this.results.put(requestId, null);
+        sendMessage(packet.serialize());
+
+        return waitForCryptResponse(requestId, message);
     }
 
     /**
@@ -182,7 +204,17 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
         // build the message
         int requestId = this.requestCounter.getAndAdd(1);
-        short[] sessionIds = Shorts.toArray(segments.stream().map(x -> x.getSessionId()).collect(Collectors.toList()));
+
+        /**
+         * Get session IDs in reverse order cause the specification says:
+         * "That is the session key corresponding to session ID N will be used to decrypt
+         * one layer from the payload, followed by that of session N-1 and so on."
+         * ... and the first/outer decryption has to be done with the session key of our first tunnel segment.
+         */
+        List<Short> sessionList = segments.stream().map(x -> x.getSessionId()).collect(Collectors.toList());
+        Collections.reverse(sessionList);
+        short[] sessionIds = Shorts.toArray(sessionList);
+
         ParsedMessage packet = this.parser.buildLayerDecrypt(requestId, sessionIds, message.getData());
 
         this.results.put(requestId, null);
@@ -207,15 +239,21 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
                 this.results.wait(5000);
         }
 
-        if (this.results.get(requestId).isReturned())
-            try {
-                AuthCryptResParsedMessage response = (AuthCryptResParsedMessage) this.results.remove(requestId).getResult();
-                message.setData(response.getPayload());
-                return message;
-            } catch (ClassCastException e) {
-                throw new ParsingException("Unable to parse response to session layer decrypt." + e.getMessage());
+        if (this.results.get(requestId).isReturned()) {
+            AuthParsedMessage response = (AuthParsedMessage) this.results.remove(requestId).getResult();
+            switch(response.getType()) {
+                case AUTH_LAYER_ENCRYPT_RESP:
+                case AUTH_LAYER_DECRYPT_RESP:
+                case AUTH_CIPHER_ENCRYPT_RESP:
+                case AUTH_CIPHER_DECRYPT_RESP:
+                    message.setData(((AuthCryptResParsedMessage)response).getPayload());
+                    return message;
+                    break;
+                case AUTH_ERROR:
+                    //todo: Throw ApiException as this packet cannot be sent further
             }
-        else
+        } else {
             throw new ParsingException("Did not receive a response from the auth module to an issued session layer decrypt.");
+        }
     }
 }
