@@ -61,7 +61,8 @@ public class AuthenticationInterfaceImplTest {
                 "localhost",
                 "localhost",
                 "localhost",
-                "localhost");
+                "localhost",
+                1);
         AuthenticationInterfaceImpl intf = new AuthenticationInterfaceImpl(config, new AuthenticationParserImpl());
 
         Peer peer = new Peer(derKey);

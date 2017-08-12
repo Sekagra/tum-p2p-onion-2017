@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.NoSuchFileException;
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -26,6 +28,7 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
     private int onionP2PPort, onionApiPort, authApiPort, rpsApiPort;
     private InetAddress onionP2PHost, onionApiHost, authApiHost, rpsApiHost;
     private int intermediateHopCount;
+    private Duration roundInterval;
 
     public ConfigurationProviderImpl(String configPath) throws NoSuchFileException, InvalidFileFormatException {
         this.logger = Logger.getLogger(ConfigurationProvider.class);
@@ -45,8 +48,25 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
         }
 
         try {
+            // Read the number of intermediate hops to use from the configuration
             intermediateHopCount = configuration.get("onion", "intermediate_hops", int.class);
+            if(intermediateHopCount < 0) {
+                throw new InvalidFileFormatException("Cannot use an negative number of intermediate hops!");
+            } else if(intermediateHopCount < 2) {
+                logger.warn("An intermediate hop count smaller than 2 leads to anonymity issues!");
+            }
 
+            // Read the length of a round in seconds from the configuration file
+            roundInterval = Duration.ofSeconds(
+                    configuration.get("onion", "round_interval", long.class)
+            );
+            if(roundInterval.getSeconds() < 1) {
+                throw new InvalidFileFormatException("Cannot use an negative round interval!");
+            } else if(roundInterval.getSeconds() < 10) {
+                logger.warn("Round interval is smaller than 10 seconds. This may lead to errors at round transition!");
+            }
+
+            // Read address and port for our P2P and API server
             String addrPort = configuration.get("onion", "listen_address");
             try {
                 onionP2PHost = getAddressFromString(addrPort);
@@ -63,6 +83,8 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
                 throw new InvalidFileFormatException("Could not parse onion/api_address: " + e.getMessage());
             }
 
+
+            // Read address and port we have to use to connect to RPS and AUTH modules
             addrPort = configuration.get("rps", "api_address");
             try {
                 rpsApiHost = getAddressFromString(addrPort);
@@ -84,49 +106,84 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public int getOnionApiPort() {
         return onionApiPort;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public int getOnionP2PPort() {
         return onionP2PPort;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public int getAuthApiPort() {
         return authApiPort;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public InetAddress getOnionP2PHost() {
         return onionP2PHost;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public InetAddress getOnionApiHost() {
         return onionApiHost;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public InetAddress getAuthApiHost() {
         return authApiHost;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public InetAddress getRpsApiHost() {
         return rpsApiHost;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public int getRpsApiPort() {
         return rpsApiPort;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public int getIntermediateHopCount() {
         return intermediateHopCount;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public Duration getRoundInterval() {
+     return roundInterval;
     }
 
     /**

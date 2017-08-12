@@ -2,6 +2,7 @@ package de.tum.in.net.group17.onion.config;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 01.08.17.
@@ -14,6 +15,7 @@ public class ConfigurationProviderMock implements ConfigurationProvider {
     private int rpsModulePort;
 
     private int intermediateHopCount;
+    private Duration roundInterval;
 
     private InetAddress rpsModuleAddress;
     private InetAddress authModuleAddress;
@@ -22,16 +24,19 @@ public class ConfigurationProviderMock implements ConfigurationProvider {
 
     public ConfigurationProviderMock(int onionApiPort, int onionPort, int authModulePort, int rpsModulePort,
                                      int intermediateHopCount, String rpsModuleAddress, String authModuleAddress,
-                                     String onionModuleAddress, String onionListenAddress) throws UnknownHostException {
+                                     String onionModuleAddress, String onionListenAddress,
+                                     long roundInterval) throws UnknownHostException {
         this.onionApiPort = onionApiPort;
         this.onionPort = onionPort;
         this.authModulePort = authModulePort;
-        this.intermediateHopCount = intermediateHopCount;
         this.rpsModulePort = rpsModulePort;
         this.rpsModuleAddress = InetAddress.getByName(rpsModuleAddress);
         this.authModuleAddress = InetAddress.getByName(authModuleAddress);
         this.onionModuleAddress = InetAddress.getByName(onionModuleAddress);
         this.onionListenAddress = InetAddress.getByName(onionListenAddress);
+
+        this.intermediateHopCount = intermediateHopCount;
+        this.roundInterval = Duration.ofSeconds(roundInterval);
     }
 
     @Override
@@ -62,6 +67,11 @@ public class ConfigurationProviderMock implements ConfigurationProvider {
     @Override
     public int getIntermediateHopCount() {
         return intermediateHopCount;
+    }
+
+    @Override
+    public Duration getRoundInterval() {
+        return roundInterval;
     }
 
     @Override

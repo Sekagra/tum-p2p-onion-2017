@@ -25,7 +25,8 @@ public class OnionApiInterfaceTest {
                 "localhost",
                 "localhost",
                 "localhost",
-                "localhost");
+                "localhost",
+                1);
         OnionApiInterfaceImpl intf = new OnionApiInterfaceImpl(config, new OnionApiParserImpl());
         //intf.listen();
     }

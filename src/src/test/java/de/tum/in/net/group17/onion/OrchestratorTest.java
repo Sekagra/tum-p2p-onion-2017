@@ -95,7 +95,8 @@ public class OrchestratorTest {
                             "localhost",
                             "localhost",
                             "localhost",
-                            "localhost");
+                            "localhost",
+                            1);
                 } catch (UnknownHostException e) {
                     assertTrue("Unable to create sender configuration! " + e.getMessage(), false);
                 }
@@ -128,7 +129,8 @@ public class OrchestratorTest {
                             "localhost",
                             "localhost",
                             "localhost",
-                            "localhost");
+                            "localhost",
+                            1);
                 } catch (UnknownHostException e) {
                     assertTrue("Unable to create receiver configuration! " + e.getMessage(), false);
                 }
@@ -160,7 +162,8 @@ public class OrchestratorTest {
                             "localhost",
                             "localhost",
                             "localhost",
-                            "localhost");
+                            "localhost",
+                            1);
                 } catch (UnknownHostException e) {
                     assertTrue("Unable to create intermediate hop configuration! " + e.getMessage(), false);
                 }
