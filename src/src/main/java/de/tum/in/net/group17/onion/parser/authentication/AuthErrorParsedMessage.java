@@ -43,13 +43,4 @@ public class AuthErrorParsedMessage extends AuthParsedMessage {
     public MessageType getType() {
         return MessageType.AUTH_ERROR;
     }
-
-    /**
-     * Get the request ID contained in this message.
-     *
-     * @return The contained request ID.
-     */
-    public int getRequestId() {
-        return requestId;
-    }
 }
