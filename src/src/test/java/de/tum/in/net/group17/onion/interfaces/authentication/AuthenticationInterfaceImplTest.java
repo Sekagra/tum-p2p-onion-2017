@@ -66,7 +66,12 @@ public class AuthenticationInterfaceImplTest {
         AuthenticationInterfaceImpl intf = new AuthenticationInterfaceImpl(config, new AuthenticationParserImpl());
 
         Peer peer = new Peer(derKey);
-        AuthSessionHs1ParsedMessage res = intf.startSession(peer);
+        AuthSessionHs1ParsedMessage res = null;
+        try {
+            res = intf.startSession(peer);
+        } catch (AuthException e) {
+            System.out.println("Auth error during session start.");
+        }
         if (res != null)
             System.out.println("Received response");
     }

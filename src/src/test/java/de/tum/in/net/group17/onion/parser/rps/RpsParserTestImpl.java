@@ -123,6 +123,4 @@ public class RpsParserTestImpl {
         byte[] data = {0, 13, 2, 29, 1, 1, 0, 0, 127, 0, 0, 1, 1};
         prs.parseMsg(data);
     }
-
-    // TODO: Add tests for invalid messages
 }

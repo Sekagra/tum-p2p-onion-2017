@@ -22,7 +22,7 @@ public interface AuthenticationInterface {
      * Issue the start of a new session on the Onion Authentication module (synchronized).
      * @param peer The peer to start a new session with.
      */
-    AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException;
+    AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException, AuthException;
 
     /**
      * Notify the auth module that a given session can be closed now.
@@ -34,7 +34,7 @@ public interface AuthenticationInterface {
      * Forward a received handshake initiation packet to the Onion module.
      * @param payload The handshake payload given by the peers authentication module in AUTH SESSION HS1.
      */
-    AuthSessionHs2ParsedMessage forwardIncomingHandshake1(byte[] payload) throws ParsingException, InterruptedException;
+    AuthSessionHs2ParsedMessage forwardIncomingHandshake1(byte[] payload) throws ParsingException, InterruptedException, AuthException;
 
     /**
      * Forward a received handshake initiation packet to the Onion module.

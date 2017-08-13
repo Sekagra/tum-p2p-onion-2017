@@ -60,9 +60,8 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
                 RequestResult res = results.get(requestId);
                 if (res != null) {
                     logger.debug("Received message from authentication module: " + parsed.getClass().getName());
-                    res.setReturned(true);
                     res.setResult(parsed);
-                    this.results.notifyAll();
+                    res.notify();
                 } else {
                     logger.warn("Received message without callback mapping: " + requestId);
                 }
@@ -77,11 +76,11 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     /**
      * @inheritDoc
      */
-    public AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException {
+    public AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException, AuthException {
         // Build session start packet
         int requestId = this.requestCounter.getAndAdd(1);
         ParsedMessage packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
-        this.results.put(requestId, null);
+        this.results.put(requestId, new RequestResult());
 
         sendMessage(packet.serialize());
 
@@ -97,10 +96,10 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     /**
      * @inheritDoc
      */
-    public AuthSessionHs2ParsedMessage forwardIncomingHandshake1(byte[] hs1)  throws ParsingException, InterruptedException  {
+    public AuthSessionHs2ParsedMessage forwardIncomingHandshake1(byte[] hs1) throws ParsingException, InterruptedException, AuthException {
         int requestId = this.requestCounter.getAndAdd(1);
         ParsedMessage packet = this.parser.buildSessionIncoming1(requestId, hs1);
-        this.results.put(requestId, null);
+        this.results.put(requestId, new RequestResult());
 
         sendMessage(packet.serialize());
 
@@ -118,21 +117,31 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @throws ParsingException Exception in case anything is wrong with the packet layouts.
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
-    private <T> T waitForSessionResponse(int requestId, Class<T> type) throws ParsingException, InterruptedException {
+    private <T> T waitForSessionResponse(int requestId, Class<T> type) throws ParsingException, InterruptedException, AuthException {
+        // wait for the response
         synchronized (this.results) {
-            while (!this.results.get(requestId).isReturned())
-                this.results.wait(5000);
+            this.results.get(requestId).wait(5000);
         }
 
-        if (this.results.get(requestId).isReturned())
-            try {
-                RequestResult response = this.results.remove(requestId);
-                return type.cast(response.getResult());
-            } catch (ClassCastException e) {
-                throw new ParsingException("Unable to parse response to session start." + e.getMessage());
+        if (this.results.get(requestId) != null && this.results.get(requestId).isReturned()) {
+            AuthParsedMessage res = (AuthParsedMessage) this.results.remove(requestId).getResult();
+            switch(res.getType()) {
+                case AUTH_SESSION_HS1:
+                case AUTH_SESSION_HS2:
+                    try {
+                        return type.cast(res);
+                    } catch (ClassCastException e) {
+                        throw new ParsingException("Did not receive the expected message type for this session handshake request." + e.getMessage());
+                    }
+                case AUTH_ERROR:
+                    throw new AuthException("Received AUTH ERROR from request: " + res.getRequestId());
+                default:
+                    throw new AuthException("Unexpected message type " + res.getType().toString() + " at when waiting for handshake response.");
             }
-        else
-            throw new ParsingException("Did not receive a response from the auth module to an issued session start.");
+        } else {
+            this.results.remove(requestId);
+            throw new ParsingException("Did not receive a response from the auth module to an issued session start in time.");
+        }
     }
 
     /**
@@ -153,7 +162,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
 
         ParsedMessage packet = this.parser.buildCipherEncrypt(isCipher, requestId, segment.getSessionId(), message.getData());
 
-        this.results.put(requestId, null);
+        this.results.put(requestId, new RequestResult());
         sendMessage(packet.serialize());
 
         return waitForCryptResponse(requestId, message);
@@ -176,7 +185,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         short[] sessionIds = Shorts.toArray(sessionList);
         ParsedMessage packet = this.parser.buildLayerEncrypt(requestId, sessionIds, message.getData());
 
-        this.results.put(requestId, null);
+        this.results.put(requestId, new RequestResult());
         sendMessage(packet.serialize());
 
         return waitForCryptResponse(requestId, message);
@@ -191,7 +200,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
 
         ParsedMessage packet = this.parser.buildCipherDecrypt(requestId, segment.getSessionId(), message.getData());
 
-        this.results.put(requestId, null);
+        this.results.put(requestId, new RequestResult());
         sendMessage(packet.serialize());
 
         return waitForCryptResponse(requestId, message);
@@ -217,7 +226,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
 
         ParsedMessage packet = this.parser.buildLayerDecrypt(requestId, sessionIds, message.getData());
 
-        this.results.put(requestId, null);
+        this.results.put(requestId, new RequestResult());
         sendMessage(packet.serialize());
 
         return waitForCryptResponse(requestId, message);
@@ -234,28 +243,27 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      */
     private OnionTunnelTransportParsedMessage waitForCryptResponse(int requestId, OnionTunnelTransportParsedMessage message) throws ParsingException, InterruptedException, AuthException {
         // wait for the response
-        synchronized (this.results) {
-            while (!this.results.get(requestId).isReturned())
-                this.results.wait(5000);
+        synchronized (this.results.get(requestId)) {
+            this.results.get(requestId).wait(5000);
         }
 
-        if (this.results.get(requestId).isReturned()) {
-            AuthParsedMessage response = (AuthParsedMessage) this.results.remove(requestId).getResult();
-            switch(response.getType()) {
+        if (this.results.get(requestId) != null && this.results.get(requestId).isReturned()) {
+            AuthParsedMessage res = (AuthParsedMessage) this.results.remove(requestId).getResult();
+            switch(res.getType()) {
                 case AUTH_LAYER_ENCRYPT_RESP:
                 case AUTH_LAYER_DECRYPT_RESP:
                 case AUTH_CIPHER_ENCRYPT_RESP:
                 case AUTH_CIPHER_DECRYPT_RESP:
-                    message.setData(((AuthCryptResParsedMessage)response).getPayload());
+                    message.setData(((AuthCryptResParsedMessage)res).getPayload());
                     return message;
                 case AUTH_ERROR:
-                    //todo: Throw ApiException as this packet cannot be sent further
-                    throw new AuthException("Received AUTH ERROR: " + ((AuthErrorParsedMessage)response).getRequestId());
+                    throw new AuthException("Received AUTH ERROR from request: " + res.getRequestId());
                 default:
-                    throw new AuthException("Unknown message type.");
+                    throw new AuthException("Unexpected message type " + res.getType().toString() + " at when waiting for crypt response.");
             }
         } else {
-            throw new ParsingException("Did not receive a response from the auth module to an issued session layer decrypt.");
+            this.results.remove(requestId);
+            throw new ParsingException("Did not receive a response from the auth module to an issued session layer decrypt in time.");
         }
     }
 }
