@@ -6,6 +6,7 @@ import de.tum.in.net.group17.onion.interfaces.UdpServer;
 import de.tum.in.net.group17.onion.interfaces.authentication.AuthException;
 import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterface;
 import de.tum.in.net.group17.onion.model.*;
+import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
@@ -58,7 +59,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     private Map<Lid, Tunnel> toBeDestroyed;
 
-    private Map<Lid, OnionTunnelAcceptParsedMessage> waitForAccept;
+    private Map<Lid, RequestResult> waitForAccept;
     private Logger logger;
     private OnionCallback orchestratorCallback;
 
@@ -136,6 +137,8 @@ public class OnionInterfaceImpl implements OnionInterface {
             throw new OnionException("Interrupted during session start build: " + e.getMessage());
         } catch (ParsingException e) {
             throw new OnionException("Unable to parse message: " + e.getMessage());
+        } catch (AuthException e) {
+            throw new OnionException("Error from the authentication module: " + e.getMessage());
         }
 
         // Create a relay-init message (use the currently last lid as incoming lid)
@@ -173,27 +176,27 @@ public class OnionInterfaceImpl implements OnionInterface {
         }
 
         // Wait for a response being there or timeout
-        this.waitForAccept.put(newSegment.getLid(), null);
+        this.waitForAccept.put(newSegment.getLid(), new RequestResult());
         synchronized (this.waitForAccept) {
-            this.waitForAccept.wait(5000);
+            this.waitForAccept.get(newSegment.getLid()).wait(5000);
         }
 
-        // Continue with accept message (if there is one)
-        OnionTunnelAcceptParsedMessage acceptMsg = this.waitForAccept.get(newSegment.getLid());
-        if(acceptMsg == null) {
-            // This has to be a timeout, remove pending accept
-            this.waitForAccept.remove(newSegment.getLid());
-            throw new OnionException("Timeout when waiting for tunnel accept message.");
-            // Todo: check if notifyAll is needed which would break this test here
-        }
-        try {
-            this.authInterface.forwardIncomingHandshake2(newSegment.getSessionId(), acceptMsg.getAuthPayload());
-        } catch (ParsingException e) {
-            throw new OnionException("Error building the packet to forward the finalizing session handshake: " + e.getMessage());
-        }
+        RequestResult res = this.waitForAccept.get(newSegment.getLid());
+        this.waitForAccept.remove(newSegment.getLid());
+        if (res != null && res.isReturned()) {
+            // Continue with accept message (if there is one)
+            OnionTunnelAcceptParsedMessage acceptMsg = (OnionTunnelAcceptParsedMessage) res.getResult();
+            try {
+                this.authInterface.forwardIncomingHandshake2(newSegment.getSessionId(), acceptMsg.getAuthPayload());
+            } catch (ParsingException e) {
+                throw new OnionException("Error building the packet to forward the finalizing session handshake: " + e.getMessage());
+            }
 
-        // Advance the tunnel model by one segment if everything has been successful
-        tunnel.addSegment(newSegment);
+            // Advance the tunnel model by one segment if everything has been successful
+            tunnel.addSegment(newSegment);
+        } else {
+            throw new OnionException("Error while extending the tunnel: Did not receive accept message in time!");
+        }
     }
 
     /**
@@ -230,12 +233,12 @@ public class OnionInterfaceImpl implements OnionInterface {
                     logger.error("Interrupted during transport message decryption: " + e.getMessage());
                 } catch (ParsingException e) {
                     logger.error("Unable to parse transport message: " + e.getMessage());
+                    // todo: Specification: Teardown in case of an API violation
                 } catch(IOException e) {
                     this.logger.error("Error during message forwarding, tunnel possibly went down: " + e.getMessage());
                 } catch (AuthException e) {
                     this.logger.warn("Error during encrypt or decrypt of packet. Dropping the packet!");
                 }
-                //todo: tear down tunnel in case of an exception (that's why they are caught here)
                 break;
             case ONION_TUNNEL_TEARDOWN:
                 try {
@@ -290,6 +293,8 @@ public class OnionInterfaceImpl implements OnionInterface {
             logger.error("Unable to parse message: " + e.getMessage());
         } catch (IOException e) {
             logger.error("Unable to send accept message: " + e.getMessage());
+        } catch (AuthException e) {
+            logger.error("Error from the authentication module: " + e.getMessage());
         }
     }
 
@@ -303,9 +308,10 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     private void handleTunnelAccept(OnionTunnelAcceptParsedMessage msg, InetAddress senderAddress, short senderPort) throws OnionException {
         if(this.waitForAccept.containsKey(msg.getLid())) {
-            this.waitForAccept.put(msg.getLid(), msg);
+            RequestResult res = this.waitForAccept.get(msg.getLid());
+            res.setResult(msg);
             synchronized (this.waitForAccept) {
-                this.waitForAccept.notify();
+                res.notify();
             }
         } else if(segments.containsKey(msg.getLid())) { // Intermediate hop + accept => Answer to relay-init
             // The relayHandler sent the init message -> Send accept through the tunnel
