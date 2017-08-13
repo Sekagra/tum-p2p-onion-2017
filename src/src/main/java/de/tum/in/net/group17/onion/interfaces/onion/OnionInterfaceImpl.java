@@ -310,7 +310,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         if(this.waitForAccept.containsKey(msg.getLid())) {
             RequestResult res = this.waitForAccept.get(msg.getLid());
             res.setResult(msg);
-            synchronized (this.waitForAccept) {
+            synchronized (res) {
                 res.notify();
             }
         } else if(segments.containsKey(msg.getLid())) { // Intermediate hop + accept => Answer to relay-init
@@ -644,7 +644,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         TunnelSegment firstSegment;
         TunnelSegment lastSegment;
 
-        logger.debug("Using tunnel " + tunnelId + " to send transport message!");
+        logger.debug("Using tunnel " + tunnelId + " to send a voice message!");
         try {
             if(tunnel != null) {
                 // tunnel started by us

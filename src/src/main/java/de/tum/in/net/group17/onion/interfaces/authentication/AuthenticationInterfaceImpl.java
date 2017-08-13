@@ -118,14 +118,19 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
     private <T> T waitForSessionResponse(int requestId, Class<T> type) throws ParsingException, InterruptedException, AuthException {
+        if (this.results.get(requestId) == null) {
+            throw new AuthException("Request no longer present in waiting list.");
+        }
         // wait for the response
-        synchronized (this.results) {
-            this.results.get(requestId).wait(5000);
+        RequestResult res = this.results.get(requestId);
+        synchronized (res) {
+            res.wait(5000);
         }
 
-        if (this.results.get(requestId) != null && this.results.get(requestId).isReturned()) {
-            AuthParsedMessage res = (AuthParsedMessage) this.results.remove(requestId).getResult();
-            switch(res.getType()) {
+        if (res.isReturned()) {
+            this.results.remove(requestId);
+            AuthParsedMessage msg = (AuthParsedMessage) res.getResult();
+            switch(msg.getType()) {
                 case AUTH_SESSION_HS1:
                 case AUTH_SESSION_HS2:
                     try {
@@ -134,13 +139,13 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
                         throw new ParsingException("Did not receive the expected message type for this session handshake request." + e.getMessage());
                     }
                 case AUTH_ERROR:
-                    throw new AuthException("Received AUTH ERROR from request: " + res.getRequestId());
+                    throw new AuthException("Received AUTH ERROR from request: " + msg.getRequestId());
                 default:
-                    throw new AuthException("Unexpected message type " + res.getType().toString() + " at when waiting for handshake response.");
+                    throw new AuthException("Unexpected message type " + msg.getType().toString() + " at when waiting for handshake response.");
             }
         } else {
             this.results.remove(requestId);
-            throw new ParsingException("Did not receive a response from the auth module to an issued session start in time.");
+            throw new AuthException("Did not receive a response from the auth module to an issued session start in time.");
         }
     }
 
@@ -242,24 +247,29 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
      */
     private OnionTunnelTransportParsedMessage waitForCryptResponse(int requestId, OnionTunnelTransportParsedMessage message) throws ParsingException, InterruptedException, AuthException {
+        if (this.results.get(requestId) == null) {
+            throw new AuthException("Request no longer present in waiting list.");
+        }
         // wait for the response
-        synchronized (this.results.get(requestId)) {
-            this.results.get(requestId).wait(5000);
+        RequestResult res = this.results.get(requestId);
+        synchronized (res) {
+            res.wait(5000);
         }
 
-        if (this.results.get(requestId) != null && this.results.get(requestId).isReturned()) {
-            AuthParsedMessage res = (AuthParsedMessage) this.results.remove(requestId).getResult();
-            switch(res.getType()) {
+        if (res.isReturned()) {
+            this.results.remove(requestId);
+            AuthParsedMessage msg = (AuthParsedMessage) res.getResult();
+            switch(msg.getType()) {
                 case AUTH_LAYER_ENCRYPT_RESP:
                 case AUTH_LAYER_DECRYPT_RESP:
                 case AUTH_CIPHER_ENCRYPT_RESP:
                 case AUTH_CIPHER_DECRYPT_RESP:
-                    message.setData(((AuthCryptResParsedMessage)res).getPayload());
+                    message.setData(((AuthCryptResParsedMessage)msg).getPayload());
                     return message;
                 case AUTH_ERROR:
-                    throw new AuthException("Received AUTH ERROR from request: " + res.getRequestId());
+                    throw new AuthException("Received AUTH ERROR from request: " + msg.getRequestId());
                 default:
-                    throw new AuthException("Unexpected message type " + res.getType().toString() + " at when waiting for crypt response.");
+                    throw new AuthException("Unexpected message type " + msg.getType().toString() + " at when waiting for crypt response.");
             }
         } else {
             this.results.remove(requestId);
