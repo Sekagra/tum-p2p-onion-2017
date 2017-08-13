@@ -18,7 +18,10 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelBuildParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDestroyParsedMessage;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.ini4j.InvalidFileFormatException;
 
 import java.nio.file.NoSuchFileException;
@@ -65,20 +68,28 @@ public class Orchestrator {
      */
     private Map<Lid, TunnelSegment> segments;
 
-    private static Logger logger = Logger.getRootLogger();
+    private static Logger logger = LogManager.getRootLogger();
 
     private TimerTask roundTask;
     private Timer roundTimer;
 
     public static void main(String[] args) {
-        logger.info("Starting up!");
+        ConfigurationArguments config = null;
 
-        if(args.length < 0) {
-            logger.fatal("No path for configuration file given as command line argument!");
-            System.err.println("No path for configuration file given as command line argument!");
+        try {
+            // logpath == null: Solely the CONSOLE logger
+            config = parseCommandLine(args);
+        } catch(Exception e) {
             System.exit(1);
         }
 
+        if(config == null) {
+                    System.exit(0);
+        }
+        // Setting the log level in the root logger will set it in every child
+        Configurator.setRootLevel(config.logLevel);
+
+        logger.info("Starting up!");
         try {
             // Setup the dependency injection with Guice
             Injector injector = Guice.createInjector(new ProductionInjector(args[1]));
@@ -92,6 +103,54 @@ public class Orchestrator {
             logger.fatal("Could not parse configuration file: " + e.getMessage());
             System.exit(1);
         }
+    }
+
+    private static ConfigurationArguments parseCommandLine(String[] arguments) throws IllegalArgumentException {
+        String configPath = null, logPath = null;
+        Level logLevel = Level.INFO;
+
+        for(int i = 1; i < arguments.length; ++i) {
+            switch(arguments[i]) {
+                case "--help":
+                    printHelp();
+                    return null;
+                case "--config":
+                    configPath = arguments[++i];
+                    break;
+                case "--logfile":
+                    logPath = arguments[++i];
+                    break;
+                case "loglevel":
+                    try {
+                    logLevel = Level.toLevel(arguments[i++]);
+                    } catch(IllegalArgumentException e) {
+                        System.err.println("Invalid log level: " + arguments[i]);
+                        throw e;
+                    }
+                    break;
+                default:
+                    System.err.println("Invalid command line argument: " + arguments[i]);
+                    throw new IllegalArgumentException();
+            }
+        }
+
+        if(configPath == null) {
+            System.err.println("Missing command line argument: config");
+            printHelp();
+            throw new MissingFormatArgumentException("config");
+        }
+
+        return new ConfigurationArguments(configPath, logPath, logLevel);
+    }
+
+    private static void printHelp() {
+        String helpText =
+                "Usage: java -jar onion_module.jar --config path [args]\n\n" +
+                "\t--config\tpath\tPath to the configuration file.\n" +
+                "\t--logfile\tpath\tFile used to output log messages.\n" +
+                "\t--loglevel\tlevel\tLog level to use. Level = {debug, info, warning, error, fatal}\n\n";
+
+        System.out.println(helpText);
     }
 
     /**
@@ -430,6 +489,22 @@ public class Orchestrator {
                 // No data seen in tunnel for one whole round
                 incomingTunnels.remove(tunnelId);
             }
+        }
+    }
+
+
+    /**
+     * This class is used to return the command line arguments after parsing.
+     */
+    private static class ConfigurationArguments {
+        public String configPath;
+        public String logPath;
+        public Level logLevel;
+
+        public ConfigurationArguments(String configPath, String logPath, Level logLevel) {
+            this.configPath = configPath;
+            this.logPath = logPath;
+            this.logLevel = logLevel;
         }
     }
 }

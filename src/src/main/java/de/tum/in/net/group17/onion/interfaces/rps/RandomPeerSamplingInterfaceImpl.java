@@ -9,7 +9,8 @@ import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.rps.RandomPeerSamplingParser;
 import de.tum.in.net.group17.onion.parser.rps.RpsPeerParsedMessage;
 import io.netty.channel.ChannelException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +35,7 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
     @Inject
     public RandomPeerSamplingInterfaceImpl(ConfigurationProvider config, RandomPeerSamplingParser parser) {
         super(config.getRpsApiHost(), config.getRpsApiPort());
-        this.logger = Logger.getLogger(RandomPeerSamplingInterface.class);
+        this.logger = LogManager.getLogger(RandomPeerSamplingInterface.class);
         this.parser = parser;
         this.config = config;
         this.peers = Collections.synchronizedList(new ArrayList<Peer>());

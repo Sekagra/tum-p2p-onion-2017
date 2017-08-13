@@ -9,6 +9,9 @@ import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterface;
 import de.tum.in.net.group17.onion.interfaces.onionapi.OnionApiInterfaceMock;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParser;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParserImpl;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,6 +49,9 @@ public class OrchestratorTest {
     public void testOrchestrator() throws InterruptedException {
         Throwable[] exc = new Throwable[1];
         exc[0] = null;
+
+        // Set log level to DEBUG for testing
+        Configurator.setRootLevel(Level.DEBUG);
 
         ih1.start(false);
         ih2.start(false);

@@ -2,16 +2,15 @@ package de.tum.in.net.group17.onion.interfaces;
 
 import de.tum.in.net.group17.onion.interfaces.authentication.AuthenticationInterface;
 import de.tum.in.net.group17.onion.model.results.RawRequestResult;
-import de.tum.in.net.group17.onion.model.results.RequestResult;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.net.ConnectException;
 import java.net.InetAddress;
 
 /**
@@ -28,7 +27,7 @@ public class TcpClientInterface {
     private Logger logger;
 
     public TcpClientInterface(InetAddress host, int port) {
-        this.logger = Logger.getLogger(AuthenticationInterface.class);
+        this.logger = LogManager.getLogger(AuthenticationInterface.class);
         this.host = host;
         this.port = port;
     }

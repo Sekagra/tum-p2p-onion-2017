@@ -3,14 +3,14 @@ package de.tum.in.net.group17.onion.interfaces.onionapi;
 import com.google.inject.Inject;
 import de.tum.in.net.group17.onion.config.ConfigurationProvider;
 import de.tum.in.net.group17.onion.interfaces.TcpServerInterface;
-import de.tum.in.net.group17.onion.interfaces.onion.OnionException;
 import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.onionapi.*;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +37,7 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
     public OnionApiInterfaceImpl(ConfigurationProvider config, OnionApiParser parser) {
         super();
 
-        this.logger = Logger.getLogger(OnionApiInterface.class);
+        this.logger = LogManager.getLogger(OnionApiInterface.class);
         this.parser = parser;
         this.config = config;
         this.clients = Collections.synchronizedMap(new HashMap<Integer, Channel>());

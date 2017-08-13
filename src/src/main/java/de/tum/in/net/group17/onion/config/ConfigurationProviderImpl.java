@@ -1,6 +1,7 @@
 package de.tum.in.net.group17.onion.config;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
@@ -31,7 +32,7 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
     private Duration roundInterval;
 
     public ConfigurationProviderImpl(String configPath) throws NoSuchFileException, InvalidFileFormatException {
-        this.logger = Logger.getLogger(ConfigurationProvider.class);
+        this.logger = LogManager.getLogger(ConfigurationProvider.class);
 
         File configFile = new File(configPath);
         if(!configFile.exists() || configFile.isDirectory()) {

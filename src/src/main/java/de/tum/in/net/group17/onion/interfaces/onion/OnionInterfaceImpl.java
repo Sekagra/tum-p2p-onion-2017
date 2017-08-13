@@ -17,7 +17,8 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 import de.tum.in.net.group17.onion.util.LidFingerprinting;
 import io.netty.buffer.ByteBuf;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -65,7 +66,7 @@ public class OnionInterfaceImpl implements OnionInterface {
 
     @Inject
     public OnionInterfaceImpl(ConfigurationProvider config, OnionToOnionParser parser, AuthenticationInterface authInterface) {
-        this.logger = Logger.getLogger(OnionInterface.class);
+        this.logger = LogManager.getLogger(OnionInterface.class);
         this.parser = parser;
         this.config = config;
         this.segments = new HashMap<>();

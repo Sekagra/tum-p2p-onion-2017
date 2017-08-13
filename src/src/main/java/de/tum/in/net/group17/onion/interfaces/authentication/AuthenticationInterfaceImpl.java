@@ -11,7 +11,8 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
 import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.*;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelTransportParsedMessage;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,7 +38,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     @Inject
     public AuthenticationInterfaceImpl(ConfigurationProvider config, AuthenticationParser parser) {
         super(config.getAuthApiHost(), config.getAuthApiPort());
-        this.logger = Logger.getLogger(AuthenticationInterface.class);
+        this.logger = LogManager.getLogger(AuthenticationInterface.class);
         this.parser = parser;
         this.config = config;
         this.requestCounter = new AtomicInteger();

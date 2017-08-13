@@ -6,7 +6,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.InetAddress;
 
@@ -21,7 +22,7 @@ public abstract class TcpServerInterface {
     private Channel channel;
 
     public TcpServerInterface() {
-        this.logger = Logger.getLogger(OnionApiInterface.class);
+        this.logger = LogManager.getLogger(OnionApiInterface.class);
     }
 
     /**
