@@ -11,8 +11,6 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParser;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionApiParserImpl;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.rules.Timeout;
-import org.junit.runner.manipulation.NoTestsRemainException;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -26,31 +24,33 @@ import static org.junit.Assert.fail;
  * Created by Marko Dorfhuber(PraMiD) on 01.08.17.
  */
 public class OrchestratorTest {
-    private static AbstractModule senderModule, receiverModule, ihModule;
-    private static Injector senderInjector, receiverInjector, ihInjector;
+    private static AbstractModule senderModule, receiverModule, ih1Module, ih2Module;
+    private static Injector senderInjector, receiverInjector, ih1Injector, ih2Injector;
 
-    private static Orchestrator sender, ih, receiver;
-    private static OnionApiInterfaceMock senderCM, ihCM, receiverCM;
+    private static OrchestratorTestExtension sender, ih1, ih2, receiver;
+    private static OnionApiInterfaceMock senderCM, ih1CM, ih2CM, receiverCM;
 
     @BeforeClass
     public static void initPeers() throws Exception {
         createInjectors();
 
-        sender = senderInjector.getInstance(Orchestrator.class);
-        receiver = receiverInjector.getInstance(Orchestrator.class);
-        ih = ihInjector.getInstance(Orchestrator.class);
+        sender = senderInjector.getInstance(OrchestratorTestExtension.class);
+        receiver = receiverInjector.getInstance(OrchestratorTestExtension.class);
+        ih1 = ih1Injector.getInstance(OrchestratorTestExtension.class);
+        ih2 = ih2Injector.getInstance(OrchestratorTestExtension.class);
     }
 
 
 
-    @Test(timeout = 10000)
+    @Test(timeout = 22000)
     public void testOrchestrator() throws InterruptedException {
         Throwable[] exc = new Throwable[1];
         exc[0] = null;
 
-        ih.start();
-        receiver.start();
-        sender.start();
+        ih1.start(false);
+        ih2.start(false);
+        receiver.start(false);
+        sender.start(true);
 
         Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
             @Override
@@ -68,7 +68,8 @@ public class OrchestratorTest {
         }
 
         receiverCM.testRunnerReady = true;
-        ihCM.testRunnerReady = true;
+        ih1CM.testRunnerReady = true;
+        ih2CM.testRunnerReady = true;
         senderCM.testRunnerReady = true;
 
         while(exc[0] == null) {
@@ -96,7 +97,7 @@ public class OrchestratorTest {
                             "localhost",
                             "localhost",
                             "localhost",
-                            1);
+                            60);
                 } catch (UnknownHostException e) {
                     assertTrue("Unable to create sender configuration! " + e.getMessage(), false);
                 }
@@ -115,7 +116,7 @@ public class OrchestratorTest {
             }
         };
 
-        receiverModule = new AbstractModule() {
+        ih1Module = new AbstractModule() {
             @Override
             protected void configure() {
                 ConfigurationProvider config = null;
@@ -130,7 +131,7 @@ public class OrchestratorTest {
                             "localhost",
                             "localhost",
                             "localhost",
-                            1);
+                            60);
                 } catch (UnknownHostException e) {
                     assertTrue("Unable to create receiver configuration! " + e.getMessage(), false);
                 }
@@ -140,7 +141,7 @@ public class OrchestratorTest {
                     assertTrue("Unable to create receiver onion api interface! " + e.getMessage(), false);
                 }
 
-                ihCM = apiInterface;
+                ih1CM = apiInterface;
                 bind(ConfigurationProvider.class).toInstance(config);
                 bind(OnionApiParser.class).to(OnionApiParserImpl.class);
                 bind(OnionApiInterface.class).toInstance(apiInterface);
@@ -148,7 +149,7 @@ public class OrchestratorTest {
             }
         };
 
-        ihModule = new AbstractModule() {
+        receiverModule = new AbstractModule() {
             @Override
             protected void configure() {
                 ConfigurationProvider config = null;
@@ -163,7 +164,7 @@ public class OrchestratorTest {
                             "localhost",
                             "localhost",
                             "localhost",
-                            1);
+                            60);
                 } catch (UnknownHostException e) {
                     assertTrue("Unable to create intermediate hop configuration! " + e.getMessage(), false);
                 }
@@ -182,8 +183,43 @@ public class OrchestratorTest {
             }
         };
 
+        ih2Module = new AbstractModule() {
+            @Override
+            protected void configure() {
+                ConfigurationProvider config = null;
+                OnionApiInterfaceMock apiInterface = null;
+                try {
+                    config = new ConfigurationProviderMock(5002,
+                            6003,
+                            7003,
+                            9003,
+                            1,
+                            "localhost",
+                            "localhost",
+                            "localhost",
+                            "localhost",
+                            60);
+                } catch (UnknownHostException e) {
+                    assertTrue("Unable to create intermediate hop configuration! " + e.getMessage(), false);
+                }
+                try {
+                    apiInterface = new OnionApiInterfaceMock();
+                } catch (IOException e) {
+                    assertTrue("Unable to create intermediate hop onion api interface! " + e.getMessage(), false);
+                }
+
+                apiInterface.setIntermediate();
+                ih2CM = apiInterface;
+                bind(ConfigurationProvider.class).toInstance(config);
+                bind(OnionApiParser.class).to(OnionApiParserImpl.class);
+                bind(OnionApiInterface.class).toInstance(apiInterface);
+
+            }
+        };
+
         senderInjector = Guice.createInjector(senderModule).createChildInjector(new OrchestratorUnitTestBaseInjector());
         receiverInjector = Guice.createInjector(receiverModule).createChildInjector(new OrchestratorUnitTestBaseInjector());
-        ihInjector = Guice.createInjector(ihModule).createChildInjector(new OrchestratorUnitTestBaseInjector());
+        ih1Injector = Guice.createInjector(ih1Module).createChildInjector(new OrchestratorUnitTestBaseInjector());
+        ih2Injector = Guice.createInjector(ih2Module).createChildInjector(new OrchestratorUnitTestBaseInjector());
     }
 }

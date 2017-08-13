@@ -24,10 +24,7 @@ import org.ini4j.InvalidFileFormatException;
 import java.nio.file.NoSuchFileException;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -36,6 +33,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by Christoph Rudolf on 09.07.17.
  */
 public class Orchestrator {
+    protected int ROUND_START_DELAY = 3000;
+
     @Inject
     private RandomPeerSamplingInterface rpsInterface;
     @Inject
@@ -123,7 +122,7 @@ public class Orchestrator {
 
         roundTimer = new Timer();
         roundTask = getRoundTask();
-        roundTimer.schedule(this.roundTask, 3000, this.configProvider.getRoundInterval().getSeconds() * 1000);
+        roundTimer.schedule(this.roundTask, ROUND_START_DELAY, this.configProvider.getRoundInterval().getSeconds() * 1000);
     }
 
     private TimerTask getRoundTask() {
@@ -208,9 +207,7 @@ public class Orchestrator {
             @Override
             public void receivedTunnelBuild(OnionTunnelBuildParsedMessage msg) {
                 // Register a tunnel build to the given destination in the next round
-                //nextTunnelBuild = () -> setupTunnel(Peer.fromOnionBuild(msg));
-                setupTunnel(Peer.fromOnionBuild(msg));
-                // TODO: Add round concept!
+                nextTunnelBuild = () -> setupTunnel(Peer.fromOnionBuild(msg));
             }
 
             @Override
@@ -346,11 +343,22 @@ public class Orchestrator {
     public void refreshTunnels() {
         for (Tunnel t : this.startedTunnels.values()) {
             Tunnel tunnel = new Tunnel(t.getId());
+            // Add the new tunnel with a temporal tunnelId to the started tunnels (necessary for creation)
+            // We will remove the temporalId afterwards
+            int temporalTunnelId = getNextTunnelId();
+            this.startedTunnels.put(temporalTunnelId, tunnel);
+
+            // We build this tunnel currently
+            if(t.getSegments().isEmpty()) {
+                continue;
+            }
 
             // build new Tunnel with same tunnel ID and last peer as the old one
-            TunnelSegment segment = tunnel.getSegments().get(tunnel.getSegments().size() - 1);
+            TunnelSegment segment = t.getSegments().get(t.getSegments().size() - 1);
             buildTunnel(tunnel, new Peer(segment.getHostkey(), segment.getNextAddress(), segment.getNextPort()));
 
+            // Remove the temporal tunnelId from the startedTunnels map
+            startedTunnels.remove(temporalTunnelId);
             // replace the tunnel instance in the startedTunnels map
             this.startedTunnels.put(t.getId(), tunnel);
 

@@ -8,6 +8,7 @@ import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs2ParsedMessage;
 import de.tum.in.net.group17.onion.parser.onion2onion.OnionTunnelTransportParsedMessage;
+import de.tum.in.net.group17.onion.util.LidFingerprinting;
 
 import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
@@ -137,10 +138,17 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
                 }
             }
 
-            throw new RuntimeException("Wrong encryption, found "
-                    + getLidFingerprint(lid1) + ", " + getLidFingerprint(lid2)
-                    + " and expected "
-                    + getLidFingerprint(segments.get(0).getLid().serialize()) + ", " + getLidFingerprint(segments.get(1).getLid().serialize()));
+            if(segments.size() < 2) {
+                throw new RuntimeException("Wrong encryption, found "
+                        + getLidFingerprint(lid1)
+                        + " and expected "
+                        + getLidFingerprint(segments.get(0).getLid().serialize()));
+            } else {
+                throw new RuntimeException("Wrong encryption, found "
+                        + getLidFingerprint(lid1) + ", " + getLidFingerprint(lid2)
+                        + " and expected "
+                        + getLidFingerprint(segments.get(0).getLid().serialize()) + ", " + getLidFingerprint(segments.get(1).getLid().serialize()));
+            }
         } else {
             throw new RuntimeException("The mock can only deal with exactly two tunnel segments.");
         }
@@ -171,7 +179,7 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
                 message.setData(payload);
             } else {
                 throw new RuntimeException("Wrong encryption, found "
-                        + getLidFingerprint(lid2)
+                        + getLidFingerprint(lid1)
                         + " and expected "
                         + getLidFingerprint(segment.getLid().serialize()));
             }
@@ -184,7 +192,6 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
     }
 
     private int getLidFingerprint(byte[] rawLid) {
-        ByteBuffer wrapped = ByteBuffer.wrap(Arrays.copyOfRange(rawLid, 0, 4));
-        return wrapped.getInt();
+        return LidFingerprinting.fingerprint(rawLid);
     }
 }

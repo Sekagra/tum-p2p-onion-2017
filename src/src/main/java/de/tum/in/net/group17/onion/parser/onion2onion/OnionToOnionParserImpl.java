@@ -183,7 +183,7 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
             byte[] lidRawOld = new byte[LidImpl.LENGTH];
 
             buffer.order(ByteOrder.BIG_ENDIAN);
-            buffer.get(lidRawOld, 4 + LidImpl.LENGTH, LidImpl.LENGTH);
+            buffer.get(lidRawOld, 0, LidImpl.LENGTH); // Content is the second LID
 
             return new OnionTunnelEstablishedParsedMessage(content.lid, LidImpl.deserialize(lidRawOld));
         } else {

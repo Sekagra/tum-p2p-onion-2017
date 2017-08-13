@@ -1,12 +1,12 @@
 package de.tum.in.net.group17.onion.interfaces.onionapi;
 
 import com.google.inject.Inject;
+import de.tum.in.net.group17.onion.OrchestratorTestExtension;
 import de.tum.in.net.group17.onion.parser.MessageType;
 import de.tum.in.net.group17.onion.parser.onionapi.*;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.util.Arrays;
-import org.junit.runner.manipulation.NoTestsRemainException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -45,8 +45,16 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
     // Only the sender of the test initiates voice and cover traffic transfer -> The receiver just sends back the received data
     private boolean sender;
 
+    // The sender has to know its Orchestrator to issue a manual round transition
+    private OrchestratorTestExtension orchestrator;
+
     // If the peer is an intermediate hop, the CM module will not send any requests
     private boolean intermediate;
+
+    // Sending 10 voice packets after round transition should be enough for testing
+    private int sentVoicePacketsAfterRoundTransit;
+    private int receivedVoicePacketsAfterRoundTransit;
+    private boolean roundTransitionDone;
 
     public OnionApiInterfaceMock() throws IOException {
         endpointKey = getEndpointKey();
@@ -57,6 +65,18 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
         this.intermediate = false;
 
         testRunner = new Timer();
+
+        sentVoicePacketsAfterRoundTransit = receivedVoicePacketsAfterRoundTransit = 0;
+    }
+
+    /**
+     *
+     * The test orchestrators will provide their apiInterfaces access to themselves for manual round transition.
+     *
+     * @param instance The orchestrator
+     */
+    public void setOrchestratorInstance(OrchestratorTestExtension instance) {
+        this.orchestrator = instance;
     }
 
     @Override
@@ -110,19 +130,44 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                         throw new RuntimeException("Cannot create ONION COVER message! " + e.getMessage());
                     }
                 } else if(receivedCover && receivedVoice) {
-                    try {
-                        Constructor<OnionTunnelDestroyParsedMessage> c =
-                                OnionTunnelDestroyParsedMessage.class.getDeclaredConstructor(
-                                        int.class
-                                );
-                        c.setAccessible(true);
-                        OnionTunnelDestroyParsedMessage msg = c.newInstance(outgoingTunnelId);
-                        callbacks.receivedDestroy(msg);
-                        Thread.sleep(300); // Wait until tunnel is destroyed
-                    } catch (Exception e) {
-                        throw new RuntimeException("Cannot create ONION TUNNEL DESTROY message! " + e.getMessage());
+                    if(!roundTransitionDone) {
+                        roundTransitionDone = true;
+                        orchestrator.issueRoundTransition();
                     }
-                    throw new RuntimeException("TESTS COMPLETED!");
+                    if (receivedVoicePacketsAfterRoundTransit < 10) {
+                        if (sentVoicePacketsAfterRoundTransit != receivedVoicePacketsAfterRoundTransit) {
+                            // Wait for voice data to 'return'
+                            return;
+                        }
+
+                        try {
+                            Constructor<OnionTunnelDataParsedMessage> c =
+                                    OnionTunnelDataParsedMessage.class.getDeclaredConstructor(
+                                            int.class, byte[].class
+                                    );
+                            c.setAccessible(true);
+                            OnionTunnelDataParsedMessage msg = c.newInstance(outgoingTunnelId, VOICE_DATA.getBytes());
+                            sentVoice = true;
+                            callbacks.receivedVoiceData(msg);
+                            sentVoicePacketsAfterRoundTransit++;
+                        } catch (Exception e) {
+                            throw new RuntimeException("Cannot create ONION TUNNEL VOICE message after round transition! " + e.getMessage());
+                        }
+                    } else {
+                        try {
+                            Constructor<OnionTunnelDestroyParsedMessage> c =
+                                    OnionTunnelDestroyParsedMessage.class.getDeclaredConstructor(
+                                            int.class
+                                    );
+                            c.setAccessible(true);
+                            OnionTunnelDestroyParsedMessage msg = c.newInstance(outgoingTunnelId);
+                            callbacks.receivedDestroy(msg);
+                            Thread.sleep(300); // Wait until tunnel is destroyed
+                        } catch (Exception e) {
+                            throw new RuntimeException("Cannot create ONION TUNNEL DESTROY message! " + e.getMessage());
+                        }
+                        throw new RuntimeException("TESTS COMPLETED!");
+                    }
                 }
             }
         };
@@ -183,6 +228,23 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
                     sentCover = true;
                 } catch (Exception e) {
                     throw new RuntimeException("Cannot create ONION COVER message! " + e.getMessage());
+                }
+            }
+        } else if (Arrays.areEqual(VOICE_DATA.getBytes(), data)) {
+            // Receive voice data after tunnel transit
+            receivedVoicePacketsAfterRoundTransit++;
+            if(!sender) {
+                try {
+                    Constructor<OnionTunnelDataParsedMessage> c =
+                            OnionTunnelDataParsedMessage.class.getDeclaredConstructor(
+                                    int.class, byte[].class
+                            );
+                    c.setAccessible(true);
+                    OnionTunnelDataParsedMessage message = c.newInstance(outgoingTunnelId, VOICE_DATA.getBytes());
+                    callbacks.receivedVoiceData(message);
+                    receivedVoicePacketsAfterRoundTransit++;
+                } catch (Exception e) {
+                    throw new RuntimeException("Cannot return voice data after tunnel refresh! " + e.getMessage());
                 }
             }
         } else {

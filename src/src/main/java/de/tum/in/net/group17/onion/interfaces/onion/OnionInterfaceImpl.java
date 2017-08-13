@@ -14,6 +14,7 @@ import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs2ParsedMes
 import de.tum.in.net.group17.onion.parser.onion2onion.*;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
+import de.tum.in.net.group17.onion.util.LidFingerprinting;
 import io.netty.buffer.ByteBuf;
 import org.apache.log4j.Logger;
 
@@ -98,7 +99,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             byte[] buf = new byte[bb.readableBytes()];
             bb.readBytes(buf);
 
-            logger.debug("Received on " + this.port + " with size " + buf.length);
+            logger.debug("Received on " + this.port + " with size " + buf.length + " from " + packet.sender().getPort());
 
             try {
                 ParsedMessage parsed = parser.parseMsg(buf);
@@ -396,6 +397,8 @@ public class OnionInterfaceImpl implements OnionInterface {
                 // decrypt the complete onion as this message is for us
                 this.handleReceiving(this.parser.parseMsg(this.authInterface.decrypt(msg, tunnel.get().getSegments()).getInnerPacket()), senderAddress, senderPort);
                 tunnel.get().getSegments().get(0).updateLastDataSeen();
+            } else {
+                logger.warn("Received ONION TUNNEL TRANSPORT message for unknown tunnel!");
             }
         }
     }
@@ -417,9 +420,9 @@ public class OnionInterfaceImpl implements OnionInterface {
 
             // Possible necessity to remove incomingTunnel state
             this.incomingTunnels.values().removeIf(t -> !t.getSegments().isEmpty() && t.getSegments().get(0).getLid().equals(msg.getLid()));
-            return;
-        } else if(this.toBeDestroyed.remove(msg.getLid()) != null) {
+
             // Might be a teardown for a previously switched out tunnel that can now be removed
+            this.toBeDestroyed.remove(msg.getLid());
             return;
         }
 
@@ -504,7 +507,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 } catch (AuthException e) {
                     this.logger.warn("Error during decrypt of packet received on switched out tunnel. Dropping packet!");
                 }
-            } else {
+            } else { // Received data on a regular tunnel
                 // check if this LID has an old LID associated with it in toBeDestroyed (associated via Tunnel ID)
 
                 // get tunnel ID of incoming Lid
@@ -519,7 +522,8 @@ public class OnionInterfaceImpl implements OnionInterface {
                     if(entry.isPresent()) {
                         // Note: The first data with a new lid removes the intermediate mapping and issues a teardown on the old tunnel
                         try {
-                            this.destroyTunnel(tunnel);
+                            this.destroyTunnel(entry.get().getValue());
+                            this.toBeDestroyed.remove(entry.get().getKey());
                         } catch (OnionException e) {
                             this.logger.warn("Could not destroy switched out tunnel: " + e.getMessage());
                         }
@@ -565,6 +569,9 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param tunnel The tunnel instance to destroy.
      */
     private void destroyTunnel(Tunnel tunnel) throws OnionException {
+        if(tunnel.getSegments().isEmpty()) {
+            throw new OnionException("Cannot destroy empty tunnel!");
+        }
         TunnelSegment firstSegment = tunnel.getSegments().get(0);
         List<ParsedMessage> transportPackets = new ArrayList<>();
 
@@ -630,6 +637,8 @@ public class OnionInterfaceImpl implements OnionInterface {
         Tunnel tunnel = this.startedTunnels.get(tunnelId);
         TunnelSegment firstSegment;
         TunnelSegment lastSegment;
+
+        logger.debug("Using tunnel " + tunnelId + " to send transport message!");
         try {
             if(tunnel != null) {
                 // tunnel started by us
@@ -699,12 +708,13 @@ public class OnionInterfaceImpl implements OnionInterface {
     public void sendEstablished(Tunnel newTunnel, Tunnel oldTunnel) throws OnionException {
         if(!oldTunnel.getSegments().isEmpty() && !newTunnel.getSegments().isEmpty()) {
             try {
+                TunnelSegment firstNewTunnelSegment = newTunnel.getSegments().get(0);
                 TunnelSegment lastNewTunnelSegment = newTunnel.getSegments().get(newTunnel.getSegments().size() - 1);
                 TunnelSegment lastOldTunnelSegment = oldTunnel.getSegments().get(oldTunnel.getSegments().size() - 1);
                 ParsedMessage msg = this.parser.buildOnionTunnelEstablishedMsg(lastNewTunnelSegment.getLid().serialize(), lastOldTunnelSegment.getLid().serialize());
-                ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(lastNewTunnelSegment.getLid().serialize(), msg);
+                ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(firstNewTunnelSegment.getLid().serialize(), msg);
                 transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, newTunnel.getSegments());
-                this.server.send(lastNewTunnelSegment.getNextAddress(), lastNewTunnelSegment.getNextPort(), transportPacket.serialize());
+                this.server.send(firstNewTunnelSegment.getNextAddress(), firstNewTunnelSegment.getNextPort(), transportPacket.serialize());
 
                 // Create mapping to be able to handle old incoming data until the receiver switched to the new keys
                 this.toBeDestroyed.put(oldTunnel.getSegments().get(0).getLid(), oldTunnel);
