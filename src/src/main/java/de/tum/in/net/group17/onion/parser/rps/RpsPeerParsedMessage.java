@@ -32,7 +32,7 @@ public class RpsPeerParsedMessage extends ParsedMessage {
     }
 
     /**
-     * @inhertDoc
+     * @inheritDoc
      */
     public byte[] serialize() {
         short res = 0;

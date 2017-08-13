@@ -17,7 +17,7 @@ public abstract class OnionToOnionParsedMessage extends ParsedMessage {
      * Create a new OnionToOnionParsedMessage.
      * This constructor may only be called by the specific subclasses.
      *
-     * @incomingLid The LID of the tunnel this message was received from.
+     * @param incomingLid The LID of the tunnel this message was received from.
      */
     OnionToOnionParsedMessage(Lid incomingLid) {
         this.incomingLid = incomingLid;

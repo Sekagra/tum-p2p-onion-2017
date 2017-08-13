@@ -93,13 +93,7 @@ public class UdpServer {
             this.channel = b.bind(addr, port).sync().channel();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } /*finally {
-            try {
-                this.channel.closeFuture().sync();
-            } catch(InterruptedException ex ) {}
-
-            eventLoopGroup.shutdownGracefully();
-        }*/
+        }
     }
 
     /**
@@ -108,7 +102,7 @@ public class UdpServer {
      * @param targetIp The IP to send the message to.
      * @param targetPort The targeted port on the receivers end.
      * @param data The raw data to send to.
-     * @throws IOException
+     * @throws IOException Throws IOException if it isn't possible to send the message due to socket issues.
      */
     public void send(InetAddress targetIp, int targetPort, byte[] data) throws IOException {
         channel.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(data), new InetSocketAddress(targetIp, targetPort)));

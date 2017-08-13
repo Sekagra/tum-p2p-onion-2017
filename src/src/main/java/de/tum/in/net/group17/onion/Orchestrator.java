@@ -185,6 +185,14 @@ public class Orchestrator {
         roundTimer.schedule(this.roundTask, ROUND_START_DELAY, this.configProvider.getRoundInterval().getSeconds() * 1000);
     }
 
+    /**
+     * Creates and returns a delegate that describes the functionality to be executed each round.
+     * This is (in order):
+     *      1. Tearing down the cover tunnel if a 'real' tunnel is to be build
+     *      2. Refreshing old tunnels (including cover tunnel if one is there)
+     *      3. Building a new tunnel as requested (cover or real)
+     * @return The usable TimerTask instance with the described task.
+     */
     private TimerTask getRoundTask() {
         return new TimerTask() {
             @Override
@@ -324,11 +332,17 @@ public class Orchestrator {
      */
     private void setupCoverTunnel() {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
+        Peer peer;
         try {
-            Peer peer = this.rpsInterface.queryRandomPeer();
-            this.coverTunnel = setupTunnel(peer);
+            peer = this.rpsInterface.queryRandomPeer();
         } catch (RandomPeerSamplingException e) {
             logger.error("Unable to get random peer as a cover tunnel destination: " + e.getMessage() + "\nRetry next round.");
+            return;
+        }
+        try {
+            this.coverTunnel = setupTunnel(peer);
+        } catch (Exception e) {
+            this.logger.error("Unable to setup cover tunnel, retry next round.");
         }
     }
 
@@ -353,7 +367,11 @@ public class Orchestrator {
                     startedTunnels.remove(t.getId());
                 }
             }
-        } catch (RandomPeerSamplingException e) {
+        } catch (Exception e) {
+            this.logger.error("Unable to setup cover tunnel, notify CM.");
+            if(startedTunnels.isEmpty()) {
+                nextTunnelBuild = () -> setupCoverTunnel();
+            }
             try {
                 // There is no tunnel created => no tunnel ID
                 apiInterface.sendError(getNextTunnelId(), MessageType.ONION_TUNNEL_BUILD);
@@ -367,7 +385,7 @@ public class Orchestrator {
      * Setup a tunnel over several intermediate hops to the given destination.
      * @param destination The peer that acts as a destination for the new tunnel.
      */
-    private Tunnel setupTunnel(Peer destination) throws RandomPeerSamplingException {
+    private Tunnel setupTunnel(Peer destination) throws RandomPeerSamplingException, InterruptedException, OnionException {
         Tunnel t = new Tunnel(getNextTunnelId());
         this.startedTunnels.put(t.getId(), t);
 
@@ -375,15 +393,22 @@ public class Orchestrator {
             buildTunnel(t, destination);
         } catch (RandomPeerSamplingException e) {
             this.startedTunnels.remove(t.getId());  // clear state
-            logger.error("Unable to rebuild tunnel due to lack of enough random peers: " + e.getMessage() + "\nRetry next round.");
+            this.logger.error("Unable to build tunnel due to lack of enough random peers: " + e.getMessage());
             throw e;    // throw further for eventual error to CM
+        } catch (InterruptedException e) {
+            this.startedTunnels.remove(t.getId());
+            this.logger.error("Unable build, interrupted while waiting for response: " + e.getMessage());
+            throw e;
+        } catch (OnionException e) {
+            this.logger.error("Unable build, error during extend: " + e.getMessage());
+            throw e;
         }
 
         try {
             this.onionInterface.sendEstablished(t);
             Thread.sleep(333);
         } catch (OnionException e) {
-            this.logger.error("Error when sending the final established message over the tunnel: " + e.getMessage());
+            this.logger.error("Error when sending the final established message over the tunnel. Tunnel is not finished! Error: " + e.getMessage());
             this.startedTunnels.remove(t.getId());
             return null;
         } catch (InterruptedException e) {
@@ -399,26 +424,14 @@ public class Orchestrator {
      * @param t The tunnel to build into.
      * @param destination The peer that acts as a destination for the new tunnel.
      */
-    private void buildTunnel(Tunnel t, Peer destination) throws RandomPeerSamplingException {
+    private void buildTunnel(Tunnel t, Peer destination) throws RandomPeerSamplingException, OnionException, InterruptedException {
         // get random intermediate hops to destination
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
             Peer p = this.rpsInterface.queryRandomPeer();    // sync'd method
-
-            try {
-                this.onionInterface.extendTunnel(t, p);
-            } catch (Exception e) {
-                logger.error("Unable to create tunnel: " + e.getMessage());
-                return;
-            }
+            this.onionInterface.extendTunnel(t, p);
         }
 
-        try {
-            this.onionInterface.extendTunnel(t, destination);
-        } catch (Exception e) {
-            logger.error("Unable to create tunnel: " + e.getMessage());
-            this.startedTunnels.remove(t.getId());
-            return;
-        }
+        this.onionInterface.extendTunnel(t, destination);
     }
 
     /**
@@ -444,6 +457,13 @@ public class Orchestrator {
             } catch (RandomPeerSamplingException e) {
                 logger.error("Unable to rebuild tunnel due to lack of enough random peers: " + e.getMessage() + "\nRetry next round.");
                 // todo: Unspecified whether or not the tunnel should continue for another round in this case
+                return;
+            } catch (InterruptedException e) {
+                logger.error("Unable to rebuild tunnel due to interrupted waiting: " + e.getMessage() + "\nRetry next round.");
+                return;
+            } catch (OnionException e) {
+                logger.error("Unable to rebuild tunnel due to P2P error: " + e.getMessage() + "\nRetry next round.");
+                return;
             }
 
             // Remove the temporal tunnelId from the startedTunnels map
