@@ -42,7 +42,7 @@ public class OrchestratorTest {
 
 
 
-    @Test(timeout = 22000)
+    @Test(timeout = 25000)
     public void testOrchestrator() throws InterruptedException {
         Throwable[] exc = new Throwable[1];
         exc[0] = null;
