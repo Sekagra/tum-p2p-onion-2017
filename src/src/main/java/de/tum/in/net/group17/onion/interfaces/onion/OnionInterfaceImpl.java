@@ -95,7 +95,7 @@ public class OnionInterfaceImpl implements OnionInterface {
     {
         orchestratorCallback = callback;
 
-        this.logger.info("Starting to listen for incoming Onion connections on port " + this.port);
+        this.logger.info("Starting to listen for incoming P2P connections on port " + this.port);
         this.server.listen(this.listenAddress, this.port, (ctx, packet) -> {
             final ByteBuf bb = packet.content();
             byte[] buf = new byte[bb.readableBytes()];

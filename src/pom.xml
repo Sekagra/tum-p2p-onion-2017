@@ -12,7 +12,18 @@
     <name>Voidphone-Group17-Onion</name>
 
     <build>
+        <!-- Mark log4j2.xml configuration as resource for it to be copied over -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <targetPath>${project.build.directory}</targetPath>
+                <includes>
+                    <include>log4j2.xml</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
+            <!-- Set target to Java 8 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -22,18 +33,38 @@
                 </configuration>
             </plugin>
 
+            <!-- Copy all dependencies -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${project.build.directory}/libs
+                            </outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Make this jar executable -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
-                    <!-- DO NOT include log4j.properties file in our Jar -->
                     <excludes>
-                        <exclude>**/log4j.properties</exclude>
+                        <exclude>**/log4j2.xml</exclude>
                     </excludes>
                     <archive>
                         <manifest>
-                            <!-- Jar file entry point -->
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>libs/</classpathPrefix>
                             <mainClass>de.tum.in.net.group17.onion.Orchestrator</mainClass>
                         </manifest>
                     </archive>

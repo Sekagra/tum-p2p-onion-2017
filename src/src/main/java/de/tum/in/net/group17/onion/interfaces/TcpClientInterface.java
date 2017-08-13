@@ -41,6 +41,8 @@ public class TcpClientInterface {
             return this.channel;
         }
 
+        this.logger.info("No connection to Onion authentication interface present, connecting anew.");
+
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             Bootstrap b = new Bootstrap();

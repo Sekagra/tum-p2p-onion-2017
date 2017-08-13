@@ -45,6 +45,7 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
 
     public void listen(OnionApiCallback callback) {
         this.callback = callback;
+        this.logger.info("Starting to listen for incoming API requests on port " + this.config.getOnionApiPort());
         this.listen(this.config.getOnionApiHost(), this.config.getOnionApiPort());
     }
 
