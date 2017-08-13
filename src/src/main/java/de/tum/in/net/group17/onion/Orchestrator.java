@@ -118,10 +118,11 @@ public class Orchestrator {
         this.apiInterface.listen(getOnionApiCallback());
 
         // Start with a delegate issuing the build of a random tunnel
-        nextTunnelBuild = () -> setupTunnel();
+        nextTunnelBuild = () -> setupCoverTunnel();
 
         roundTimer = new Timer();
         roundTask = getRoundTask();
+        // wait a bit to give our RPS module that started along time to learn some hosts
         roundTimer.schedule(this.roundTask, ROUND_START_DELAY, this.configProvider.getRoundInterval().getSeconds() * 1000);
     }
 
@@ -172,7 +173,7 @@ public class Orchestrator {
                 try {
                     apiInterface.sendVoiceData(tunnelId, data); // Notify the CM via "ONION TUNNEL DATA"
                 } catch (OnionApiException e) {
-                    // todo: terminate tunnel?!
+                    logger.error("Unable to send incoming voice data to listening CM, have to drop them because: " + e.getMessage());
                 }
             }
 
@@ -207,7 +208,7 @@ public class Orchestrator {
             @Override
             public void receivedTunnelBuild(OnionTunnelBuildParsedMessage msg) {
                 // Register a tunnel build to the given destination in the next round
-                nextTunnelBuild = () -> setupTunnel(Peer.fromOnionBuild(msg));
+                nextTunnelBuild = () -> setupVoiceTunnel(Peer.fromOnionBuild(msg));
             }
 
             @Override
@@ -230,7 +231,7 @@ public class Orchestrator {
                     try {
                         apiInterface.sendError(msg.getTunnelId(), msg.getType());
                     } catch (OnionApiException e1) {
-                        logger.error("Cannot send error to CM module..: " + e1.getMessage());
+                        logger.error("Cannot even send error to CM module (disconnected?): " + e1.getMessage());
                     }
                 }
             }
@@ -243,62 +244,91 @@ public class Orchestrator {
                     try {
                         apiInterface.sendError(msg.getTunnelId(), MessageType.ONION_TUNNEL_DESTROY);
                     } catch (OnionApiException e1) {
-                        logger.error("Unable to contact call module.");
+                        logger.error("Cannot even send error to CM module (disconnected?): " + e1.getMessage());
                     }
                 }
                 // Clean up of tunnels
                 startedTunnels.remove(msg.getTunnelId());
                 incomingTunnels.remove(msg.getTunnelId());
 
-                // TODO: Change if cover tunnel has to be build immediately
+                // todo: Specification doesn't say whether a cover tunnel has to be built if a voice tunnel is closed mid-round
                 // Issue new cover tunnel build for new round
                 if(startedTunnels.isEmpty()) {
-                    nextTunnelBuild = () -> setupTunnel();
+                    nextTunnelBuild = () -> setupCoverTunnel();
                 }
             }
         };
     }
 
     /**
-     * Setup a tunnel over several intermediate hops to a random destination.
+     * Setup a tunnel over several intermediate hops to a random destination (COVER TUNNEL).
      */
-    private void setupTunnel() {
+    private void setupCoverTunnel() {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
         try {
             Peer peer = this.rpsInterface.queryRandomPeer();
             this.coverTunnel = setupTunnel(peer);
         } catch (RandomPeerSamplingException e) {
-            logger.error("Unable to get random peer as cover tunnel destination: " + e.getMessage());
+            logger.error("Unable to get random peer as a cover tunnel destination: " + e.getMessage() + "\nRetry next round.");
         }
     }
 
     /**
-     * Setup a startedTunnels over several intermediate hops to the given destination.
+     * Setup a tunnel over several intermediate hops to a requested destination (REQUESTED TUNNEL).
+     * @param destination The peer that has been requested to act as a destination for the new tunnel.
+     */
+    private void setupVoiceTunnel(Peer destination) {
+        try {
+            Tunnel t = setupTunnel(destination);
+
+            // Notify CM
+            try {
+                apiInterface.sendReady(t.getId(), destination.getHostkey());
+            } catch (OnionApiException e) {
+                logger.error("Error when notifying calling module of completed tunnel creation: " + e.getMessage());
+                try {   // destroy tunnel if we cannot send READY message
+                    onionInterface.destroyTunnelById(t.getId());
+                } catch (OnionException e1) {
+                    logger.error("Unable to teardown tunnel that is destroyed because we couldn't send a READY message to CM: " + e.getMessage());
+                } finally {
+                    startedTunnels.remove(t.getId());
+                }
+            }
+        } catch (RandomPeerSamplingException e) {
+            try {
+                // There is no tunnel created => no tunnel ID
+                apiInterface.sendError(getNextTunnelId(), MessageType.ONION_TUNNEL_BUILD);
+            } catch (OnionApiException e1) {
+                logger.error("Cannot even send error to CM module (disconnected?): " + e1.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Setup a tunnel over several intermediate hops to the given destination.
      * @param destination The peer that acts as a destination for the new tunnel.
      */
-    private Tunnel setupTunnel(Peer destination) {
+    private Tunnel setupTunnel(Peer destination) throws RandomPeerSamplingException {
         Tunnel t = new Tunnel(getNextTunnelId());
         this.startedTunnels.put(t.getId(), t);
 
-        buildTunnel(t, destination);
+        try {
+            buildTunnel(t, destination);
+        } catch (RandomPeerSamplingException e) {
+            this.startedTunnels.remove(t.getId());  // clear state
+            logger.error("Unable to rebuild tunnel due to lack of enough random peers: " + e.getMessage() + "\nRetry next round.");
+            throw e;    // throw further for eventual error to CM
+        }
 
         try {
             this.onionInterface.sendEstablished(t);
             Thread.sleep(333);
         } catch (OnionException e) {
             this.logger.error("Error when sending the final established message over the tunnel: " + e.getMessage());
-            this.startedTunnels.remove(t);
+            this.startedTunnels.remove(t.getId());
             return null;
         } catch (InterruptedException e) {
             this.logger.warn("Interrupted while timeout after sending established!");
-        }
-
-        try {
-            this.apiInterface.sendReady(t.getId(), destination.getHostkey());
-        } catch (OnionApiException e) {
-            this.logger.error("Error when notifying calling module of completed tunnel creation: " + e.getMessage());
-            this.startedTunnels.remove(t);
-            return null;
         }
 
         this.nextTunnelBuild = null;
@@ -310,16 +340,11 @@ public class Orchestrator {
      * @param t The tunnel to build into.
      * @param destination The peer that acts as a destination for the new tunnel.
      */
-    private void buildTunnel(Tunnel t, Peer destination) {
+    private void buildTunnel(Tunnel t, Peer destination) throws RandomPeerSamplingException {
         // get random intermediate hops to destination
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
-            Peer p = null;
-            try {
-                p = this.rpsInterface.queryRandomPeer();    // sync'd method
-            } catch (RandomPeerSamplingException e) {
-                logger.error("Unable to get random intermediate peer from RPS module: " + e.getMessage());
-                //todo: write error to CM
-            }
+            Peer p = this.rpsInterface.queryRandomPeer();    // sync'd method
+
             try {
                 this.onionInterface.extendTunnel(t, p);
             } catch (Exception e) {
@@ -332,7 +357,7 @@ public class Orchestrator {
             this.onionInterface.extendTunnel(t, destination);
         } catch (Exception e) {
             logger.error("Unable to create tunnel: " + e.getMessage());
-            this.startedTunnels.remove(t);
+            this.startedTunnels.remove(t.getId());
             return;
         }
     }
@@ -355,7 +380,12 @@ public class Orchestrator {
 
             // build new Tunnel with same tunnel ID and last peer as the old one
             TunnelSegment segment = t.getSegments().get(t.getSegments().size() - 1);
-            buildTunnel(tunnel, new Peer(segment.getHostkey(), segment.getNextAddress(), segment.getNextPort()));
+            try {
+                buildTunnel(tunnel, new Peer(segment.getHostkey(), segment.getNextAddress(), segment.getNextPort()));
+            } catch (RandomPeerSamplingException e) {
+                logger.error("Unable to rebuild tunnel due to lack of enough random peers: " + e.getMessage() + "\nRetry next round.");
+                // todo: Unspecified whether or not the tunnel should continue for another round in this case
+            }
 
             // Remove the temporal tunnelId from the startedTunnels map
             startedTunnels.remove(temporalTunnelId);
@@ -367,7 +397,7 @@ public class Orchestrator {
                 this.onionInterface.sendEstablished(tunnel, t);
             } catch (OnionException e) {
                 this.logger.error("Error when sending the established message to mark the refresh of a tunnel: " + e.getMessage());
-                this.startedTunnels.remove(t);
+                this.startedTunnels.remove(t.getId());
                 return;
             }
         }
