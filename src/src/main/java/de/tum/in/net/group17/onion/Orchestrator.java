@@ -109,7 +109,7 @@ public class Orchestrator {
         String configPath = null, logPath = null;
         Level logLevel = Level.INFO;
 
-        for(int i = 1; i < arguments.length; ++i) {
+        for(int i = 0; i < arguments.length; ++i) {
             switch(arguments[i]) {
                 case "--help":
                     printHelp();

@@ -27,6 +27,9 @@ public abstract class TcpServerInterface {
 
     /**
      * Start listening to incoming requests on the specified port for this server interface.
+     *
+     * @param addr The address to listen on.
+     * @param port The port to listen on.
      */
     public void listen(InetAddress addr, int port) {
         EventLoopGroup entryGroup = new NioEventLoopGroup();

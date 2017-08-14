@@ -21,6 +21,7 @@ public interface AuthenticationInterface {
     /**
      * Issue the start of a new session on the Onion Authentication module (synchronized).
      * @param peer The peer to start a new session with.
+     * @return
      */
     AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException, AuthException;
 
