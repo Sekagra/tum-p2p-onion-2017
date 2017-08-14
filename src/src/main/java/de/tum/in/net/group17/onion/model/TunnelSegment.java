@@ -22,13 +22,13 @@ public class TunnelSegment {
         this.nextAddress = nextAddress;
         this.nextPort = nextPort;
         this.direction = direction;
+
+        updateLastDataSeen();
     }
 
     public TunnelSegment(Lid lid, Peer peer, Direction direction) {
         this(lid, peer.getIpAddress(), peer.getPort(), direction);
         this.hostkey = peer.getHostkey();
-
-        updateLastDataSeen();
     }
 
     public de.tum.in.net.group17.onion.model.Lid getLid() {

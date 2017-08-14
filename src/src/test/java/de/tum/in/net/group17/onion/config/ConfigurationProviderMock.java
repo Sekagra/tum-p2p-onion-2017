@@ -40,6 +40,11 @@ public class ConfigurationProviderMock implements ConfigurationProvider {
     }
 
     @Override
+    public String getHostId() {
+        return "";
+    }
+
+    @Override
     public int getOnionApiPort() {
         return onionApiPort;
     }

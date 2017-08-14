@@ -8,7 +8,6 @@ import de.tum.in.net.group17.onion.parser.ParsedMessage;
  * Created by Christoph Rudolf on 06.06.17.
  */
 public class RequestResult {
-    private boolean returned;
     private ParsedMessage result;
 
     public boolean isReturned() {

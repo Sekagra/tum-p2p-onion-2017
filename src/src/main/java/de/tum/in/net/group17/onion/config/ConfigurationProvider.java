@@ -9,6 +9,8 @@ import java.time.Duration;
  * Created by Christoph Rudolf on 09.07.17.
  */
 public interface ConfigurationProvider {
+    String getHostId();
+
     int getIntermediateHopCount();
     Duration getRoundInterval();
 

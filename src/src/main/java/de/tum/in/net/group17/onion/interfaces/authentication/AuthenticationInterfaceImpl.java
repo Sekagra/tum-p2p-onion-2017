@@ -137,7 +137,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
                 case AUTH_SESSION_HS1:
                 case AUTH_SESSION_HS2:
                     try {
-                        return type.cast(res);
+                        return type.cast(res.getResult());
                     } catch (ClassCastException e) {
                         throw new ParsingException("Did not receive the expected message type for this session handshake request." + e.getMessage());
                     }

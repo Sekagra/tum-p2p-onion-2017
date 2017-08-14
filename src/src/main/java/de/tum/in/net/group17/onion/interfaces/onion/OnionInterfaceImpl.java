@@ -179,11 +179,10 @@ public class OnionInterfaceImpl implements OnionInterface {
         // Wait for a response being there or timeout
         this.waitForAccept.put(newSegment.getLid(), new RequestResult());
         synchronized (this.waitForAccept.get(newSegment.getLid())) {
-            this.waitForAccept.get(newSegment.getLid()).wait(5000);
+            this.waitForAccept.get(newSegment.getLid()).wait(10000);
         }
 
-        RequestResult res = this.waitForAccept.get(newSegment.getLid());
-        this.waitForAccept.remove(newSegment.getLid());
+        RequestResult res = this.waitForAccept.remove(newSegment.getLid());
         if (res != null && res.isReturned()) {
             // Continue with accept message (if there is one)
             OnionTunnelAcceptParsedMessage acceptMsg = (OnionTunnelAcceptParsedMessage) res.getResult();

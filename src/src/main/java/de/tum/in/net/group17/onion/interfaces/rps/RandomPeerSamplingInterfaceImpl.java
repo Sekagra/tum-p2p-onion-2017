@@ -80,7 +80,8 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
         }
 
         if(!this.peers.isEmpty()) {
-            return this.peers.get(0);
+            this.logger.debug("Got host from RPS: " + this.peers.get(0).getIpAddress());
+            return this.peers.remove(0);
         } else {
             throw new RandomPeerSamplingException("No peer found after query. Timed out.");
         }

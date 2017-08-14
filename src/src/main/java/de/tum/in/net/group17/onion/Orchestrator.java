@@ -120,7 +120,7 @@ public class Orchestrator {
                 case "--logfile":
                     logPath = arguments[++i];
                     break;
-                case "loglevel":
+                case "--loglevel":
                     try {
                     logLevel = Level.toLevel(arguments[i++]);
                     } catch(IllegalArgumentException e) {
@@ -332,9 +332,16 @@ public class Orchestrator {
      */
     private void setupCoverTunnel() {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
-        Peer peer;
+        Peer peer = null;
         try {
-            peer = this.rpsInterface.queryRandomPeer();
+            for (int i=0; i<10; i++) {
+                peer = this.rpsInterface.queryRandomPeer();
+                if (peer.getId() != this.configProvider.getHostId()) break;
+                if (i == 9) {
+                    logger.error("Unable to get random peer other than ourselves after 10 retries. Retry next round.");
+                    return;
+                }
+            }
         } catch (RandomPeerSamplingException e) {
             logger.error("Unable to get random peer as a cover tunnel destination: " + e.getMessage() + "\nRetry next round.");
             return;
@@ -397,10 +404,10 @@ public class Orchestrator {
             throw e;    // throw further for eventual error to CM
         } catch (InterruptedException e) {
             this.startedTunnels.remove(t.getId());
-            this.logger.error("Unable build, interrupted while waiting for response: " + e.getMessage());
+            this.logger.error("Unable to build, interrupted while waiting for response: " + e.getMessage());
             throw e;
         } catch (OnionException e) {
-            this.logger.error("Unable build, error during extend: " + e.getMessage());
+            this.logger.error("Unable to build, error during extend: " + e.getMessage());
             this.onionInterface.destroyTunnelById(t.getId());
             throw e;
         }
@@ -427,8 +434,19 @@ public class Orchestrator {
      */
     private void buildTunnel(Tunnel t, Peer destination) throws RandomPeerSamplingException, OnionException, InterruptedException {
         // get random intermediate hops to destination
+        this.logger.debug("Trying to find " + this.configProvider.getIntermediateHopCount() + " hops.");
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
-            Peer p = this.rpsInterface.queryRandomPeer();    // sync'd method
+            Peer p = null;
+            int r = 0;
+            while(p == null || p.getId().equals(destination.getId()) || p.getId().equals(this.configProvider.getHostId())) {
+                p = this.rpsInterface.queryRandomPeer();    // sync'd method
+                if(r < 10) {
+                    r++;
+                } else {
+                    this.logger.error("Failed to find enough new random peers for tunnel building other than ourselves. Retry next round.");
+                    return;
+                }
+            }
             this.onionInterface.extendTunnel(t, p);
         }
 

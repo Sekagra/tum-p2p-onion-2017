@@ -1,17 +1,20 @@
 package de.tum.in.net.group17.onion.config;
 
+import de.tum.in.net.group17.onion.util.Hashing;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.asn1.ASN1StreamParser;
+import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
+import org.bouncycastle.util.io.pem.PemReader;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
-
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.NoSuchFileException;
+import java.security.KeyFactory;
+import java.security.spec.RSAPublicKeySpec;
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -30,6 +33,8 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
     private InetAddress onionP2PHost, onionApiHost, authApiHost, rpsApiHost;
     private int intermediateHopCount;
     private Duration roundInterval;
+    private byte[] hostkey;
+    private String id;
 
     public ConfigurationProviderImpl(String configPath) throws NoSuchFileException, InvalidFileFormatException {
         this.logger = LogManager.getLogger(ConfigurationProvider.class);
@@ -84,6 +89,19 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
                 throw new InvalidFileFormatException("Could not parse onion/api_address: " + e.getMessage());
             }
 
+            String hostkeyFile = "";
+            try {
+                // Adapted from PEMParser of the given testing environment
+                KeyFactory factory = KeyFactory.getInstance("RSA");
+                hostkeyFile = configuration.get("onion", "hostkey");
+                PemReader reader = new PemReader(new FileReader(hostkeyFile));
+                RSAPrivateKey privateKey = RSAPrivateKey.getInstance(new ASN1StreamParser(reader.readPemObject().getContent()).readObject());
+                RSAPublicKeySpec publicSpec = new RSAPublicKeySpec(privateKey.getModulus(), privateKey.getPublicExponent());
+                this.hostkey = factory.generatePublic(publicSpec).getEncoded();
+                this.id = Hashing.Sha256(this.hostkey);
+            } catch(IOException e) {
+                throw new InvalidFileFormatException("Could not parse hostkey file " + hostkeyFile + ": " + e.getMessage());
+            }
 
             // Read address and port we have to use to connect to RPS and AUTH modules
             addrPort = configuration.get("rps", "api_address");
@@ -105,6 +123,14 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
             throw new InvalidFileFormatException("Could not access required value from configuration file: " +
                     e.getMessage());
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public String getHostId() {
+        return this.id;
     }
 
     /**
