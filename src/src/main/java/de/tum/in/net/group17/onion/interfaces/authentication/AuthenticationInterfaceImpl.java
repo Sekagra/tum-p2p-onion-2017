@@ -80,6 +80,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @inheritDoc
      */
     public AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException, AuthException {
+        this.logger.debug("Starting session via authentication module.");
         // Build session start packet
         int requestId = this.requestCounter.getAndAdd(1);
         ParsedMessage packet = this.parser.buildSessionStart(requestId, peer.getHostkey());
@@ -92,6 +93,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
 
     @Override
     public void closeSession(short sessionId) throws ParsingException {
+        this.logger.debug("Closing session via authentication module.");
         ParsedMessage packet = this.parser.buildSessionClose(sessionId);
         this.sendMessage(packet.serialize());
     }
@@ -100,6 +102,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      * @inheritDoc
      */
     public AuthSessionHs2ParsedMessage forwardIncomingHandshake1(byte[] hs1) throws ParsingException, InterruptedException, AuthException {
+        this.logger.debug("Forwarding session handshake 1 to local auth module.");
         int requestId = this.requestCounter.getAndAdd(1);
         ParsedMessage packet = this.parser.buildSessionIncoming1(requestId, hs1);
         this.results.put(requestId, new RequestResult());
@@ -108,6 +111,17 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
 
         return waitForSessionResponse(requestId, AuthSessionHs2ParsedMessage.class);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public void forwardIncomingHandshake2(short sessionId, byte[] payload) throws ParsingException {
+        this.logger.debug("Forwarding session handshake 2 to local auth module.");
+        int requestId = this.requestCounter.getAndAdd(1);
+        ParsedMessage packet = this.parser.buildSessionIncoming2(requestId, sessionId, payload);
+        sendMessage(packet.serialize());
+    }
+
 
     /**
      * Generic method that waits for a response from all session establish related requests.
@@ -155,17 +169,9 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     /**
      * @inheritDoc
      */
-    public void forwardIncomingHandshake2(short sessionId, byte[] payload) throws ParsingException {
-        int requestId = this.requestCounter.getAndAdd(1);
-        ParsedMessage packet = this.parser.buildSessionIncoming2(requestId, sessionId, payload);
-        sendMessage(packet.serialize());
-    }
-
-    /**
-     * @inheritDoc
-     */
     @Override
     public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException, AuthException {
+        this.logger.debug("Encrypting data (single hop). Is cipher: " + isCipher);
         int requestId = this.requestCounter.getAndAdd(1);
 
         ParsedMessage packet = this.parser.buildCipherEncrypt(isCipher, requestId, segment.getSessionId(), message.getData());
@@ -181,6 +187,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      */
     @Override
     public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException, AuthException {
+        this.logger.debug("Encrypting data for a whole tunnel.");
         int requestId = this.requestCounter.getAndAdd(1);
         /**
          * Get session IDs in reverse order cause the specification says:
@@ -204,6 +211,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      */
     @Override
     public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException, AuthException {
+        this.logger.debug("Decrypting data for a single hop.");
         int requestId = this.requestCounter.getAndAdd(1);
 
         ParsedMessage packet = this.parser.buildCipherDecrypt(requestId, segment.getSessionId(), message.getData());
@@ -219,6 +227,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      */
     @Override
     public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException, AuthException {
+        this.logger.debug("Decrypting data for a whole tunnel.");
         // build the message
         int requestId = this.requestCounter.getAndAdd(1);
 

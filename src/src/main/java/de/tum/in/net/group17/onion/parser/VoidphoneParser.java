@@ -27,7 +27,8 @@ public abstract class VoidphoneParser {
         ByteBuffer buffer = ByteBuffer.wrap(message);
         buffer.order(ByteOrder.BIG_ENDIAN);
         if((int)buffer.getShort(0) != message.length)
-            throw new ParsingException("Package size does not match size field in header!");
+            throw new ParsingException("Packet size does not match size field in header! Size of array: "
+                    + message.length + "; Size in packet: " + (int)buffer.getShort(0));
     }
 
     /**

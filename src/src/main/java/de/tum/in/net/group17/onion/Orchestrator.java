@@ -512,7 +512,7 @@ public class Orchestrator {
 
     private void cleanupOldStates() {
         // Clean all segments for which we are an intermediate hop
-        for(Lid lid : this.segments.keySet()) {
+        for(Lid lid : new ArrayList<>(this.segments.keySet())) {
             if(Duration.between(segments.get(lid).getLastDataSeen(), LocalDateTime.now()).
                     compareTo(configProvider.getRoundInterval()) > 0) {
                 // No data seen for a whole round
@@ -520,7 +520,7 @@ public class Orchestrator {
             }
         }
 
-        for(Integer tunnelId : this.incomingTunnels.keySet()) {
+        for(Integer tunnelId : new ArrayList<>(this.incomingTunnels.keySet())) {
             if(incomingTunnels.get(tunnelId).getSegments().isEmpty()) {
                 incomingTunnels.remove(tunnelId);
             } else if(Duration.between(incomingTunnels.get(tunnelId).getSegments().get(0).getLastDataSeen(),

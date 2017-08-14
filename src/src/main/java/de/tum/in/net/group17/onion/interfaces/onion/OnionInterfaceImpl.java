@@ -108,7 +108,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 InetSocketAddress senderSocketAddress = packet.sender();
                 handleReceiving(parsed, senderSocketAddress.getAddress(), (short)senderSocketAddress.getPort());
             } catch (ParsingException e) {
-                logger.warn("Received invalid message over Onion P2P interface.");
+                logger.warn("Received invalid message over Onion P2P interface: " + e.getMessage());
             }
         });
     }
@@ -207,6 +207,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param senderPort The remote port of the sender of this datagram.
      */
     private void handleReceiving(ParsedMessage parsedMessage, InetAddress senderAddress, short senderPort) {
+        this.logger.debug("Received onion message with type " + parsedMessage.getType().toString() + " from " + senderAddress.toString() + ":" + senderPort);
         switch(parsedMessage.getType()) {
             case ONION_TUNNEL_INIT:
                 handleTunnelInit((OnionTunnelInitParsedMessage)parsedMessage, senderAddress, senderPort);
@@ -503,6 +504,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param senderPort The remote port of the sender of this datagram.
      */
     private void handleDestroyedTunnel(OnionToOnionParsedMessage msg, InetAddress senderAddress, short senderPort) throws ParsingException, InterruptedException {
+        this.logger.debug("Cleanup of switch out incoming tunnels.");
         // check type
         if(msg.getType() == MessageType.ONION_TUNNEL_TRANSPORT) {
             // check if this LID is part of toBeDestroyed, decrypt and forward it accordingly
@@ -575,6 +577,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param tunnel The tunnel instance to destroy.
      */
     private void destroyTunnel(Tunnel tunnel) throws OnionException {
+        this.logger.debug("Attempting to destroy tunnel with ID " + tunnel.getId());
         if(tunnel.getSegments().isEmpty()) {
             this.logger.info("Tunnel to be destroyed is currently empty. Simple cleanup.");
             return; // can be cleaned up without further teardown
@@ -645,7 +648,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         TunnelSegment firstSegment;
         TunnelSegment lastSegment;
 
-        logger.debug("Using tunnel " + tunnelId + " to send a voice message!");
+        this.logger.debug("Using tunnel " + tunnelId + " to send a voice message!");
         try {
             if(tunnel != null) {
                 // tunnel started by us
@@ -688,6 +691,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     @Override
     public void sendEstablished(Tunnel tunnel) throws OnionException {
+        this.logger.debug("Sending final established message for tunnel setup.");
         if(!tunnel.getSegments().isEmpty()) {
             try {
                 ParsedMessage msg = this.parser.buildOnionTunnelEstablishedMsg(tunnel.getSegments().get(tunnel.getSegments().size() - 1).getLid().serialize());
@@ -713,6 +717,7 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     @Override
     public void sendEstablished(Tunnel newTunnel, Tunnel oldTunnel) throws OnionException {
+        this.logger.debug("Sending final established message for tunnel refresh.");
         if(!oldTunnel.getSegments().isEmpty() && !newTunnel.getSegments().isEmpty()) {
             try {
                 TunnelSegment firstNewTunnelSegment = newTunnel.getSegments().get(0);
