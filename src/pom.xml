@@ -12,16 +12,6 @@
     <name>Voidphone-Group17-Onion</name>
 
     <build>
-        <!-- Mark log4j2.xml configuration as resource for it to be copied over -->
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <targetPath>${project.build.directory}</targetPath>
-                <includes>
-                    <include>log4j2.xml</include>
-                </includes>
-            </resource>
-        </resources>
         <plugins>
             <!-- Set target to Java 8 -->
             <plugin>
@@ -50,9 +40,6 @@
                                         de.tum.in.net.group17.onion.Orchestrator
                                     </mainClass>
                                 </manifest>
-                                <manifestEntries>
-                                    <Class-Path>.</Class-Path>
-                                </manifestEntries>
                             </archive>
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
