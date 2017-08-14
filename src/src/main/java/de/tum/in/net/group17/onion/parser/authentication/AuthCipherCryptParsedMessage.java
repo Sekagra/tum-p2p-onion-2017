@@ -86,6 +86,6 @@ public abstract class AuthCipherCryptParsedMessage extends AuthParsedMessage {
      */
     @Override
     public short getSize() {
-        return (short)(12 + payload.length);
-    }
+        return (short)(14 + payload.length);
+    }   // Head (4) + Bitmask (4) + Request ID (4) + Session ID (2)
 }

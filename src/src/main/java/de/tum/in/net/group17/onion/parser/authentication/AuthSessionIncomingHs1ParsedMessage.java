@@ -39,7 +39,7 @@ public class AuthSessionIncomingHs1ParsedMessage extends AuthParsedMessage {
      * @inheritDoc
      */
     public short getSize() {
-        return (short)(14 + payload.length);
+        return (short)(12 + payload.length);
     }
 
     /**

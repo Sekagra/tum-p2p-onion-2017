@@ -42,6 +42,11 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
         setCallback(result -> randomPeerResult(result));
     }
 
+    /**
+     * Triggered when a new random peer is being delivered by the RPS module.
+     *
+     * @param data The raw data from RPS.
+     */
     private void randomPeerResult(byte[] data) {
         try {
             peers.add(Peer.fromRpsReponse((RpsPeerParsedMessage) parser.parseMsg(data)));
@@ -56,6 +61,7 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
     /**
      * @inheritDoc
      */
+    @Override
     public Peer queryRandomPeer() throws RandomPeerSamplingException {
         // Build the query message
         ParsedMessage packet = null;
@@ -85,5 +91,19 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
         } else {
             throw new RandomPeerSamplingException("No peer found after query. Timed out.");
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public Peer queryRandomPeer(List<String> excluding) throws RandomPeerSamplingException {
+        for(int i=0; i<10; i++) {
+            Peer p = queryRandomPeer();
+            if(!excluding.contains(p.getId()))
+                return p;
+        }
+        this.logger.error("Failed to find a new random peer in 10 queries.");
+        return null;
     }
 }

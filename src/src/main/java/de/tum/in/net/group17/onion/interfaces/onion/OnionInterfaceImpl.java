@@ -101,8 +101,6 @@ public class OnionInterfaceImpl implements OnionInterface {
             byte[] buf = new byte[bb.readableBytes()];
             bb.readBytes(buf);
 
-            logger.debug("Received on " + this.port + " with size " + buf.length + " from " + packet.sender().getPort());
-
             try {
                 ParsedMessage parsed = parser.parseMsg(buf);
                 InetSocketAddress senderSocketAddress = packet.sender();
@@ -159,6 +157,7 @@ public class OnionInterfaceImpl implements OnionInterface {
                 msg = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), msg);
                 msg = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)msg, tunnel.getSegments());
                 try {
+                    this.logger.debug("Sending Tunnel Relay encrypted " + tunnel.getSegments().size() + " times.");
                     this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), msg.serialize());
                 } catch (IOException e) {
                     throw new OnionException("Error sending the packet to initiate the a tunnel: " + e.getMessage());
@@ -170,6 +169,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             }
         } else {
             try {
+                this.logger.debug("Sending plain Tunnel INIT.");
                 this.server.send(peer.getIpAddress(), peer.getPort(), msg.serialize()); // send directly to new peer
             } catch (IOException e) {
                 throw new OnionException("Error sending the packet to initiate the a tunnel: " + e.getMessage());
@@ -179,7 +179,7 @@ public class OnionInterfaceImpl implements OnionInterface {
         // Wait for a response being there or timeout
         this.waitForAccept.put(newSegment.getLid(), new RequestResult());
         synchronized (this.waitForAccept.get(newSegment.getLid())) {
-            this.waitForAccept.get(newSegment.getLid()).wait(10000);
+            this.waitForAccept.get(newSegment.getLid()).wait(5000);
         }
 
         RequestResult res = this.waitForAccept.remove(newSegment.getLid());
@@ -281,6 +281,8 @@ public class OnionInterfaceImpl implements OnionInterface {
         // get AuthSessionHs2ParsedMessage from auth module handshake
         try {
             AuthSessionHs2ParsedMessage response = this.authInterface.forwardIncomingHandshake1(parsedMessage.getAuthPayload());
+            logger.debug("INIT results in new session with session ID " + response.getSessionId());
+            segment.setSessionId(response.getSessionId());
 
             // build accept message
             ParsedMessage acceptMsg = this.parser.buildOnionTunnelAcceptMsg(parsedMessage.getLid().serialize(), response.getPayload());
@@ -318,6 +320,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             // The relayHandler sent the init message -> Send accept through the tunnel
             TunnelSegment outgoingSegment = segments.get(msg.getLid());
             TunnelSegment incomingSegment = outgoingSegment.getOther();
+            this.logger.debug("Incoming accept in our role as intermediate hop. Matching segments " + outgoingSegment.getLid() + " and " + incomingSegment.getLid());
             try {
                 ParsedMessage relayAnswer = this.parser.buildOnionTunnelTransferMsgPlain(incomingSegment.getLid().serialize(), msg);
                 relayAnswer = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)relayAnswer, incomingSegment, false);
@@ -348,9 +351,9 @@ public class OnionInterfaceImpl implements OnionInterface {
         TunnelSegment incomingSegment = this.segments.get(msg.getLid());
         if(incomingSegment != null) {
             TunnelSegment outgoingSegment = new TunnelSegment(msg.getOutgoingTunnel(), msg.getAddress(), msg.getPort(), Direction.BACKWARD);
+            this.logger.debug("Received Relay message for me, updating segment " + LidFingerprinting.fingerprint(msg.getLid().serialize()) + " to match " + LidFingerprinting.fingerprint(msg.getOutgoingTunnel().serialize()));
             incomingSegment.setOther(outgoingSegment);
             outgoingSegment.setOther(incomingSegment);
-
             this.segments.put(outgoingSegment.getLid(), outgoingSegment);
 
             // send the expected encapsulated message out to the new node and adapt the peer's own state
@@ -479,6 +482,7 @@ public class OnionInterfaceImpl implements OnionInterface {
             this.orchestratorCallback.tunnelIncoming(segment);
             return;
         } else {    // refresh a tunnel state transparently
+            this.logger.debug("Tunnel established wants us to refresh a LID mapping " + LidFingerprinting.fingerprint(msg.getLidOld().serialize()) + " -> " + LidFingerprinting.fingerprint(msg.getLid().serialize()));
             Optional<Map.Entry<Integer, Tunnel>> entry = this.incomingTunnels.entrySet().stream()
                     .filter(t -> !t.getValue().getSegments().isEmpty() && t.getValue().getSegments().get(0).getLid().equals(msg.getLidOld()))
                     .findAny();
@@ -504,7 +508,6 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param senderPort The remote port of the sender of this datagram.
      */
     private void handleDestroyedTunnel(OnionToOnionParsedMessage msg, InetAddress senderAddress, short senderPort) throws ParsingException, InterruptedException {
-        this.logger.debug("Cleanup of switch out incoming tunnels.");
         // check type
         if(msg.getType() == MessageType.ONION_TUNNEL_TRANSPORT) {
             // check if this LID is part of toBeDestroyed, decrypt and forward it accordingly

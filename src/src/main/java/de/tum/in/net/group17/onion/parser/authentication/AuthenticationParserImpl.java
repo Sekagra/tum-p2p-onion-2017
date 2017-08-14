@@ -41,7 +41,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     @Override
     public ParsedMessage buildSessionIncoming1(int requestId, byte[] payload) throws ParsingException {
-        if(14 + payload.length > 65536)
+        if(12 + payload.length > 65536)
             throw new ParsingException("Message too large!");
 
         return new AuthSessionIncomingHs1ParsedMessage(requestId, payload);

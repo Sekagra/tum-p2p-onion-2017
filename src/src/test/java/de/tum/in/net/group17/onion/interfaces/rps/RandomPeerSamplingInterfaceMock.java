@@ -4,6 +4,7 @@ import de.tum.in.net.group17.onion.model.Peer;
 
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
+import java.util.List;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 31.07.17.
@@ -61,5 +62,10 @@ public class RandomPeerSamplingInterfaceMock implements RandomPeerSamplingInterf
         Peer p = peers[nextPeer];
         nextPeer = (nextPeer + 1) % peers.length;
         return p;
+    }
+
+    @Override
+    public Peer queryRandomPeer(List<String> excluding) throws RandomPeerSamplingException {
+        return queryRandomPeer();
     }
 }

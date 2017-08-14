@@ -18,6 +18,7 @@ import de.tum.in.net.group17.onion.parser.onionapi.OnionCoverParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelBuildParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDataParsedMessage;
 import de.tum.in.net.group17.onion.parser.onionapi.OnionTunnelDestroyParsedMessage;
+import de.tum.in.net.group17.onion.util.Hashing;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +29,7 @@ import java.nio.file.NoSuchFileException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -164,9 +166,9 @@ public class Orchestrator {
         assert configProvider != null;
 
         // Init data structures
-        this.startedTunnels = new HashMap<>();
-        this.incomingTunnels = new HashMap<>();
-        this.segments = new HashMap<>();
+        this.startedTunnels = new ConcurrentHashMap<>();
+        this.incomingTunnels = new ConcurrentHashMap<>();
+        this.segments = new ConcurrentHashMap<>();
 
         // Listen for Onion connections
         this.onionInterface.setTunnels(this.startedTunnels, this.incomingTunnels);
@@ -248,12 +250,12 @@ public class Orchestrator {
             public void tunnelIncoming(TunnelSegment segment) {
                 int tunnelId = getNextTunnelId();
                 try {
-                    apiInterface.sendIncoming(tunnelId);
                     Tunnel tunnel = new Tunnel(tunnelId);
                     tunnel.addSegment(segment);
                     incomingTunnels.put(tunnelId, tunnel);
+                    apiInterface.sendIncoming(tunnelId);
                 } catch (OnionApiException e) {
-                    logger.error("Unable to send ONION TUNNEL INCOMING message to connect CM: " + e.getMessage());
+                    logger.error("Unable to send ONION TUNNEL INCOMING message to connected CM: " + e.getMessage());
                 }
             }
 
@@ -334,16 +336,15 @@ public class Orchestrator {
         // cover tunnels don't need IDs as they won't be addressed by them, but the destination is random
         Peer peer = null;
         try {
-            for (int i=0; i<10; i++) {
-                peer = this.rpsInterface.queryRandomPeer();
-                if (peer.getId() != this.configProvider.getHostId()) break;
-                if (i == 9) {
-                    logger.error("Unable to get random peer other than ourselves after 10 retries. Retry next round.");
-                    return;
-                }
+            // Create list of peers we do not want to be sampled, here only this hop
+            ArrayList<String> exceptions = new ArrayList<>(Arrays.asList(configProvider.getHostId()));
+            peer = this.rpsInterface.queryRandomPeer(exceptions);
+            if (peer == null) {
+                this.logger.error("Unable to find a destination peer for the cover tunnel. Retry next round.");
+                return;
             }
         } catch (RandomPeerSamplingException e) {
-            logger.error("Unable to get random peer as a cover tunnel destination: " + e.getMessage() + "\nRetry next round.");
+            this.logger.error("Unable to get random peer as a cover tunnel destination: " + e.getMessage() + "\nRetry next round.");
             return;
         }
         try {
@@ -433,21 +434,21 @@ public class Orchestrator {
      * @param destination The peer that acts as a destination for the new tunnel.
      */
     private void buildTunnel(Tunnel t, Peer destination) throws RandomPeerSamplingException, OnionException, InterruptedException {
+        // build list of exceptions for RPS
+        ArrayList<String> exceptions = new ArrayList<>();
+        exceptions.add(this.configProvider.getHostId());
+        exceptions.add(destination.getId());
+
         // get random intermediate hops to destination
         this.logger.debug("Trying to find " + this.configProvider.getIntermediateHopCount() + " hops.");
         for (int i = 0; i < this.configProvider.getIntermediateHopCount(); i++) {
-            Peer p = null;
-            int r = 0;
-            while(p == null || p.getId().equals(destination.getId()) || p.getId().equals(this.configProvider.getHostId())) {
-                p = this.rpsInterface.queryRandomPeer();    // sync'd method
-                if(r < 10) {
-                    r++;
-                } else {
-                    this.logger.error("Failed to find enough new random peers for tunnel building other than ourselves. Retry next round.");
-                    return;
-                }
+            Peer p = this.rpsInterface.queryRandomPeer(exceptions);    // sync'd method
+            if(p == null) {
+                this.logger.error("Failed to find enough new random peers for tunnel building other than ourselves. Retry next round.");
+                return;
             }
             this.onionInterface.extendTunnel(t, p);
+            exceptions.add(p.getId());
         }
 
         this.onionInterface.extendTunnel(t, destination);
@@ -457,6 +458,7 @@ public class Orchestrator {
      * Refresh all existing previously started tunnels for the new round.
      */
     public void refreshTunnels() {
+        this.logger.debug("Starting to refresh old tunnel now...");
         for (Tunnel t : this.startedTunnels.values()) {
             Tunnel tunnel = new Tunnel(t.getId());
             // Add the new tunnel with a temporal tunnelId to the started tunnels (necessary for creation)
