@@ -80,6 +80,7 @@ public class Orchestrator {
 
         try {
             // logpath == null: Solely the CONSOLE logger
+            // TODO: Add ROTATING FILE LOGGER
             config = parseCommandLine(args);
         } catch(Exception e) {
             System.exit(1);
