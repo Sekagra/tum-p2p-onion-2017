@@ -50,6 +50,9 @@
                                         de.tum.in.net.group17.onion.Orchestrator
                                     </mainClass>
                                 </manifest>
+                                <manifestEntries>
+                                    <Class-Path>.</Class-Path>
+                                </manifestEntries>
                             </archive>
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>

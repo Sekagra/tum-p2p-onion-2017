@@ -577,7 +577,8 @@ public class OnionInterfaceImpl implements OnionInterface {
      */
     private void destroyTunnel(Tunnel tunnel) throws OnionException {
         if(tunnel.getSegments().isEmpty()) {
-            throw new OnionException("Cannot destroy empty tunnel!");
+            this.logger.info("Tunnel to be destroyed is currently empty. Simple cleanup.");
+            return; // can be cleaned up without further teardown
         }
         TunnelSegment firstSegment = tunnel.getSegments().get(0);
         List<ParsedMessage> transportPackets = new ArrayList<>();

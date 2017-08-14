@@ -368,7 +368,7 @@ public class Orchestrator {
                 }
             }
         } catch (Exception e) {
-            this.logger.error("Unable to setup cover tunnel, notify CM.");
+            this.logger.error("Unable to setup voice tunnel, notify CM.");
             if(startedTunnels.isEmpty()) {
                 nextTunnelBuild = () -> setupCoverTunnel();
             }
@@ -401,6 +401,7 @@ public class Orchestrator {
             throw e;
         } catch (OnionException e) {
             this.logger.error("Unable build, error during extend: " + e.getMessage());
+            this.onionInterface.destroyTunnelById(t.getId());
             throw e;
         }
 
@@ -409,8 +410,8 @@ public class Orchestrator {
             Thread.sleep(333);
         } catch (OnionException e) {
             this.logger.error("Error when sending the final established message over the tunnel. Tunnel is not finished! Error: " + e.getMessage());
-            this.startedTunnels.remove(t.getId());
-            return null;
+            this.onionInterface.destroyTunnelById(t.getId());
+            throw e;
         } catch (InterruptedException e) {
             this.logger.warn("Interrupted while timeout after sending established!");
         }
