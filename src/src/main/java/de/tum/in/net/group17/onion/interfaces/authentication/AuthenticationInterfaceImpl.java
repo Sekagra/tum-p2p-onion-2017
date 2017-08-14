@@ -62,7 +62,9 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
                 if (res != null) {
                     logger.debug("Received message from authentication module: " + parsed.getClass().getName());
                     res.setResult(parsed);
-                    res.notify();
+                    synchronized (res) {
+                        res.notify();
+                    }
                 } else {
                     logger.warn("Received message without callback mapping: " + requestId);
                 }

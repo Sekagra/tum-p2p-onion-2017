@@ -82,7 +82,7 @@ public class RandomPeerSamplingInterfaceImpl extends TcpClientInterface implemen
         if(!this.peers.isEmpty()) {
             return this.peers.get(0);
         } else {
-            throw new RandomPeerSamplingException("No peer found despite of being notified of a peer.");
+            throw new RandomPeerSamplingException("No peer found after query. Timed out.");
         }
     }
 }
