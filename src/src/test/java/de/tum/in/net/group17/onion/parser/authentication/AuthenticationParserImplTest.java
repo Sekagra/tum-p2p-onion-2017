@@ -12,12 +12,12 @@ public class AuthenticationParserImplTest {
     private static AuthenticationParser parser;
 
     @BeforeClass
-    public void setUp() throws Exception {
+    public static void setUp() throws Exception {
         parser = new AuthenticationParserImpl();
     }
 
     @Test
-    public static void buildSessionClose() throws Exception {
+    public void buildSessionClose() throws Exception {
         parser.buildSessionClose((short)15);
     }
 

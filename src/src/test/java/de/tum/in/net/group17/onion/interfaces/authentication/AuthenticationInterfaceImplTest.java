@@ -63,7 +63,7 @@ public class AuthenticationInterfaceImplTest {
                 "localhost",
                 "localhost",
                 60);
-        AuthenticationInterfaceImpl intf = new AuthenticationInterfaceImpl(config, new AuthenticationParserImpl());
+        AuthenticationInterface intf = new AuthenticationInterfaceMock();
 
         Peer peer = new Peer(derKey);
         AuthSessionHs1ParsedMessage res = null;
