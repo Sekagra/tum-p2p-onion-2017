@@ -1,7 +1,13 @@
 image: maven:3.5.0-jdk-8-alpine
 
+stages:
+  - build
+  - test
+
 build:
-    script: "mvn clean install -DskipTests"
+  stage: build
+  script: "mvn clean install -DskipTests"
 
 test:
-    script: "mvn test"
+  stage: test
+  script: "mvn test"
