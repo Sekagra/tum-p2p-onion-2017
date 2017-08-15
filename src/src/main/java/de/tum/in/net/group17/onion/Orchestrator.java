@@ -149,6 +149,7 @@ public class Orchestrator {
     private static void printHelp() {
         String helpText =
                 "Usage: java -jar onion_module.jar --config path [args]\n\n" +
+                "\t--help\t\t\tPrint this help text.\n" +
                 "\t--config\tpath\tPath to the configuration file.\n" +
                 //"\t--logfile\tpath\tFile used to output log messages.\n" +
                 "\t--loglevel\tlevel\tLog level to use. Level = {debug, info, warning, error, fatal}\n\n";

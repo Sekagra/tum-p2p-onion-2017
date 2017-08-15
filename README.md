@@ -15,7 +15,9 @@ Following parameters are required in the *onion* section:
 * round_interval = <round_interval_in_seconds>      &rightarrow; Round interval the Onion module shall use
 * intermediate_hops = <number_of_intermediate_hops> &rightarrow; Number of intermediate hops in the tunnel between this peer and the receiver.
 
-A sample configuration is contained in the *config/* directory.
+In addition, *api_address = \<pubic/private_ip\>:\<port\>* is also required in the *rps* and *auth* section.
+
+A sample configuration is contained in the *config/* directory. (Adapted from the bootstrap.conf in the [testing framework](https://gitlab.lrz.de/voidphone/testing))
 
 ## Help and Command Line Arguments ##
 
@@ -26,8 +28,8 @@ To display the help text of the Onion module following command:
 Subsequent command line arguments are supported:
 
 * help: Display the help text.
-* config: Path to the configuration file
-* loglevel: The log level used by the Onion module. Currently all log messages will be printed to stdout.
+* config: Path to the configuration file. (Required)
+* loglevel: The log level used by the Onion module (Default: INFO). Currently all log messages will be printed to stdout. (Optional)
 
 
 
