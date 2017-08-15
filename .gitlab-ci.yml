@@ -1,9 +1,7 @@
 image: maven:3.5.0-jdk-8-alpine
 
 build:
-    echo: "Building from scratch with Maven"
     script: "mvn clean install -DskipTests"
 
 test:
-    echo: "Separate testing"
     script: "mvn test"
