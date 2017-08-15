@@ -57,7 +57,7 @@ To skip all tests use following command to build the project:
 Our implementation has the following dependencies:
 
 * jUnit-RELEASE (4.12 currently): Eclipse Public License 1.0
-* Boucy Castle-1.57: MIT X11 License
+* Bouncy Castle-1.57: MIT X11 License
 * Netty-4.1.12.Final: Apache License 2.0
 * Google Guice-4.1.0: Apache License 2.0
 * log4j-2.8.2: Apache License 2.0
