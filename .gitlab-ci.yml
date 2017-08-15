@@ -4,6 +4,10 @@ stages:
   - build
   - test
 
+before_script:
+  - apk add --no-cache git
+  - cd /builds/ga78sil/p2p-2017-group17-onion/src
+
 build:
   stage: build
   script: "mvn clean install -DskipTests"
