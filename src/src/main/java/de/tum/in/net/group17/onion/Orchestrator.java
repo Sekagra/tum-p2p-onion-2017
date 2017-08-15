@@ -120,9 +120,9 @@ public class Orchestrator {
                 case "--config":
                     configPath = arguments[++i];
                     break;
-                case "--logfile":
-                    logPath = arguments[++i];
-                    break;
+                //case "--logfile":
+                //    logPath = arguments[++i];
+                //    break;
                 case "--loglevel":
                     try {
                     logLevel = Level.toLevel(arguments[i++]);
@@ -150,7 +150,7 @@ public class Orchestrator {
         String helpText =
                 "Usage: java -jar onion_module.jar --config path [args]\n\n" +
                 "\t--config\tpath\tPath to the configuration file.\n" +
-                "\t--logfile\tpath\tFile used to output log messages.\n" +
+                //"\t--logfile\tpath\tFile used to output log messages.\n" +
                 "\t--loglevel\tlevel\tLog level to use. Level = {debug, info, warning, error, fatal}\n\n";
 
         System.out.println(helpText);
