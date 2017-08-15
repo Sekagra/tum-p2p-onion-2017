@@ -9,11 +9,11 @@ Use this command to run the Onion module:
 Following parameters are required in the *onion* section:
 
 
-* hostkey = <path_to_pem_key>                       &rightarrow; Path to the key used by this peer.
-* listen_address = <public_ip>:<port>               &rightarrow; P2P address of this peer.
-* api_address = <pubic/private_ip>:<port>           &rightarrow; Address used for API connections to the Onion module
-* round_interval = <round_interval_in_seconds>      &rightarrow; Round interval the Onion module shall use
-* intermediate_hops = <number_of_intermediate_hops> &rightarrow; Number of intermediate hops in the tunnel between this peer and the receiver.
+* hostkey = \<path_to_pem_key\>                         | Path to the key used by this peer.
+* listen_address = \<public_ip\>:\<port\>               | P2P address of this peer.
+* api_address = \<pubic/private_ip\>:\<port\>           | Address used for API connections to the Onion module
+* round_interval = \<round_interval_in_seconds\>      | Round interval the Onion module shall use
+* intermediate_hops = \<number_of_intermediate_hops\> | Number of intermediate hops in the tunnel between this peer and the receiver.
 
 In addition, *api_address = \<pubic/private_ip\>:\<port\>* is also required in the *rps* and *auth* section.
 
