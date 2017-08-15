@@ -14,10 +14,18 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> {
     private SimpleChannelInboundHandler handler;
 
+    /**
+     * Create a new ClientChannelInitializer.
+     *
+     * @param handler The last handler in the channel pipeline.
+     */
     public ClientChannelInitializer(SimpleChannelInboundHandler handler) {
         this.handler = handler;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void initChannel(SocketChannel socketChannel) throws Exception {
         ChannelPipeline pipeline = socketChannel.pipeline();

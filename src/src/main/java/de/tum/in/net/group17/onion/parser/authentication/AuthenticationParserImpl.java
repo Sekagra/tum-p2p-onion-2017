@@ -15,6 +15,8 @@ import java.nio.ByteBuffer;
  * Created by Christoph Rudolf on 25.05.17.
  *
  * Marko Dorfhuber (PraMiD) 24.07.2017: Added Cipher Messages
+ *
+ * A parser for all AUTH messages for the Specification (v4.0) of the VoidPhone application.
  */
 public class AuthenticationParserImpl extends VoidphoneParser implements AuthenticationParser {
     /**
@@ -64,7 +66,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     @Override
     public ParsedMessage buildLayerEncrypt(int requestId, short[] sessionIds, byte[] payload) throws ParsingException {
-        checkSizeCryptMessage(requestId, sessionIds, payload);
+        checkSizeCryptMessage(sessionIds, payload);
 
         return new AuthLayerEncryptParsedMessage(requestId, sessionIds, payload);
     }
@@ -74,7 +76,7 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
      */
     @Override
     public ParsedMessage buildLayerDecrypt(int requestId, short[] sessionIds, byte[] payload) throws ParsingException {
-        checkSizeCryptMessage(requestId, sessionIds, payload);
+        checkSizeCryptMessage(sessionIds, payload);
 
         return new AuthLayerDecryptParsedMessage(requestId, sessionIds, payload);
     }
@@ -116,10 +118,14 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     }
 
     /**
-     * Confirm the size and type matching the specification of the AUTH_SESSION_HS1 message.
+     * Confirm the size and type matching the specification of the AUTH SESSION HS1 message.
+     *
      *
      * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violations.
+     *
+     * @return The parsed message to confirm its validity.
+     *
+     * @throws ParsingException If the input does not contain an AUTH SESSION HS1 message.
      */
     private ParsedMessage parseSessionHandshake1(byte[] message) throws ParsingException {
         ByteBuffer buffer;
@@ -142,10 +148,14 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     }
 
     /**
-     * Confirm the size and type matching the specification of the AUTH_SESSION_HS2 message.
+     * Confirm the size and type matching the specification of the AUTH SESSION HS2 message.
+     *
      *
      * @param message The raw message as byte[].
-     * @return The parsed message to confirm its validity; This method throws a ParsingExecption on every format violation.
+     *
+     * @return The parsed message to confirm its validity.
+     *
+     * @throws ParsingException If the input does not contain an AUTH SESSION HS2 message.
      */
     private ParsedMessage parseSessionHandshake2(byte[] message) throws ParsingException {
         ByteBuffer buffer;
@@ -167,11 +177,15 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     }
 
     /**
-     * Parse a AUTH_[LAYER|CIPHER]_[EN-|DECRYPT]_RESP message.
+     * Parse a AUTH [LAYER|CIPHER] [EN-|DECRYPT] RESP message.
+     *
      *
      * @param type Is this a decrypt/encrypt message?
      * @param message The received message.
-     * @return The parsed message to confirm its validity; This method throws a ParsingException on every format violation.
+     *
+     * @return The parsed message to confirm its validity.
+     *
+     * @throws ParsingException If the input does not contain a message of the type given by the type parameter.
      */
     private ParsedMessage parseCryptResponse(MessageType type, byte[] message) throws ParsingException {
         ByteBuffer buffer;
@@ -205,10 +219,13 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
     }
 
     /**
-     * Parse an ONION_AUTH_ERROR message.
+     * Parse an ONION AUTH ERROR message.
      *
      * @param message The message sent by the Onion Auth module.
-     * @return A ParsedMessage to confirm the validity of the message; This method throws a ParsingException on every format violation.
+     *
+     * @return A ParsedMessage to confirm the validity of the message.
+     *
+     * @throws ParsingException If the input does not contain an AUTH ERROR message.
      */
     private ParsedMessage parseAuthErrorRespone(byte[] message) throws ParsingException {
         ByteBuffer buffer;
@@ -246,7 +263,17 @@ public class AuthenticationParserImpl extends VoidphoneParser implements Authent
         }
     }
 
-    private void checkSizeCryptMessage(int requestId, short[] sessionIds, byte[] payload) throws ParsingException {
+    /**
+     * Check if the packet with all parameters encoded would exceed the packet size limit given by the specification
+     * (65536 byte).
+     *
+     *
+     * @param sessionIds The session IDs we would add to the packet.
+     * @param payload The payload we would add to the packet.
+     *
+     * @throws ParsingException If the message size is too large.
+     */
+    private void checkSizeCryptMessage(short[] sessionIds, byte[] payload) throws ParsingException {
         int size;
 
         if(sessionIds == null || sessionIds.length > 255 || sessionIds.length < 1)

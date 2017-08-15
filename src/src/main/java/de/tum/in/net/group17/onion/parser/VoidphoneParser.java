@@ -13,9 +13,11 @@ import java.nio.ByteOrder;
 public abstract class VoidphoneParser {
     /**
      * Check an message's size value.
-     * This method throws a ParsingException on any errors.
+     *
      *
      * @param message The message we shall check.
+     *
+     * @throws ParsingException If the size in the packet is invalid.
      */
     protected void checkSize(byte[] message) throws ParsingException {
         if (message == null || message.length < 4) // Null or shorter than the header?
@@ -37,6 +39,8 @@ public abstract class VoidphoneParser {
      *
      * @param message The incoming message.
      * @param expectedType The expected MessageType.
+     *
+     * @throws ParsingException If the incoming data has another type than the expected one.
      */
     protected void checkType(byte[] message, MessageType expectedType) throws ParsingException {
         ByteBuffer buffer = ByteBuffer.wrap(message);
@@ -47,15 +51,13 @@ public abstract class VoidphoneParser {
                     ". Expected: " + expectedType.getValue());
     }
 
-    protected boolean hasMinimumSize(byte[] message) {
-        return message.length >= 4;
-    }
-
     /**
      * Get the MessageType of a message.
      *
      * @param message The message we want to read the type from.
      * @return The MessageType.
+     *
+     * @throws ParsingException Get the type of the incoming message.
      */
     protected MessageType extractType(byte[] message) throws ParsingException {
         ByteBuffer buffer = ByteBuffer.wrap(message);

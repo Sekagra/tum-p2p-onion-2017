@@ -20,6 +20,10 @@ import java.util.TimerTask;
 
 /**
  * Created by Marko Dorfhuber(PraMiD) on 31.07.17.
+ *
+ * This class simulates a CM module of the VoidPhone application.
+ * It builds a tunnel, sends normal and cover data, issues a tunnel refresh while sending additional data and destroys
+ * the tunnel at the end.
  */
 public class OnionApiInterfaceMock implements OnionApiInterface {
     public boolean testRunnerReady = true;
@@ -56,6 +60,12 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
     private int receivedVoicePacketsAfterRoundTransit;
     private boolean roundTransitionDone;
 
+
+    /**
+     * Create a new OnionApiInterfaceMock.
+     *
+     * @throws IOException If we could not load this hosts public key.
+     */
     public OnionApiInterfaceMock() throws IOException {
         endpointKey = getEndpointKey();
         endpointIp = Inet4Address.getByName("localhost");
@@ -269,6 +279,14 @@ public class OnionApiInterfaceMock implements OnionApiInterface {
         this.intermediate = true;
     }
 
+    /**
+     * Get the key used by this mock.
+     *
+     *
+     * @return An ASN1Primitive containing the parsed key.
+     *
+     * @throws IOException If the provided key is invalid.
+     */
     public ASN1Primitive getEndpointKey() throws IOException {
             // Create a key in DER format used in different cases
             int[] tmp = {

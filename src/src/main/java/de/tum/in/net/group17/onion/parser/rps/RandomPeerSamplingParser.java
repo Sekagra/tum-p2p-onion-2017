@@ -16,6 +16,8 @@ public interface RandomPeerSamplingParser extends Parser {
      * Build a RPS Query message.
      *
      * @return The RpsParsedObject containing the RPS Query message.
+     *
+     * @throws ParsingException If an error occured during message build.
      */
     ParsedMessage buildRpsQueryMsg() throws ParsingException;
 }

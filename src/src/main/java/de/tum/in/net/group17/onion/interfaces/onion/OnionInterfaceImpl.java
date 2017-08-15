@@ -64,6 +64,14 @@ public class OnionInterfaceImpl implements OnionInterface {
     private Logger logger;
     private OnionCallback orchestratorCallback;
 
+
+    /**
+     * Create a new OnionInterface compatible to version 1.0 of this onion module.
+     *
+     * @param config ConfigurationProvider to use.
+     * @param parser Parser for Onion P2P messages.
+     * @param authInterface Connection to the Onion Auth Module to use.
+     */
     @Inject
     public OnionInterfaceImpl(ConfigurationProvider config, OnionToOnionParser parser, AuthenticationInterface authInterface) {
         this.logger = LogManager.getLogger(OnionInterface.class);
@@ -308,6 +316,8 @@ public class OnionInterfaceImpl implements OnionInterface {
      * @param msg The incoming parsed OnionTunnelAcceptParsedMessage message.
      * @param senderAddress InetAddress of the sender of this datagram.
      * @param senderPort The remote port of the sender of this datagram.
+     *
+     * @throws OnionException On any error during message handling. Use OnionException.getMessage() for further information.
      */
     private void handleTunnelAccept(OnionTunnelAcceptParsedMessage msg, InetAddress senderAddress, short senderPort) throws OnionException {
         if(this.waitForAccept.containsKey(msg.getLid())) {
@@ -344,7 +354,10 @@ public class OnionInterfaceImpl implements OnionInterface {
      * Handle an incoming tunnel relay message by expanding the tunnel with the expected inner init-message and
      * update the own state.
      *
+     *
      * @param msg The incoming parsed OnionTunnelRelayParsedMessage message.
+     *
+     * @throws IOException If we could not send the relay answer back through the tunnel.
      */
     private void handleTunnelRelay(OnionTunnelRelayParsedMessage msg) throws IOException {
         // adapt peer's own state first (just so we don't run into extremely quick responses not being able to get handled)
@@ -364,12 +377,18 @@ public class OnionInterfaceImpl implements OnionInterface {
         }
     }
 
-    /***
+    /**
      * Handle an incoming transport message that has to be decrypted at least once.
+     *
      *
      * @param msg The incoming parsed OnionTunnelTransportParsedMessage message.
      * @param senderAddress InetAddress of the sender of this datagram.
      * @param senderPort The remote port of the sender of this datagram.
+     *
+     * @throws IOException If we could not send the transport message to the next hop in the tunnel.
+     * @throws ParsingException If we could not parse the wrapped message.
+     * @throws InterruptedException If we were interrupted while waiting for en-/decryption response.
+     * @throws AuthException If Onion Auth sent an error.
      */
     private void handleTunnelTransport(OnionTunnelTransportParsedMessage msg, InetAddress senderAddress, short senderPort)
             throws IOException, ParsingException, InterruptedException, AuthException {
@@ -413,10 +432,15 @@ public class OnionInterfaceImpl implements OnionInterface {
         }
     }
 
-    /***
+    /**
      * Handle an incoming teardown message.
      *
+     *
      * @param msg The incoming parsed OnionTunnelTeardownParsedMessage message.
+     *
+     * @throws ParsingException If we could not create the teardown message if the teardown was issued by the last hop
+     *                              in the tunnel.
+     * @throws OnionException If we should destroy an unknown tunnel.
      */
     private void handleTunnelTeardown(OnionTunnelTeardownParsedMessage msg) throws ParsingException, OnionException {
         // If we receive a tunnel teardown for a tunnel we are an intermediate hop for, tear it down
@@ -501,11 +525,16 @@ public class OnionInterfaceImpl implements OnionInterface {
     }
 
     /**
-     * This method handles possible leftovers from switched out tunnels
-     * @param msg The received message for which we now check if there is possible a tunnel we switched out accociated
+     * This method handles possible leftovers from switched out tunnels.
+     *
+     *
+     * @param msg The received message for which we now check if there is possible a tunnel we switched out associated
      *            with its local identifier.
      * @param senderAddress InetAddress of the sender of this datagram.
      * @param senderPort The remote port of the sender of this datagram.
+     *
+     * @throws ParsingException If we could not build the ONION TUNNEL TEARDOWN message.
+     * @throws InterruptedException If we were interrupted while waiting for decryption response.
      */
     private void handleDestroyedTunnel(OnionToOnionParsedMessage msg, InetAddress senderAddress, short senderPort) throws ParsingException, InterruptedException {
         // check type
@@ -577,7 +606,11 @@ public class OnionInterfaceImpl implements OnionInterface {
 
     /**
      * Destroy a concrete tunnel given by a Tunnel-instance.
+     *
+     *
      * @param tunnel The tunnel instance to destroy.
+     *
+     * @throws OnionException If we shall destroy an unknown tunnel.
      */
     private void destroyTunnel(Tunnel tunnel) throws OnionException {
         this.logger.debug("Attempting to destroy tunnel with ID " + tunnel.getId());
@@ -645,50 +678,6 @@ public class OnionInterfaceImpl implements OnionInterface {
         }
     }
 
-    private void sendVoiceData(int tunnelId, byte[] data) throws OnionException {
-        // expect a matching tunnel ID in either the list of created or incoming tunnels
-        Tunnel tunnel = this.startedTunnels.get(tunnelId);
-        TunnelSegment firstSegment;
-        TunnelSegment lastSegment;
-
-        this.logger.debug("Using tunnel " + tunnelId + " to send a voice message!");
-        try {
-            if(tunnel != null) {
-                // tunnel started by us
-                firstSegment = tunnel.getSegments().get(0);
-                lastSegment = tunnel.getSegments().get(tunnel.getSegments().size() - 1);
-            } else if(this.incomingTunnels.containsKey(tunnelId) && !this.incomingTunnels.get(tunnelId).getSegments().isEmpty()) {
-                // tunnel we are an endpoint to
-                firstSegment = lastSegment = this.incomingTunnels.get(tunnelId).getSegments().get(0);
-            } else {
-                this.logger.error("Unable to send data on unknown tunnel with ID: " + tunnelId);
-                return;
-            }
-
-            // create the voice messages and handle each one
-            List<ParsedMessage> voicePackets = this.parser.buildOnionTunnelVoiceMsgs(lastSegment.getLid().serialize(), data);
-            for (ParsedMessage voicePacket : voicePackets) {
-                ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), voicePacket);
-                // encrypt accordingly
-                if(tunnel != null) {
-                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel.getSegments());
-                } else {
-                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, firstSegment, false);
-                }
-                this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), transportPacket.serialize());
-                firstSegment.updateLastDataSeen();
-            }
-        } catch (ParsingException e) {
-            this.logger.error("Unable to build required voice or transport data packet to send out a voice message: " + e.getMessage());
-        } catch (InterruptedException e) {
-            this.logger.error("Unable to encrypt a message via the authentication module: " + e.getMessage());
-        } catch (IOException e) {
-            this.logger.error("Unable to send message to next peer: " + e.getMessage());
-        } catch (AuthException e) {
-            throw new OnionException("Cannot encrypt ONION TUNNEL TRANSPORT package: " + e.getMessage());
-        }
-    }
-
     /**
      * @inheritDoc
      */
@@ -745,6 +734,59 @@ public class OnionInterfaceImpl implements OnionInterface {
             }
         } else {
             this.logger.error("Cannot send established for empty tunnels.");
+        }
+    }
+
+    /**
+     * Called if a user asks to send data through the tunnel.
+     *
+     *
+     * @param tunnelId Specifies the tunnel to use.
+     * @param data The data to send.
+     *
+     * @throws OnionException If we shall send data through an unknown tunnel.
+     */
+    private void sendVoiceData(int tunnelId, byte[] data) throws OnionException {
+        // expect a matching tunnel ID in either the list of created or incoming tunnels
+        Tunnel tunnel = this.startedTunnels.get(tunnelId);
+        TunnelSegment firstSegment;
+        TunnelSegment lastSegment;
+
+        this.logger.debug("Using tunnel " + tunnelId + " to send a voice message!");
+        try {
+            if(tunnel != null) {
+                // tunnel started by us
+                firstSegment = tunnel.getSegments().get(0);
+                lastSegment = tunnel.getSegments().get(tunnel.getSegments().size() - 1);
+            } else if(this.incomingTunnels.containsKey(tunnelId) && !this.incomingTunnels.get(tunnelId).getSegments().isEmpty()) {
+                // tunnel we are an endpoint to
+                firstSegment = lastSegment = this.incomingTunnels.get(tunnelId).getSegments().get(0);
+            } else {
+                this.logger.error("Unable to send data on unknown tunnel with ID: " + tunnelId);
+                return;
+            }
+
+            // create the voice messages and handle each one
+            List<ParsedMessage> voicePackets = this.parser.buildOnionTunnelVoiceMsgs(lastSegment.getLid().serialize(), data);
+            for (ParsedMessage voicePacket : voicePackets) {
+                ParsedMessage transportPacket = this.parser.buildOnionTunnelTransferMsgPlain(firstSegment.getLid().serialize(), voicePacket);
+                // encrypt accordingly
+                if(tunnel != null) {
+                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, tunnel.getSegments());
+                } else {
+                    transportPacket = this.authInterface.encrypt((OnionTunnelTransportParsedMessage)transportPacket, firstSegment, false);
+                }
+                this.server.send(firstSegment.getNextAddress(), firstSegment.getNextPort(), transportPacket.serialize());
+                firstSegment.updateLastDataSeen();
+            }
+        } catch (ParsingException e) {
+            this.logger.error("Unable to build required voice or transport data packet to send out a voice message: " + e.getMessage());
+        } catch (InterruptedException e) {
+            this.logger.error("Unable to encrypt a message via the authentication module: " + e.getMessage());
+        } catch (IOException e) {
+            this.logger.error("Unable to send message to next peer: " + e.getMessage());
+        } catch (AuthException e) {
+            throw new OnionException("Cannot encrypt ONION TUNNEL TRANSPORT package: " + e.getMessage());
         }
     }
 }

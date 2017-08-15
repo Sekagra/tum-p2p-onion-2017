@@ -18,6 +18,11 @@ public class RandomPeerSamplingInterfaceMock implements RandomPeerSamplingInterf
 
     private static int nextPeer = 0;
 
+    /**
+     * Create a new RandomPeerSamplingInterface mockup.
+     *
+     * @throws UnknownHostException If an unknown host is provided. (We use localhost -> Will never happen)
+     */
     public RandomPeerSamplingInterfaceMock() throws UnknownHostException {
         // Create a key in DER format used in different cases
         int[] tmp = {

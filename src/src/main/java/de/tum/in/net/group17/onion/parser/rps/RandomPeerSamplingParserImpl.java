@@ -51,10 +51,13 @@ public class RandomPeerSamplingParserImpl extends VoidphoneParser implements Ran
 
     /**
      * Parse an RPS PEER message.
-     * The method throws a ParsingException on every parsing error!
+     *
      *
      * @param data Array containing the packet to parse.
-     * @return RpsParsedObject of type RPS_MSG_TYPE.RPS_PEER if the packet is a valid RPS PEER message.
+     *
+     * @return RpsParsedObject of type RPS PEER.
+     *
+     * @throws ParsingException If the input does not contain a valid RPS PEER message.
      */
     private ParsedMessage parseRpsPeerMsg(byte[] data) throws ParsingException {
         InetAddress ipAddress;

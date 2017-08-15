@@ -21,6 +21,9 @@ public abstract class TcpServerInterface {
     private Logger logger;
     private Channel channel;
 
+    /**
+     * Create a new TcpServerInterface.
+     */
     public TcpServerInterface() {
         this.logger = LogManager.getLogger(OnionApiInterface.class);
     }

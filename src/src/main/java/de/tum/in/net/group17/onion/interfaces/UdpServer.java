@@ -25,13 +25,10 @@ import java.util.Date;
 public class UdpServer {
     private Channel channel;
 
-    public Channel getChannel() {
-        return channel;
-    }
-
     /**
      * Start listening to incoming requests on the specified port for this server interface.
      *
+     * @param addr The address we bind to.
      * @param port The port to be listening on.
      * @param handler The message handler for the unparsed.
      */

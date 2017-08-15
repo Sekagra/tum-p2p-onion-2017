@@ -6,10 +6,18 @@ package de.tum.in.net.group17.onion.interfaces.authentication;
 public class AuthException extends Throwable {
     private String msg;
 
+    /**
+     * Create a new auth exception with the given message.
+     *
+     * @param message A message describing the error.
+     */
     public AuthException(String message) {
         this.msg = message;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public String getMessage() {
         return this.msg;

@@ -141,6 +141,24 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
 
     /**
      * @inheritDoc
+     */
+    @Override
+    public List<ParsedMessage> buildOnionTunnelVoiceMsgs(byte[] incomingLidRaw, byte[] payload) throws ParsingException {
+        List<ParsedMessage> result = new ArrayList<>();
+        int partSize = OnionTunnelTransportParsedMessage.MAX_INNER_SIZE - lidLen - OnionTunnelTransportParsedMessage.MAGIC.length - 4; // subtract header
+
+        int start = 0;
+        while (start < payload.length) {
+            int end = Math.min(payload.length, start + partSize);
+            result.add(this.buildOnionTunnelVoiceMsg(incomingLidRaw, Arrays.copyOfRange(payload, start, end)));
+            start += partSize;
+        }
+
+        return result;
+    }
+
+    /**
+     * @inheritDoc
      *
      * This implementation throws a ParsingError on every error!
      */
@@ -173,6 +191,16 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         }
     }
 
+    /**
+     * Parse an incoming ONION TUNNEL ESTABLISHED message.
+     *
+     *
+     * @param data The raw message received on the interface.
+     *
+     * @return The parsed ONION TUNNEL ESTABLISHED message.
+     *
+     * @throws ParsingException If the input does not provide a valid ONION TUNNEL ESTABLISHED message.
+     */
     private ParsedMessage parseIncomingEstablishedMessage(byte[] data) throws ParsingException {
         GenericMsgContent content = parseIncomingOnionMessage(data, 0, MessageType.ONION_TUNNEL_ESTABLISHED);
 
@@ -194,10 +222,13 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
 
     /**
      * Parse a ONION TUNNEL RELAY message.
-     * The method throws a ParsingException on every parsing error!
+     *
      *
      * @param message Array containing the packet to parse.
+     *
      * @return OnionToOnionParseMessage of type ONION_TUNNEL_RELAY if the packet is a valid ONION TUNNEL RELAY message.
+     *
+     * @throws ParsingException If the input does not provide a valid ONION TUNNEL RELAY message.
      */
     private OnionToOnionParsedMessage parseIncomingRelayMessage(byte[] message) throws ParsingException {
         GenericMsgContent genericHeader;
@@ -251,10 +282,13 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
 
     /**
      * Parse a ONION TUNNEL TRANSPORT message.
-     * The method throws a ParsingException on every parsing error!
+     *
      *
      * @param message Array containing the packet to parse.
-     * @return OnionToOnionParseMessage of type ONION_TUNNEL_TRANSPORT if the packet is a valid ONION TUNNEL TRANSPORT message.
+     *
+     * @return OnionToOnionParseMessage of type ONION TUNNEL TRANSPORT.
+     *
+     * @throws ParsingException If the input does not provide a valid ONION TUNNEL TRANSPORT message.
      */
     private OnionToOnionParsedMessage parseIncomingTransportMessage(byte[] message) throws ParsingException
     {
@@ -276,12 +310,16 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
 
     /**
      * Parse all messages retrieved by the Onion module with respect to a given type, minimalDataLen, and a MessageType.
-     * This method throws a ParsingException on every error!
+     *
      *
      * @param message The message to parse.
      * @param minDataLen The minimal length of contained data.
      * @param type The Type this message must have.
+     *
      * @return A GenericMsgContent containing the data and LID of the received message.
+     *
+     * @throws ParsingException If the input data does not contain a valid ONION message (generic header), is too short
+     *                              or has a wrong type.
      */
     private GenericMsgContent parseIncomingOnionMessage(byte[] message, int minDataLen, MessageType type) throws ParsingException {
         byte[] lidRaw;
@@ -307,27 +345,16 @@ public class OnionToOnionParserImpl extends VoidphoneParser implements OnionToOn
         public final Lid lid;
         public final byte[] data;
 
+        /**
+         * Create a new GenericMsgContent with the given parameters.
+         *
+         *
+         * @param lid The Lid contained in the message.
+         * @param data The 'rest' of the message. (Truncated the LID and header of the original message)
+         */
         public GenericMsgContent(Lid lid, byte[] data) {
             this.lid = lid;
             this.data = data;
         }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    @Override
-    public List<ParsedMessage> buildOnionTunnelVoiceMsgs(byte[] incomingLidRaw, byte[] payload) throws ParsingException {
-        List<ParsedMessage> result = new ArrayList<>();
-        int partSize = OnionTunnelTransportParsedMessage.MAX_INNER_SIZE - lidLen - OnionTunnelTransportParsedMessage.MAGIC.length - 4; // subtract header
-
-        int start = 0;
-        while (start < payload.length) {
-            int end = Math.min(payload.length, start + partSize);
-            result.add(this.buildOnionTunnelVoiceMsg(incomingLidRaw, Arrays.copyOfRange(payload, start, end)));
-            start += partSize;
-        }
-
-        return result;
     }
 }

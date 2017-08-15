@@ -9,5 +9,11 @@ import io.netty.channel.socket.DatagramPacket;
  * Created by Christoph Rudolf on 17.07.17.
  */
 public interface UdpMessageHandler {
+    /**
+     * Create a new UDP handler.
+     *
+     * @param ctx The context of the message.
+     * @param packet The incoming datagram.
+     */
     void readDatagram(ChannelHandlerContext ctx, DatagramPacket packet);
 }

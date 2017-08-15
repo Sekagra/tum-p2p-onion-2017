@@ -12,14 +12,23 @@ import java.util.List;
 public interface RandomPeerSamplingInterface {
     /**
      * Query a new random peer from the RPS module.
+     *
+     *
      * @return The random peer.
+     *
+     * @throws RandomPeerSamplingException If we could not query a random peer.
      */
     Peer queryRandomPeer() throws RandomPeerSamplingException;
 
     /**
-     * Query a new random peer from the RPS module but excluding certain hostkeys from being sampled. 10 retries.
-     * @param excluding The list of all hostkeys that are not allowed to be used.
+     * Query a new random peer from the RPS module but excluding certain host keys from being sampled. 10 retries.
+     *
+     *
+     * @param excluding The list of all host keys that are not allowed to be used.
+     *
      * @return The random peer.
+     *
+     * @throws RandomPeerSamplingException If we could not query a random peer.
      */
     Peer queryRandomPeer(List<String> excluding) throws RandomPeerSamplingException;
 }

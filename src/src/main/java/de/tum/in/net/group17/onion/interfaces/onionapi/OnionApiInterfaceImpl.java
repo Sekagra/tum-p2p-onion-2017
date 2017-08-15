@@ -139,13 +139,9 @@ public class OnionApiInterfaceImpl extends TcpServerInterface implements OnionAp
             throw new OnionApiException("Unable to build ONION TUNNEL ERROR message: " + e.getMessage());
         }
 
-        /**
-         *
-         * Tunnel ID might not be set because we specify the tunnel ID and if an error happens during build, whom to
-         * send this back to?!
-         * What about lastClient?
-         *
-         */
+        // Tunnel ID might not be set because we specify the tunnel ID and if an error happens during build, whom to
+        // send this back to?!
+        // What about lastClient?
         Channel chn = clients.get(tunnelId);
         if(chn == null) {
             try {

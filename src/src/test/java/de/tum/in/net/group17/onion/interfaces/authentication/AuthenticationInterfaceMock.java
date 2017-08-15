@@ -23,10 +23,16 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
 
     public List<Short> sessions;
 
+    /**
+     * Create a new AuthenticationInterfaceMock with an empty session list.
+     */
     public AuthenticationInterfaceMock() {
         sessions = new ArrayList<>();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public AuthSessionHs1ParsedMessage startSession(Peer peer) throws ParsingException, InterruptedException {
         try {
@@ -43,11 +49,17 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void closeSession(short sessionId) throws ParsingException {
         sessions.remove(new Short(sessionId));
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public AuthSessionHs2ParsedMessage forwardIncomingHandshake1(byte[] payload) throws ParsingException, InterruptedException {
         // TODO: May return Auth Error in this case
@@ -68,6 +80,9 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void forwardIncomingHandshake2(short sessionId, byte[] payload) throws ParsingException {
         if(!sessions.contains(sessionId))
@@ -78,6 +93,9 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
             throw new RuntimeException("Invalid payload in incoming HS2 message!");
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
         // Set the new arrays to handle the case if we only get a copy of the stored array
@@ -99,6 +117,9 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         return message;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment, boolean isCipher) throws InterruptedException, ParsingException, AuthException {
         // Set the new arrays to handle the case if we only get a copy of the stored array
@@ -118,6 +139,9 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         return message;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException {
         // Set the new arrays to handle the case if we only get a copy of the stored array
@@ -154,6 +178,9 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public OnionTunnelTransportParsedMessage decrypt(OnionTunnelTransportParsedMessage message, TunnelSegment segment) throws InterruptedException, ParsingException {
         byte[] lid1 = Arrays.copyOfRange(message.getData(), 0, LidImpl.LENGTH);
@@ -187,10 +214,23 @@ public class AuthenticationInterfaceMock implements AuthenticationInterface {
         return message;
     }
 
+    /**
+     * Get a new random integer.
+     *
+     * @return A random integer.
+     */
     private int getRndInt() {
         return (new Random()).nextInt();
     }
 
+    /**
+     * Return the fingerprint of a LID encoded as byte array.
+     *
+     *
+     * @param rawLid byte[] containing the LID.
+     *
+     * @return The fingerprint of the LID.
+     */
     private int getLidFingerprint(byte[] rawLid) {
         return LidFingerprinting.fingerprint(rawLid);
     }

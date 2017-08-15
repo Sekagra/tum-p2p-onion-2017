@@ -17,12 +17,27 @@ public class Peer {
     private InetAddress ipAddress;
     private short port;
 
+    /**
+     * Create a new peer without host key, address and port.
+     */
     public Peer() { };
 
+    /**
+     * Create a new peer with host key information.
+     *
+     * @param hostkey The host key of this peer.
+     */
     public Peer(byte[] hostkey)  {
         this.hostkey = hostkey;
     }
 
+    /**
+     * Create a new peer.
+     *
+     * @param hostkey The host key of this peer.
+     * @param addr The address of this peer.
+     * @param port The port of this peer's application.
+     */
     public Peer(byte[] hostkey, InetAddress addr, short port)  {
         this.hostkey = hostkey;
         this.ipAddress = addr;
@@ -30,22 +45,50 @@ public class Peer {
         this.id = Hashing.Sha256(hostkey);
     }
 
+    /**
+     * Get the ID (Hash of the public key) of this peer.
+     *
+     * @return The host's ID.
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Get the host key of this peer.
+     *
+     * @return The peer's key.
+     */
     public byte[] getHostkey() {
         return hostkey;
     }
 
+    /**
+     * Get the address of the peer.
+     *
+     * @return The peer's address.
+     */
     public InetAddress getIpAddress() {
         return this.ipAddress;
     }
 
+    /**
+     * Get the port used by the peer's Onion module.
+     *
+     * @return The Onion module's port on the peer.
+     */
     public short getPort() {
         return this.port;
     }
 
+    /**
+     * Create a peer from a RPS PEER message.
+     *
+     *
+     * @param msg The message.
+     *
+     * @return The created peer.
+     */
     public static Peer fromRpsReponse(RpsPeerParsedMessage msg) {
         try {
             return new Peer(msg.getKey().getEncoded("DER"), msg.getAddress(), msg.getPort());
@@ -54,6 +97,14 @@ public class Peer {
         }
     }
 
+    /**
+     * Create a peer from an ONION TUNNEL BUILD message.
+     *
+     *
+     * @param msg The message.
+     *
+     * @return The created peer.
+     */
     public static Peer fromOnionBuild(OnionTunnelBuildParsedMessage msg) {
         try {
             return new Peer(msg.getDestinationKey().getEncoded("DER"), msg.getIpAddress(), msg.getPort());

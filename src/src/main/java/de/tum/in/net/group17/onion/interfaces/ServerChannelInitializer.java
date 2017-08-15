@@ -20,10 +20,19 @@ public class ServerChannelInitializer extends ChannelInitializer<SocketChannel> 
     private final int WORKERS = 4;
     private EventExecutorGroup workerPool = new DefaultEventExecutorGroup(WORKERS);
 
+
+    /**
+     * Create a new ServerChannelInitializer with the given request handler.
+     *
+     * @param handlerSupplier Supplies the last handler in the channel pipeline.
+     */
     public ServerChannelInitializer(Supplier<ChannelHandler> handlerSupplier) {
         this.handlerSupplier = handlerSupplier;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void initChannel(SocketChannel socketChannel) throws Exception {
         ChannelPipeline pipeline = socketChannel.pipeline();

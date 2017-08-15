@@ -6,11 +6,14 @@ import de.tum.in.net.group17.onion.config.ConfigurationProviderMock;
 import de.tum.in.net.group17.onion.model.results.RequestResult;
 import de.tum.in.net.group17.onion.model.Peer;
 import de.tum.in.net.group17.onion.parser.ParsedMessage;
+import de.tum.in.net.group17.onion.parser.ParsingException;
 import de.tum.in.net.group17.onion.parser.authentication.AuthSessionHs1ParsedMessage;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParser;
 import de.tum.in.net.group17.onion.parser.authentication.AuthenticationParserImpl;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.net.UnknownHostException;
 
 /**
  * Created by Christoph Rudolf on 27.05.17.
@@ -18,8 +21,11 @@ import org.junit.Test;
 public class AuthenticationInterfaceImplTest {
     private static byte[] derKey;
 
+    /**
+     * Set-up test environment: Store a DER encoded key in the derKey Array.
+     */
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUp() {
         // Create a key in DER format used in different cases
         int[] tmp = {
                 0x30, 0x82, 0x01, 0x22, 0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01,
@@ -51,8 +57,15 @@ public class AuthenticationInterfaceImplTest {
         }
     }
 
+    /**
+     * Test sending of AUTH SESSION START.
+     *
+     * @throws UnknownHostException If a bad host is provided to the ConfigurationProviderMock.
+     * @throws ParsingException If the AUTH SESSION START message could not be constructed.
+     * @throws InterruptedException If we were interrupted while waiting for Onion Auth module's response.
+     */
     @Test
-    public void startSession() throws Exception {
+    public void startSession() throws UnknownHostException, ParsingException, InterruptedException {
         ConfigurationProvider config = new ConfigurationProviderMock(5000,
                 6000,
                 7000,

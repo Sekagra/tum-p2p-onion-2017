@@ -16,6 +16,9 @@ import java.util.TimerTask;
  */
 public class OrchestratorTestExtension extends Orchestrator {
 
+    /**
+     * Create a new OchestratorTestExtension object.
+     */
     public OrchestratorTestExtension() {
         super();
 

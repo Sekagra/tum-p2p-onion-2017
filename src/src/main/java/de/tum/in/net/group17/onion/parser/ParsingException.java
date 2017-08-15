@@ -9,10 +9,18 @@ package de.tum.in.net.group17.onion.parser;
 public class ParsingException extends Exception {
     private final String message;
 
+    /**
+     * Create a new ParsingException with the given message.
+     *
+     * @param msg A message describing the error.
+     */
     public ParsingException(String msg) {
         this.message = msg;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public String getMessage() {
         return message;

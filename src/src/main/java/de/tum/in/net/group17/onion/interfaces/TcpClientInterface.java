@@ -26,16 +26,32 @@ public class TcpClientInterface {
     private RawRequestResult callback;
     private Logger logger;
 
+    /**
+     * Create a new TcpClientInterface that send data to the specified host and port.
+     *
+     * @param host The server's address.
+     * @param port The server's port.
+     */
     public TcpClientInterface(InetAddress host, int port) {
         this.logger = LogManager.getLogger(AuthenticationInterface.class);
         this.host = host;
         this.port = port;
     }
 
+    /**
+     * Set the callback to use if a response is received.
+     *
+     * @param callback The callback.
+     */
     protected void setCallback(RawRequestResult callback) {
         this.callback = callback;
     }
 
+    /**
+     * Get the channel used by this client interface.
+     *
+     * @return The used channel.
+     */
     protected Channel getChannel() {
         if(this.channel != null && this.channel.isOpen() && this.channel.isWritable()) {
             return this.channel;
@@ -74,6 +90,11 @@ public class TcpClientInterface {
         return null;
     }
 
+    /**
+     * Send a message to the specified server.
+     *
+     * @param data The message to send.
+     */
     protected void sendMessage(byte[] data) {
         // Get channel with the correct response handler
         Channel channel = this.getChannel();

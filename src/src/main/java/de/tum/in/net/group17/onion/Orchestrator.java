@@ -75,6 +75,13 @@ public class Orchestrator {
     private TimerTask roundTask;
     private Timer roundTimer;
 
+
+    /**
+     * Main method of the Onion module.
+     * Parses command line parameters and set everything up.
+     *
+     * @param args Command line arguments.
+     */
     public static void main(String[] args) {
         ConfigurationArguments config = null;
 
@@ -108,6 +115,17 @@ public class Orchestrator {
         }
     }
 
+    /**
+     * Parse all command line arguments.
+     * Currently we support: loglevel, config and help.
+     *
+     *
+     * @param arguments Array with all command line arguments.
+     *
+     * @return The parsed configuration arguments. (null -> Exit gracefully (just print help))
+     *
+     * @throws IllegalArgumentException If an error occured during parsing.
+     */
     private static ConfigurationArguments parseCommandLine(String[] arguments) throws IllegalArgumentException {
         String configPath = null, logPath = null;
         Level logLevel = Level.INFO;
@@ -146,6 +164,9 @@ public class Orchestrator {
         return new ConfigurationArguments(configPath, logPath, logLevel);
     }
 
+    /**
+     * Print the application's help text.
+     */
     private static void printHelp() {
         String helpText =
                 "Usage: java -jar onion_module.jar --config path [args]\n\n" +
@@ -393,7 +414,15 @@ public class Orchestrator {
 
     /**
      * Setup a tunnel over several intermediate hops to the given destination.
+     *
+     *
      * @param destination The peer that acts as a destination for the new tunnel.
+     *
+     * @return the newly set-up tunnel.
+     *
+     * @throws InterruptedException If we were interrupted while waiting for a response message.
+     * @throws RandomPeerSamplingException If we could not get a random peer.
+     * @throws OnionException If an error occured during extend. Use OnionException.getMessage() for further information.
      */
     private Tunnel setupTunnel(Peer destination) throws RandomPeerSamplingException, InterruptedException, OnionException {
         Tunnel t = new Tunnel(getNextTunnelId());
@@ -432,8 +461,14 @@ public class Orchestrator {
 
     /**
      * Concrete building into a currently empty Tunnel data structure.
+     *
+     *
      * @param t The tunnel to build into.
      * @param destination The peer that acts as a destination for the new tunnel.
+     *
+     * @throws InterruptedException If we were interrupted while waiting for a response message.
+     * @throws RandomPeerSamplingException If we could not get a random peer.
+     * @throws OnionException If an error occured during extend. Use OnionException.getMessage() for further information.
      */
     private void buildTunnel(Tunnel t, Peer destination) throws RandomPeerSamplingException, OnionException, InterruptedException {
         // build list of exceptions for RPS
@@ -514,6 +549,11 @@ public class Orchestrator {
         return tunnelId.getAndIncrement();
     }
 
+
+    /**
+     * Clean-up old tunnel states.
+     * Remove incoming tunnels and tunnel segments if no data was sent for two rounds.
+     */
     private void cleanupOldStates() {
         // Clean all segments for which we are an intermediate hop
         for(Lid lid : new ArrayList<>(this.segments.keySet())) {
@@ -544,6 +584,14 @@ public class Orchestrator {
         public String logPath;
         public Level logLevel;
 
+
+        /**
+         * Create a new ConfigurationArguments object with the given parameters.
+         *
+         * @param configPath The path to the configuration file.
+         * @param logPath The path to the log file to use. (Currently not supported!)
+         * @param logLevel The log level to use.
+         */
         public ConfigurationArguments(String configPath, String logPath, Level logLevel) {
             this.configPath = configPath;
             this.logPath = logPath;

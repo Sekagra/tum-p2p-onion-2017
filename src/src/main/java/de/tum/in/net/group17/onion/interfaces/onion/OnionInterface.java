@@ -26,6 +26,7 @@ public interface OnionInterface {
 
     /**
      * Set the list of tunnels this peer has created or received
+     *
      * @param started The list of tunnels this peer created.
      * @param incoming The list of tunnels this peer is an endpoint on.
      */
@@ -33,33 +34,50 @@ public interface OnionInterface {
 
     /**
      * Set the map with tunnel segments for all cases in which this peer is an intermediate hop.
+     *
      * @param segments The segment map to work on.
      */
     void setSegments(Map<Lid, TunnelSegment> segments);
 
     /**
      * Extend the given tunnel by contacting the new peer and adding a segment to the tunnel in case of success.
+     *
+     *
      * @param tunnel The tunnel to advance.
      * @param peer The peer to make part of the tunnel at the current end.
+     *
+     * @throws OnionException On any error during tunnel extension. Use OnionException.getMessage for further information.
+     * @throws InterruptedException If we were interrupted while waiting for Onion P2P response.
      */
     void extendTunnel(Tunnel tunnel, Peer peer) throws OnionException, InterruptedException;
 
     /**
      * Orders the onion module to destroy a tunnel with a given ID.
      *
+     *
      * @param tunnelId The ID of the tunnel to destroy.
+     *
+     * @throws OnionException On any error during tunnel extension. Use OnionException.getMessage for further information.
      */
     void destroyTunnelById(int tunnelId) throws OnionException;
 
     /**
      * Instructs the onion module to send cover traffic.
+     *
+     *
      * @param msg The OnionCoverParsedMessage with all necessary data regarding the cover traffic to sent.
+     *
+     * @throws OnionException On any error during tunnel extension. Use OnionException.getMessage for further information.
      */
     void sendVoiceData(OnionTunnelDataParsedMessage msg) throws OnionException;
 
     /**
      * Instructs the onion module to send cover traffic.
+     *
+     *
      * @param msg The OnionCoverParsedMessage with all necessary data regarding the cover traffic to sent.
+     *
+     * @throws OnionException On any error during tunnel extension. Use OnionException.getMessage for further information.
      */
     void sendCoverData(OnionCoverParsedMessage msg) throws OnionException;
 
@@ -67,6 +85,8 @@ public interface OnionInterface {
      * Send the established message type over the given tunnel.
      *
      * @param tunnel The tunnel to send the established message over.
+     *
+     * @throws OnionException On any error during tunnel extension. Use OnionException.getMessage for further information.
      */
     void sendEstablished(Tunnel tunnel) throws OnionException;
 
@@ -76,6 +96,8 @@ public interface OnionInterface {
      *
      * @param newTunnel The new tunnel that will be used for ongoing communication.
      * @param oldTunnel The tunnel that has been previously used for communication.
+     *
+     * @throws OnionException On any error during tunnel extension. Use OnionException.getMessage for further information.
      */
     void sendEstablished(Tunnel newTunnel, Tunnel oldTunnel) throws OnionException;
 }

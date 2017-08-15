@@ -126,6 +126,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     /**
      * Generic method that waits for a response from all session establish related requests.
      *
+     *
      * @param requestId The ID of the request to wait for.
      * @param type The generic parameter to parse the response to.
      *
@@ -133,6 +134,7 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
      *
      * @throws ParsingException Exception in case anything is wrong with the packet layouts.
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
+     * @throws AuthException If an error is returned by the Onion Auth module or we received an unexpected message.
      */
     private <T> T waitForSessionResponse(int requestId, Class<T> type) throws ParsingException, InterruptedException, AuthException {
         if (this.results.get(requestId) == null) {
@@ -189,12 +191,11 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     public OnionTunnelTransportParsedMessage encrypt(OnionTunnelTransportParsedMessage message, List<TunnelSegment> segments) throws InterruptedException, ParsingException, AuthException {
         this.logger.debug("Encrypting data for a whole tunnel.");
         int requestId = this.requestCounter.getAndAdd(1);
-        /**
-         * Get session IDs in reverse order cause the specification says:
-         * "The layered encryption is then to be done by first encrypting the payload with the session
-         * key corresponding to session ID 1, followed by with that of session ID 2 and so on."
-         * ... and the first/inner encryption has to be done with the session key of the tunnel end
-         */
+
+        // Get session IDs in reverse order cause the specification says:
+        // "The layered encryption is then to be done by first encrypting the payload with the session
+        // key corresponding to session ID 1, followed by with that of session ID 2 and so on."
+        // ... and the first/inner encryption has to be done with the session key of the tunnel end
         List<Short> sessionList = segments.stream().map(x -> x.getSessionId()).collect(Collectors.toList());
         Collections.reverse(sessionList);
         short[] sessionIds = Shorts.toArray(sessionList);
@@ -231,12 +232,10 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
         // build the message
         int requestId = this.requestCounter.getAndAdd(1);
 
-        /**
-         * Get session IDs in reverse order cause the specification says:
-         * "That is the session key corresponding to session ID N will be used to decrypt
-         * one layer from the payload, followed by that of session N-1 and so on."
-         * ... and the first/outer decryption has to be done with the session key of our first tunnel segment.
-         */
+        // Get session IDs in reverse order cause the specification says:
+        // "That is the session key corresponding to session ID N will be used to decrypt
+        // one layer from the payload, followed by that of session N-1 and so on."
+        // ... and the first/outer decryption has to be done with the session key of our first tunnel segment.
         List<Short> sessionList = segments.stream().map(x -> x.getSessionId()).collect(Collectors.toList());
         Collections.reverse(sessionList);
         short[] sessionIds = Shorts.toArray(sessionList);
@@ -252,11 +251,15 @@ public class AuthenticationInterfaceImpl extends TcpClientInterface implements A
     /**
      * Generic method that waits for a response from all en- and decryption requests. Sets the payload accordingly.
      *
+     *
      * @param requestId The ID of the request to wait for.
      * @param message The message to be en- or decrypted.
+     *
      * @return The given message with swapped payload.
+     *
      * @throws ParsingException Exception in case anything is wrong with the packet layouts.
      * @throws InterruptedException Exception in case the synchronous waiting is interrupted.
+     * @throws AuthException If an error is returned by the Onion Auth module or we received an unexpected message.
      */
     private OnionTunnelTransportParsedMessage waitForCryptResponse(int requestId, OnionTunnelTransportParsedMessage message) throws ParsingException, InterruptedException, AuthException {
         if (this.results.get(requestId) == null) {

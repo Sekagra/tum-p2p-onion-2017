@@ -9,6 +9,14 @@ import java.security.NoSuchAlgorithmException;
  * Created by Christoph Rudolf on 27.05.17.
  */
 public class Hashing {
+    /**
+     * Calculate the SHA256 hash of data.
+     *
+     *
+     * @param data The data we want to get the SHA256 hash from.
+     *
+     * @return The SHA256 hash.
+     */
     public static String Sha256(byte[] data) {
         MessageDigest digest = null;
         try {

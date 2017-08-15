@@ -36,6 +36,17 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
     private byte[] hostkey;
     private String id;
 
+    /**
+     * Create a new ConfigurationProvider that reads the required configuration parameters from the Windows INI file
+     * specified by configPath.
+     *
+     *
+     * @param configPath The path of the configuration file.
+     *
+     * @throws NoSuchFileException If no configuration file is available at the specified path.
+     * @throws InvalidFileFormatException If the format of the configuration file is invalid or a
+     *                                      required parameter is missing.
+     */
     public ConfigurationProviderImpl(String configPath) throws NoSuchFileException, InvalidFileFormatException {
         this.logger = LogManager.getLogger(ConfigurationProvider.class);
 

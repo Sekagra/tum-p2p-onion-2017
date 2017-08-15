@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by Marko Dorfhuber(PraMiD) on 25.05.17.
  */
-public class RpsParserTestImpl {
+public class RpsParserImplTest {
     static RandomPeerSamplingParser prs;
     static byte[] derKey;
 

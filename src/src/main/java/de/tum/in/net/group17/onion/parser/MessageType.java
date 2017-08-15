@@ -59,9 +59,7 @@ public enum MessageType {
     private static Map<Integer, MessageType> map = new HashMap<Integer, MessageType>();
 
 
-    /**
-     * Build the mapping between ID and MessageType
-     */
+    //Build the mapping between ID and MessageType
     static {
         for (MessageType type : MessageType.values()) {
             map.put(new Integer(type.value), type);
@@ -78,10 +76,22 @@ public enum MessageType {
     public static MessageType valueOf(int msgID) {
         return MessageType.map.get(msgID);
     }
+
+    /**
+     * Create the message type of the given short value.
+     * (Necessary as we want to specify the value of the enumeration value)
+     *
+     * @param value The short value of the enumeration value.
+     */
     MessageType(short value) {
         this.value = value;
     }
 
+    /**
+     * Get the short value 'behind' the enumeration value.
+     *
+     * @return The short value.
+     */
     public short getValue() {
         return this.value;
     }

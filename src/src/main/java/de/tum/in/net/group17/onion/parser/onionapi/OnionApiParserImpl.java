@@ -113,11 +113,11 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
     /**
      * Parse an incoming ONION COVER message.
-     * This method will throw an ParsingException if the message length does not match to the specified ONION
-     * COVER message length(8).
      *
      * @param data The actual packet.
      * @return A ParsedMessage on success.
+     *
+     * @throws ParsingException If invalid parameters were provided.
      */
     private ParsedMessage parseOnionCoverMsg(byte[] data) throws ParsingException {
         ByteBuffer buffer;
@@ -140,6 +140,8 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
      *
      * @param data The packet.
      * @return An ParsedMessage if parsing was successful.
+     *
+     * @throws ParsingException If invalid parameters were provided.
      */
     private ParsedMessage parseOnionTunnelBuildMsg(byte[] data) throws ParsingException {
         ByteBuffer buffer;
@@ -186,10 +188,11 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
     /**
      * Check the validity of a ONION TUNNEL DESTROY message. This is basically only the packet's length..
-     * The method will throw an ParsingException if a parsion error occurs.
      *
      * @param data The actual packet.
      * @return A ParsedMessage if the packet is valid.
+     *
+     * @throws ParsingException If invalid parameters were provided.
      */
     private ParsedMessage parseOnionTunnelDestroyMsg(byte[] data) throws ParsingException {
         ByteBuffer buffer;
@@ -207,10 +210,11 @@ public class OnionApiParserImpl extends VoidphoneParser implements OnionApiParse
 
     /**
      * Parse a ONION TUNNEL DATA message. We can only check if the packet is long enough to contain any data.
-     * This method will throw an ParsingException on any parsing error.
      *
      * @param data The actual packet
      * @return A ParsedMessage if the ONION TUNNEL DATA packet is valid.
+     *
+     * @throws ParsingException If invalid parameters were provided.
      */
     private ParsedMessage parseOnionTunnelDataMsg(byte[] data) throws ParsingException {
         ByteBuffer buffer;

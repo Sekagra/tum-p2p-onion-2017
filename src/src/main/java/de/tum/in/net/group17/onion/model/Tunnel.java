@@ -10,6 +10,11 @@ public class Tunnel {
     private int id;
     private List<TunnelSegment> segments;
 
+    /**
+     * Create a new tunnel with the given tunnel ID.
+     *
+     * @param id The tunnel ID of this tunnel.
+     */
     public Tunnel(int id) {
         this.id = id;
         this.segments = new ArrayList<>();

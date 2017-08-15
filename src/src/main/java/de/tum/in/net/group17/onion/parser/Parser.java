@@ -8,8 +8,12 @@ public interface Parser {
     /**
      * Parse an incoming message.
      *
+     *
      * @param data Incoming packet.
+     *
      * @return ParsedMessage containing the message type and packet data if parsing succeeds.
+     *
+     * @throws ParsingException If the incoming message is invalid.
      */
-    public abstract ParsedMessage parseMsg(byte[] data) throws ParsingException;
+    ParsedMessage parseMsg(byte[] data) throws ParsingException;
 }

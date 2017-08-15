@@ -31,12 +31,26 @@ public class ProductionInjector extends AbstractModule {
     private final String configPath;
     private final ConfigurationProvider cfgProvider;
 
+    /**
+     * Create a new injector for the production environment.
+     *
+     *
+     * @param configPath The path to the configuration file to use.
+     *
+     * @throws NoSuchFileException If there is no configuration file at the given path.
+     * @throws InvalidFileFormatException If the configuration file is not valid Windows INI file or a required
+     *                                      parameter is missing.
+     */
     public ProductionInjector(String configPath) throws NoSuchFileException, InvalidFileFormatException {
         this.configPath = configPath;
 
         // Create configuration provider here to pass errors to the Orchestrator!
         cfgProvider = new ConfigurationProviderImpl(configPath);
     }
+
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void configure() {
         bind(ConfigurationProvider.class).toInstance(cfgProvider);
