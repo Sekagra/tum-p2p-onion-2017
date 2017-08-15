@@ -8,9 +8,14 @@ In addition, we increase security by refreshing every built tunnel after a fixed
 
 This module requires a running Onion Auth and RPS module for encryption and random peer selection.
 
+Contributors: Group17
+* Marko Dorfhuber
+* Christoph Rudolf
+
 ## Execute the Onion Module ##
 
 To execute the Onion module, you can either use the pre-built version contained in the *release/* directory or [build from source](#building-from-source).
+Java 8 is required for execution.
 Use this command to run the Onion module:
 
     release/# java -jar Onion_1.0.jar --config path
