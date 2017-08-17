@@ -1,0 +1,286 @@
+%----------------------------------------------------------------------------------------
+%       PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+\documentclass[paper=letter, fontsize=12pt]{article}
+\usepackage[english]{babel} % English language/hyphenation
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+\usepackage[utf8]{inputenc}
+\usepackage{float}
+\usepackage{lipsum} % Package to generate dummy text throughout this template
+\usepackage{blindtext}
+\usepackage{graphicx} 
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[sc]{mathpazo} % Use the Palatino font
+\linespread{1.05} % Line spacing - Palatino needs more space between lines
+\usepackage{microtype} % Slightly tweak font spacing for aesthetics
+\usepackage[hmarginratio=1:1,top=32mm,columnsep=20pt]{geometry} % Document margins
+\usepackage{multicol} % Used for the two-column layout of the document
+%\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
+\usepackage{booktabs} % Horizontal rules in tables
+\usepackage{float} % Required for tables and figures in the multi-column environment - they need to be placed in specific locations with the [H] (e.g. \begin{table}[H])
+\usepackage[hidelinks=true]{hyperref} % For hyperlinks in the PDF
+\usepackage{lettrine} % The lettrine is the first enlarged letter at the beginning of the text
+\usepackage{paralist} % Used for the compactitem environment which makes bullet points with less space between them
+\usepackage{abstract} % Allows abstract customization
+\renewcommand{\abstractnamefont}{\normalfont\bfseries} % Set the "Abstract" text to bold
+\renewcommand{\abstracttextfont}{\normalfont\small\itshape} % Set the abstract itself to small italic text
+\usepackage{titlesec} % Allows customization of titles
+\usepackage{marvosym}
+\usepackage{array}
+\usepackage{csquotes}
+\usepackage{bytefield}
+\usepackage{tikz-uml}
+\usepackage{pifont}
+\usepackage[underline=true]{pgf-umlsd}
+\usepackage{pdflscape}
+\usepackage{cite}
+\usepackage[separate-uncertainty=true,quotient-mode=fraction]{siunitx}
+\sisetup{exponent-product = \cdot, output-product = \cdot}
+
+\usetikzlibrary{calc}
+
+%\renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
+%\renewcommand\thesubsection{\Roman{subsection}} % Roman numerals for subsections
+
+\titleformat{\section}[block]{\large}{\thesection.}{1em}{} % Change the look of the section titles
+\titleformat{\subsection}[block]{\large}{\thesubsection.}{1em}{} % Change the look of the subsection titles
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} % Create horizontal rule command with 1 argument of height
+\usepackage{fancyhdr} % Headers and footers
+\pagestyle{fancy} % All pages have headers and footers
+\fancyhead{} % Blank out the default header
+\fancyfoot{} % Blank out the default footer
+
+\fancyhead[C]{Technische Universität München $\bullet\enskip$\today$\enskip\bullet$ Group 17 }
+
+\fancyfoot[RO,LE]{\thepage} % Custom footer text
+%----------------------------------------------------------------------------------------
+%       TITLE SECTION
+%----------------------------------------------------------------------------------------
+\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{Final Report: \\Onion Module}} % Article title
+\author{
+\large
+{\textsc{Marko Dorfhuber (03658730) $\quad$ \Letter marko.dorfhuber@tum.de}}\\[2mm]
+{\textsc{Christoph Rudolf (03662116) $\quad$ \Letter christoph.rudolf@tum.de}}\\[2mm]
+%\thanks{A thank you or further information}\\ % Your name
+%\normalsize \href{mailto:marco.torres.810@gmail.com}{marco.torres.810@gmail.com}\\[2mm] % Your email address
+}
+\date{}
+
+%----------------------------------------------------------------------------------------
+\begin{document}
+\maketitle % Insert title
+\thispagestyle{fancy} % All pages have headers and footers
+
+\section{Overview over the architecture}
+\begin{itemize}
+    \item Image with details of the major classes like Orchestrator with his collaborator
+    \item Small Description of each element and its role
+    \item Major data structures (startedTunnels, incomingTunnels, intermediateSegments ...)
+\end{itemize}
+
+\section{Final protocol and why changes happened}
+
+\section{Functioning}
+
+\subsection{How tunnels are initiated}
+
+\subsection{Sending of data}
+
+\subsection{Teardown}
+
+\subsection{Transparent switching of tunnels}
+
+\section{Limitations regarding security}
+
+\section{How to run + Config}
+
+\section{Time management}
+
+
+\section{Old text and protocols from intermediate report}
+
+\subsection{Onion Tunnel Init}
+This messages indicates the beginning of a new tunnel segment and is created after an Onion module receives the \texttt{ONION TUNNEL BUILD} message from its \emph{Call module} or choses to create a tunnel for cover traffic on its own. Messages of this type are then sent iteratively by the tunnel initiator to the peers he choses to be part of the tunnel. The message deploys a size and type header field to be compliant with all other packets defined in the project's specification. The subsequent 128~bit define the \emph{local tunnel identifier} to use for this tunnel segment. 
+
+The majority of the message's data is the first part of the authentication handshake. Here we transmit the payload of the \texttt{AUTH SESSION HS1} which is given by the tunnel initiator's Onion Authentication module. 
+
+\textbf{Important:} If we want to create the \texttt{AUTH SESSION INCOMING HS1} message on the receiver's side for its Onion Authentication module, we need to transmit the initiators hostkey as well. However, this leaks information about the initiator to the target for this tunnel, which is a rendezvous point. An alternative discussed with the project's originator Sree Harsha Totakura is to omit the host key and don't verify the initiator on the side of the peer. This does not introduce a security issue because the initiator is still able to verify the authenticity of the session key parameter. In case of Diffie-Hellman, this is sufficient to prevent Man-in-the-Middle attacks. Therefore, our protocol omits the host key of the initiator in this message and therefore also in \texttt{AUTH SESSION INCOMING HS1}. \\
+
+\newcommand{\colorwordbox}[3]{\rlap{\wordbox{#2}{\color{#1}\rule{\width}{\height}}}\wordbox{#2}{#3}}
+\begin{bytefield}[bitwidth=1.1em]{32}
+    \bitheader{0,7,8,15,16,23,24,31} \\
+    \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL INIT} = 595} \\ 
+    \wordbox{4}{local tunnel identifier (LID)} \\ 
+    \colorwordbox{red!80}{3}{{\color{white}host key that would be necessary to comply with the current \\ specification towards the Onion Authentication module, but we omit}} \\ 
+    \wordbox[tlr]{2}{handshake payload from \texttt{AUTH SESSION HS1}} \\
+    \skippedwords \\
+    \wordbox[blr]{1}{}
+\end{bytefield}
+
+
+\subsection{Onion Tunnel Accept}
+This messages is the expected response to the \texttt{ONION TUNNEL INIT} message. It sends the local tunnel identifier specified in the matching \texttt{ONION TUNNEL INIT} and forwards the data this peer received from its Onion Authentication module in \texttt{AUTH SESSION HS2}. \texttt{AUTH SESSION HS2} contains the response to the first authentication handshake and finishes the session establishment. After this message is received, data between the tunnel initiator and the hop sending this, can be encrypted. \\
+
+\begin{bytefield}[bitwidth=1.1em]{32}
+    \bitheader{0,7,8,15,16,23,24,31} \\
+    \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL ACCEPT} = 596} \\ 
+    \wordbox{4}{local tunnel identifier (LID)} \\ 
+    \wordbox[tlr]{2}{handshake payload from \texttt{AUTH SESSION HS2}} \\
+    \skippedwords \\
+    \wordbox[blr]{1}{}
+\end{bytefield}
+
+
+\subsection{Onion Tunnel Relay}
+The relay message is used to instruct a host that is already part of the tunnel, to send data to a new host currently outside of the tunnel. This instruction can already be encrypted with the session keys established so far. With this message, the forwarding host is also instructed to assign the new host as its successor for this tunnel segment. This message is necessary for tunnel building when the currently last hop expands the tunnel with a new hop. 
+
+The message includes the typical header with size and type. An additional bit \texttt{V} defines the usage of IPv4 (= 0) or IPv6 (= 1). Subsequently, the message includes the local identifier matching the connection from the initiator to the receiver. This LID allows the receiver of this message to chose the correct session key for decrypting the subsequent data. The encrypted data includes the destination for this message and an arbitrary nested onion tunnel message type. With this, the initiator picks all local tunnel identifiers. \\
+
+\begin{bytefield}[bitwidth=1.1em]{32}
+    \bitheader{0,7,8,15,16,23,24,31} \\
+    \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL RELAY} = 597} \\
+    \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the initiator and the receiver} \\ 
+	\bitbox{16}{port} & \bitbox{1}{V} & \bitbox{15}{reserved} \\
+    \wordbox{1}{address (e.\,g. IP address) of the host to forward to} \\ 
+    \wordbox{4}{local tunnel identifier (LID$_2$) \\ between the initiator and the new hop} \\ 
+    \wordbox[tlr]{2}{data for the new hop (e.\,g. a \texttt{ONION TUNNEL INIT} message)} \\
+    \skippedwords \\
+    \wordbox[blr]{1}{} 
+\end{bytefield}
+
+
+\subsection{Onion Tunnel Transport}
+The \texttt{ONION TUNNEL TRANSPORT} message is used to securely transmit data over an already established tunnel. As specified by the project specification~\cite{spec}, a fixed length is the best choice regarding
+anonymity. Otherwise, an attacker can use traffic analysis to gain intel on which data is real voice data and which is merely cover traffic.
+
+The best packet size for the Onion to Onion data packets depends on various parameters: quality, time frame per packet, payload size and bandwidth. A packet should transmit a relatively small time frame of voice data to be negligible when being lost. The packet, however, should still be big enough to avoid unnecessarily large overheads.
+
+For padding the payload, we aim to use PKCS\#7, which is a well known and easy to parse padding-scheme. With PKCS\#7, to pad a total number of $n$ bytes, one simply adds $n$ bytes with the value~$n$. This limits the amount of data that can be padded to 256 bytes. However, a payload of exactly 256 bytes would lead PKCS\#7 to add another 256 byte long block, which would result in two packets for our scenario. Therefore, the maximum payload length we aim to use is 255 bytes.
+
+The size of 255 bytes for voice data per packet has to be reasonable regarding the quality and length of the voice data transmitted. In order to find suitable values, we have to start with the question of how much time a single packet should contain. The average rate of speech for an English speaker has a magnitude of around \textbf{150 words per minute}~\cite{voicespeed}. This results in:
+\begin{align*}
+	\SI{150}{\frac{words}{min}} \cdot \SI{1/60}{\frac{min}{s}} = \SI{2.5}{\frac{words}{s}}
+\end{align*}
+
+Considering the roughly $\SI{2.5}{\frac{words}{s}}$, the timespan covered in one packet has to be short enough to avoid losing meaningful fractions of words in case of a packet loss. Vendors of VoIP applications and telephones implement packets to contain between 20 ms and 40 ms~\cite{voip} of audio. With our 255 bytes of payload data per packet we are able to transmit
+\begin{align*}
+	p_{size} = \SI{255}{byte} = \SI{2040}{bit}\quad\quad\text{\emph{(per packet)}}
+\end{align*}
+
+Assuming we receive a packetization rate of $\Delta t = \SI{30}{\milli\second}$ from the Call module, we can reach a bitrate $r$ of 
+\begin{align*}
+	r = \frac{p_{size}}{\Delta t} = \frac{\SI{2040}{bit}}{\SI{30e-3}{\second}} = \SI{68e3}{\frac{bit}{s}} = \SI{68}{kbps}
+\end{align*}
+This bitrate is sufficient to support all common VoIP codecs which use bitrates up to a maximum of 64 kbps~\cite{codecs}. 
+
+The last parameter to consider is the necessary bandwith. We have 255 bytes of voice payload and an additional header size of 20 bytes for our application protocol. This protocol is based on UDP which adds an additional 8 bytes for its header. The network layer protocol header can be either 20 bytes (IPv4) or 40 bytes (IPv6). Assuming IPv6 to be used we get a total packet size $s$ per 30 ms of speech:
+\begin{align*}
+	s = \SI{255}{byte} + \SI{20}{byte} + \SI{8}{byte} + \SI{40}{byte} = \SI{323}{byte}
+\end{align*}
+To ensure this data can be delivered in the necessary amount of time $\Delta t$, we need a network bandwidth $B$ of:
+\begin{align*}
+	R = \frac{s}{\Delta t} = \SI{323}{byte} \cdot \SI{1/30e-3}{\frac{1}{s}} = \SI{10767}{\frac{byte}{s}} \approx \SI{0.09}{MBit \per\second}
+\end{align*}
+
+A necesssary data rate of $\SI{0.09}{MBit \per\second}$ is easily within the limitations of current Internet connection speeds. This makes a fixed packet size of $\SI{255}{byte} + \SI{20}{byte} = $ \textbf{275\,byte} for the Onion to Onion protocol suitable. \\
+
+\begin{bytefield}[bitwidth=1.1em]{32}
+    \bitheader{0,7,8,15,16,23,24,31} \\
+    \bitbox{16}{size = 536 + c} & \bitbox{16}{\texttt{ONION TUNNEL TRANSPORT} = 598} \\ 
+    \begin{rightwordgroup}{defines the \\ key and next \\ hop to forward \\ this to}
+        \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the initiator and the receiver}
+    \end{rightwordgroup} \\
+    \bitbox{32}{"PtoP"} \\
+    \begin{rightwordgroup}{encrypted \\ and integrity \\ protected \\ with session \\ key belonging \\ to LID$_1$. \\ Size = \SI{512}{byte}}
+        \wordbox[tlr]{2}{encrypted and padded data to be forwarded} \\
+        \skippedwords \\
+        \wordbox[blr]{1}{}
+    \end{rightwordgroup} \\
+\end{bytefield}
+
+
+\subsection{Onion Tunnel Teardown}
+
+The teardown process of a tunnel can only be issued by its originator. This is necessary because a tunnel has to be teared down beginning from very the last hop and only the originator can send an encrypted teardown message through the whole tunnel. Unauthenticated tear downs would introduce a huge weakness to denial of service attacks on existing tunnels. 
+
+As peers might be malicious or randomly disconnect before terminating their tunnels, peers used as intermediate hops need to be able to remove old tunnel states on their own. To avoid running out of memory, a peer can remove its tunnel state safely after two rounds. The timespan of two rounds makes sure that even with the maximum possible offset between the round starting points on two peers, no tunnel is prematurely eliminated. 
+
+To ensure freshness and avoid replay attacks against open tunnels, the payload of this message is an integrity protected timestamp. Due to the fact that we can only use the interface to the Onion Authentication module for encryption and authenticity, both is applied to the timestamp even though authenticity (e.\,g. via an HMAC) would be enough.\\
+
+\begin{bytefield}[bitwidth=1.1em]{32}
+    \bitheader{0,7,8,15,16,23,24,31} \\
+    \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL TEARDOWN} = 599} \\ 
+    \begin{rightwordgroup}{defines the \\ key and next \\ hop to forward}
+        \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the sender and receiver}
+    \end{rightwordgroup} \\
+    \begin{rightwordgroup}{with session \\ key belonging \\ to LID$_1$}
+        \wordbox{1}{encrypted and integrity protected timestamp for freshness}
+    \end{rightwordgroup} \\
+\end{bytefield}
+
+
+\section{Protocol sequence}
+The final protocol sequence composed of all aforementioned message types is given below in Figure~\ref{fig:sequence}. As Onion routing hasn't been covered in the lecture so far, the basic idea of repeated encapsulation of encrypted data has been derived from the TOR paper by Dingledine et.~al.~\cite{torpaper}.
+
+\begin{landscape}
+\begin{figure}[ht]
+\resizebox{1.38\textwidth}{!}{
+    \begin{sequencediagram}
+        \newinst{ot}{Initiator}
+        \newinst[10]{ih1}{$Hop_1$}
+        \newinst[9]{ih2}{$Hop_2$}
+        \newinst[7]{r}{Receiver}
+
+        \begin{sdblock}{TunnelBuild}{Building a tunnel from the initiator to the rendevouz point}
+            \mess{ot}{init[$LID_1$, payload]}{ih1}
+            \mess{ih1}{accept[$LID_1$, payload]}{ot}
+
+            \mess{ot}{relay[$LID_1$, $E_{LID_1}${(}$LID_2$, $Hop_2$, init[$LID_2$, payload]{)}]}{ih1}
+            \mess{ih1}{init[$LID_2$, payload]}{ih2}
+            \mess{ih2}{accept[$LID_2$, payload]}{ih1}
+            \mess{ih1}{data[$LID_1$, $E_{LID_1}${(}accept[$LID_2$, payload]{)}]}{ot}
+
+            \mess{ot}{data[$LID_1$, $E_{LID_1}${(}relay[$LID_2$, $E_{LID_2}${(}$LID_3$, R, init[$LID_3$, payload]{)}]{)}]}{ih1}
+            \mess{ih1}{relay[$LID_2$, $E_{LID_2}${(}$LID_3$, R, init[$LID_3$, payload]{)}]}{ih2}
+            \mess{ih2}{init[$LID_3$, payload]}{r}
+            \mess{r}{accept[$LID_3$, payload]}{ih2}
+            \mess{ih2}{data[$LID_2$, $E_{LID_2}${(}accept[$LID_3$, payload]{)}]}{ih1}
+            \mess{ih1}{data[$LID_1$, $E_{LID_1}${(}data[$LID_2$, $E_{LID_2}${(}accept[$LID_3$, payload]{)}]{)}]}{ot}
+        \end{sdblock}
+
+        \begin{sdblock}{TunnelData}{Sending data from the initiator to the rendevouz point}
+            \mess{ot}{data[$LID_1$, $E_{LID_1}${(}data[$LID_2$, $E_{LID_2}${(}data[$LID_3$, $E_{LID_3}${(}"Hello"{)}]{)}]{)}]}{ih1}
+            \mess{ih1}{data[$LID_2$, $E_{LID_2}${(}data[$LID_3$, $E_{LID_3}${(}"Hello"{)}]{)}]}{ih2}
+            \mess{ih2}{data[$LID_3$, $E_{LID_3}${(}"Hello"{)}]}{r}
+            \mess{r}{data[$LID_3$, $E_{LID_3}${(}"World"{)}]}{ih2}
+            \mess{ih2}{data[$LID_2$, $E_{LID_2}${(}data[$LID_3$, $E_{LID_3}${(}"World"{)}]{)}]}{ih1}
+            \mess{ih1}{data[$LID_1$, $E_{LID_1}${(}data[$LID_2$, $E_{LID_2}${(}data[$LID_3$, $E_{LID_3}${(}"World"{)}]{)}]{)}]}{ot}
+        \end{sdblock}
+
+        \begin{sdblock}{TunnelTeardown}{Controlled tunnel teardown}
+            \mess{ot}{data[$LID_1$, $E_{LID_1}${(}data[$LID_2$, $E_{LID_2}${(}teardown[$LID_3$, $E_{LID_3}${(}$ts_{Init}${)}]{)}]{)}]}{ih1}
+            \mess{ih1}{data[$LID_2$, $E_{LID_2}${(}teardown[$LID_3$, $E_{LID_3}${(}$ts_{Init}${)}]{)}]}{ih2}
+            \mess{ih2}{teardown[$LID_3$, $E_{LID_3}${(}$ts_{Init}${)}]}{r}
+            
+
+            \mess{ot}{data[$LID_1$, $E_{LID_1}${(}teardown[$LID_2$, $E_{LID_2}${(}$ts_{Init}${)}]{)}]}{ih1}
+            \mess{ih1}{teardown[$LID_2$, $E_{LID_2}${(}$ts_{Init}${)}]}{ih2}
+
+            \mess{ot}{teardown[$LID_1$, $E_{LID_1}${(}$ts_{Init}${)}]}{ih1}
+
+            %\mess{r}{teardown[$LID_3$, $E_{LID_3}${(}$ts_{R}${)}]}{ih2}
+            %\mess{ih2}{teardown[$LID_2$, $E_{LID_2}${(}$ts_{Hop_2}${)}]}{ih1}
+            %\mess{ih1}{teardown[$LID_1$, $E_{LID_1}${(}$ts_{Hop_1}${)}]}{ot}
+        \end{sdblock}
+
+    \end{sequencediagram}}
+    \caption{Protocol sequence of the complete Onion peer-to-peer protocol.}
+    \label{fig:sequence}
+\end{figure}
+\end{landscape}
+
+\bibliography{ref}
+\bibliographystyle{abbrv}
+
+\end{document}
