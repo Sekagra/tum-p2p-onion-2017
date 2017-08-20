@@ -7,7 +7,6 @@
 \usepackage[utf8]{inputenc}
 \usepackage{float}
 \usepackage{lipsum} % Package to generate dummy text throughout this template
-\usepackage{blindtext}
 \usepackage{graphicx} 
 \usepackage{caption}
 \usepackage{subcaption}
@@ -30,18 +29,19 @@
 \usepackage{array}
 \usepackage{csquotes}
 \usepackage{bytefield}
-\usepackage{tikz-uml}
+\usepackage{xcolor}
 \usepackage{pifont}
 \usepackage[underline=true]{pgf-umlsd}
 \usepackage{pdflscape}
 \usepackage{cite}
+\usepackage{wasysym}
+\usepackage{csquotes}
+\usepackage[export]{adjustbox}
+\usepackage{moeptikz}
 \usepackage[separate-uncertainty=true,quotient-mode=fraction]{siunitx}
 \sisetup{exponent-product = \cdot, output-product = \cdot}
 
 \usetikzlibrary{calc}
-
-%\renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
-%\renewcommand\thesubsection{\Roman{subsection}} % Roman numerals for subsections
 
 \titleformat{\section}[block]{\large}{\thesection.}{1em}{} % Change the look of the section titles
 \titleformat{\subsection}[block]{\large}{\thesubsection.}{1em}{} % Change the look of the subsection titles
@@ -54,6 +54,17 @@
 \fancyhead[C]{Technische Universität München $\bullet\enskip$\today$\enskip\bullet$ Group 17 }
 
 \fancyfoot[RO,LE]{\thepage} % Custom footer text
+
+% COLOR DEFINITIONS
+\definecolor{darkestBrew}{RGB}{191,80,29}
+\definecolor{darkBrew}{RGB}{230,85,13}
+\definecolor{mediumBrew}{RGB}{253,141,60}
+\definecolor{lightBrew}{RGB}{253,190,133}
+\definecolor{lightestBrew}{RGB}{254,237,222}
+
+
+\DeclareUnicodeCharacter{2603}{\snowman}
+
 %----------------------------------------------------------------------------------------
 %       TITLE SECTION
 %----------------------------------------------------------------------------------------
@@ -73,54 +84,103 @@
 \thispagestyle{fancy} % All pages have headers and footers
 
 \section{Overview over the architecture}
-\begin{itemize}
-    \item Image with details of the major classes like Orchestrator with his collaborator
-    \item Small Description of each element and its role
-    \item Major data structures (startedTunnels, incomingTunnels, intermediateSegments ...)
-\end{itemize}
+This section aims to give an overview over the basic architecture and components of the final implementation of the Onion module.
+The interim report gave an abstract overview over the environment of the Onion Module, making clear that its central role in the Voidphone application requires the module to have many interfaces. Figure~\ref{fig:architecture} shows a more detailed representation of the final design. The figure can be seen as the inner workings of the \emph{Onion Module} component depicted in the component diagram of the interim report (see Figure~1 of the interim report). 
 
-\section{Final protocol and why changes happened}
+Each interface the Onion module has towards another module is managed by a respective interface class. Common base classes like for example an abstract \texttt{TcpClientInterface} for Authentication and RPS are used to encapsulate shared functionality among these interface classes. The common basis for all elements with networking code is the \textbf{Netty}\footnote{\url{http://netty.io/}} framework, an asynchronous event-driven network application framework based on Java's NIO. 
 
-\section{Functioning}
+Each of the interfaces references a parser specific for the data that is expected on this interface. The parser is given the raw bytes which is received by the interface and returns a serialized message instance or a parsing error. The parsers are also used by the refercing modules to build the message types they are sending. All references between components are setup via \emph{Depedency Injection} using Google's \textbf{Guice} framework.
 
-\subsection{How tunnels are initiated}
+\usetikzlibrary{positioning,shapes.misc}
+\tikzstyle{orchestrator} = [rectangle, draw=black, text=white, fill=darkestBrew, rounded corners=15pt, text width=7.5em, minimum height=7.5em, minimum width=7mm]
+\tikzstyle{interface} = [rectangle, draw=black, text=black, fill=mediumBrew, rounded corners=5pt, text centered, text width=6.5em, minimum height=4em, minimum width=6mm]
+\tikzstyle{config} = [rectangle, draw=black, dashed, text=black, fill=lightBrew, rounded corners=5pt, text centered, text width=6.5em, minimum height=4em, minimum width=6mm]
+\tikzstyle{parser} = [rectangle, draw=black, dashed, text=black, fill=lightestBrew, rounded corners=3pt, text centered, text width=6.5em, minimum height=2.5em, minimum width=6.5mm]
+\begin{figure}[ht]
+\resizebox{\textwidth}{!}{\begin{tikzpicture}[x=1mm,y=1mm, >=latex, ->]
+    \node[orchestrator] (orchestrator) {\hspace{1.5mm}\large{Orchestrator} \\ \vspace{2mm} \hspace{0.6mm}\scriptsize{$\bullet$ handles rounds} \raisebox{-0.7ex}{\Large{\clock}} \\ \hspace{0.6mm}\scriptsize{$\bullet$ holds state}};
 
-\subsection{Sending of data}
+    % Interface elements
+    \node[interface, left of=orchestrator, node distance=14em] (onionInterface) {Onion P2P \\ Interface};
+    \node[interface, right of=orchestrator, node distance=14em] (apiInterface) {Onion API \\ Interface};
+    \node[interface, below of=onionInterface, node distance=9em] (authInterface) {Onion \\ Authentication \\ Interface};
+    \node[interface, right of=authInterface, node distance=21em] (rpsInterface) {RPS \\ Interface};
 
-\subsection{Teardown}
+    \node[config, above of=orchestrator, node distance=9em] (configProvider) {Configuration \\ Provider};
 
-\subsection{Transparent switching of tunnels}
+    % Connections
+    \draw [-{latex[scale=1.2]}] (orchestrator) edge (configProvider);
+    \draw [-{latex[scale=1.2]}] (orchestrator) edge (rpsInterface);
+    \draw [{latex[scale=1.2]}-{latex[scale=1.2]}] (orchestrator) edge node [text width=20mm, midway, align=center] {\footnotesize{reference and callback}} (onionInterface);
+    \draw [{latex[scale=1.2]}-{latex[scale=1.2]}] (orchestrator) edge node [text width=20mm, midway, align=center] {\footnotesize{reference and callback}} (apiInterface);
+    \draw [-{latex[scale=1.2]}] (onionInterface) edge (authInterface);
 
-\section{Limitations regarding security}
+    % Parser
+    \node[parser, above of=onionInterface, node distance=3.2em] (onionInterface) {Parser};
+    \node[parser, above of=apiInterface, node distance=3.2em] (apiInterface) {Parser};
+    \node[parser, below of=rpsInterface, node distance=3.2em] (rpsParser) {Parser};
+    \node[parser, below of=authInterface, node distance=3.2em] (rpsParser) {Parser};
 
-\section{How to run + Config}
+\end{tikzpicture}}
+    \caption{Architecture overview of the final implementation.}
+    \label{fig:architecture}
+\end{figure}
 
-\section{Time management}
 
+\begin{description}
+    \item [The Orchestrator] acts as a starting point for the module and manages a total of three interfaces (\texttt{RPS Interface}, \texttt{Onion API Interface}, \texttt{Onion P2P Interface}). It's job is to issue the start of rounds and to manage data flow between interfaces. For this, the \texttt{Orchestrator} has references and callbacks towards interfaces. In case of an event on one interface that affects another one, an approriate transfer is done. An example would be that the CM/UI module wants to build a new tunnel which requires the sampling of hops via the \texttt{RPS Interface} as well as the tunnel build itself by the \texttt{Onion P2P interface}. The \texttt{Orchestrator} also references the \texttt{Configuration Provider} which reads the configuration file and parses it to provide the given data to all modules.
 
-\section{Old text and protocols from intermediate report}
+    \item [The Onion API Interface] acts as a TCP server for a connecting UI/CM module. It is able to handle all messages specified as Onion API messages in the specificationn~\cite{spec}.
+    A callback connects the interface to the \texttt{Orchestrator} and notifies it of incoming requests.
+
+    \item [The RPS Interface] is the simplest interface, acting as a TCP client towards the RPS module. It only provides one method to query a random peer (using the \texttt{RPS QUERY} message type) which encapsulates the call to the other module.
+
+    \item [The Onion P2P Interface] is in charge of managing the peer-to-peer connections (tunnels) to other modules. It acts as a combined UDP server and client. Its parser handles our custom P2P protocol (see Section~\ref{sec:protocol}). The \texttt{Onion Authentication Interface}, a client to the Authentication module, is referenced directly. This accounts for the fact that both modules are strongly connected, even being combined into one in the past. The P2P interfaces is the only module who uses the \texttt{Onion Authentication Interface} and needs to call its functionality frequently during tunnel operations which do not trigger any callback to the \texttt{Orchestrator}. This way, the \texttt{Orchestrator} can simply issue a tunnel to be build, select the random peers and is not required to handle roundtrips to the authentication module for every encryption happening as a result.
+
+    \item [Data structures and identifiers:] The application has a set of central data structures used to store its state. The major ones are collections of tunnels started by the running peer as initiator (\texttt{startedTunnels}), tunnels that this peer acts as an endpoint to (\texttt{incomingTunnels}) and states for this peer's role as an intermediate hop (\texttt{intermediateSegments}). The collections are created by the \texttt{Orchestrator} and also accessible by the \texttt{Onion P2P Interface}. 
+    From the perspective of the application, a tunnel is an object with a tunnel identifier and a list of tunnel segments. The segments have precise information about adjecent hops (address and port). A segment created for each hop of a tunnel, describing the state between the tunnel initiator and this hop. Therefore, a segment does also now about the session it belongs to and is identified by a \emph{local identifier}. In a peers role as an intermediate hop, each tunnel segment gets a matching counterpart segment assigned. With this, a peer is able to match forwarding of data with a certain LID in both ways through the tunnel. Each time, he has to write the corresponding LID expected by the next peer inside the message header. It is noteworthy that for a peer's role as intermediate hop, we only store tunnel segments (not whole tunnels) as an additional grouping by tunnel ID, has no relevance for this peer. Tunnel IDs, and therefore whole tunnel instances, are only stored for tunnels a peer started and the ones he received as an endpoint, as these are scenarios in which the peer has to report to its respective UI/CM module stating a tunnel ID. 
+
+    The \textbf{local identifiers (LIDs)} have been introduced in the interim report and, as we noticed during the lectures on TOR, correspond to the circuit IDs in TOR. They are valid between the initiator and a specific hop of a tunnel. The LID allows an intermediate peer to match an incoming packet to a session and a tunnel-specific next hop for forwarding. Figure~\ref{fig:lids} taken from our interim report visualize the concept and the validity of the identifiers in an Onion tunnel with two intermediate hops.
+
+    \begin{figure}[ht]
+    \centering
+    \includegraphics[width=.94\textwidth,right]{images/lids.pdf}
+    \caption{Structure of a tunnel and validity of the local tunnel identifiers (LIDs).}
+    \label{fig:lids}
+    \end{figure}
+\end{description}
+
+\section{Final Onion P2P protocol}
+\label{sec:protocol}
+
+The protocol proposed in the interim report underwent minor improvements due to specification changes regarding the fixed size of packets. With new message types towards the authentication module, we are now able to maintain a fixed message size during onion layer encryption at each hop. With the lectures on TOR's onion protocol that happened shortly after the interim report's submission and the changes to the specification, we were able to refine our protocol.
+
+This section describes the final message types for the Onion P2P protocol and the purpose of each. Not all message types underwent changes, however, this section still includes them to provide a complete replacement to the interim report. In order to maintain consistency with the inter-module protocols defined by the specification, each message type starts with a fixed four byte header that includes the message size and its type. We additionally specified a 128 bit local identifier (LID) to follow for every type.
 
 \subsection{Onion Tunnel Init}
-This messages indicates the beginning of a new tunnel segment and is created after an Onion module receives the \texttt{ONION TUNNEL BUILD} message from its \emph{Call module} or choses to create a tunnel for cover traffic on its own. Messages of this type are then sent iteratively by the tunnel initiator to the peers he choses to be part of the tunnel. The message deploys a size and type header field to be compliant with all other packets defined in the project's specification. The subsequent 128~bit define the \emph{local tunnel identifier} to use for this tunnel segment. 
 
-The majority of the message's data is the first part of the authentication handshake. Here we transmit the payload of the \texttt{AUTH SESSION HS1} which is given by the tunnel initiator's Onion Authentication module. 
+This messages indicates the beginning of a new tunnel segment and is created after the \texttt{Onion API Interfaces} 
+receives the ONION TUNNEL BUILD message from its client CM/UI module or choses to create a tunnel
+for cover traffic on its own. Messages of this type are sent iteratively by the tunnel initiator to
+the peers he choses to be part of the tunnel. Eachg encrypted depending on how far the tunnel is already setup. 
+It is used to transmit the first handshake data given by the Onion Authentication module. \\
 
-\textbf{Important:} If we want to create the \texttt{AUTH SESSION INCOMING HS1} message on the receiver's side for its Onion Authentication module, we need to transmit the initiators hostkey as well. However, this leaks information about the initiator to the target for this tunnel, which is a rendezvous point. An alternative discussed with the project's originator Sree Harsha Totakura is to omit the host key and don't verify the initiator on the side of the peer. This does not introduce a security issue because the initiator is still able to verify the authenticity of the session key parameter. In case of Diffie-Hellman, this is sufficient to prevent Man-in-the-Middle attacks. Therefore, our protocol omits the host key of the initiator in this message and therefore also in \texttt{AUTH SESSION INCOMING HS1}. \\
-
-\newcommand{\colorwordbox}[3]{\rlap{\wordbox{#2}{\color{#1}\rule{\width}{\height}}}\wordbox{#2}{#3}}
 \begin{bytefield}[bitwidth=1.1em]{32}
     \bitheader{0,7,8,15,16,23,24,31} \\
     \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL INIT} = 595} \\ 
     \wordbox{4}{local tunnel identifier (LID)} \\ 
-    \colorwordbox{red!80}{3}{{\color{white}host key that would be necessary to comply with the current \\ specification towards the Onion Authentication module, but we omit}} \\ 
     \wordbox[tlr]{2}{handshake payload from \texttt{AUTH SESSION HS1}} \\
     \skippedwords \\
     \wordbox[blr]{1}{}
 \end{bytefield}
 
-
 \subsection{Onion Tunnel Accept}
-This messages is the expected response to the \texttt{ONION TUNNEL INIT} message. It sends the local tunnel identifier specified in the matching \texttt{ONION TUNNEL INIT} and forwards the data this peer received from its Onion Authentication module in \texttt{AUTH SESSION HS2}. \texttt{AUTH SESSION HS2} contains the response to the first authentication handshake and finishes the session establishment. After this message is received, data between the tunnel initiator and the hop sending this, can be encrypted. \\
+
+This messages is the expected response to the \texttt{ONION TUNNEL INIT} message. It contains the local
+tunnel identifier specified in the matching \texttt{ONION TUNNEL INIT} and forwards the data this peer
+received from its Onion Authentication module in \texttt{AUTH SESSION HS2}. 
+This finishes the session establishment and allows for a subsequent encryption of 
+messages between the initiator and the sending peer. \\
 
 \begin{bytefield}[bitwidth=1.1em]{32}
     \bitheader{0,7,8,15,16,23,24,31} \\
@@ -131,11 +191,17 @@ This messages is the expected response to the \texttt{ONION TUNNEL INIT} message
     \wordbox[blr]{1}{}
 \end{bytefield}
 
-
 \subsection{Onion Tunnel Relay}
-The relay message is used to instruct a host that is already part of the tunnel, to send data to a new host currently outside of the tunnel. This instruction can already be encrypted with the session keys established so far. With this message, the forwarding host is also instructed to assign the new host as its successor for this tunnel segment. This message is necessary for tunnel building when the currently last hop expands the tunnel with a new hop. 
 
-The message includes the typical header with size and type. An additional bit \texttt{V} defines the usage of IPv4 (= 0) or IPv6 (= 1). Subsequently, the message includes the local identifier matching the connection from the initiator to the receiver. This LID allows the receiver of this message to chose the correct session key for decrypting the subsequent data. The encrypted data includes the destination for this message and an arbitrary nested onion tunnel message type. With this, the initiator picks all local tunnel identifiers. \\
+The relay message is used to instruct a host that is already part of the tunnel, to send data to a new
+host currently outside of the tunnel. This instruction can already be encrypted with the session
+keys established so far. With this message, the forwarding host is also instructed to assign the new
+host as its successor for this tunnel segment. This message is necessary for tunnel building when
+the currently last hop expands the tunnel with a new hop.
+The message includes the address and port the new peer is reachable on. An additional bit \texttt{V} defines the
+usage of IPv4 (= 0) or IPv6 (= 1). Subsequently, the message includes the local identifier matching
+the connection from the initiator to the new peer. This LID allows the receiver of this message to
+create a mapping for further forwarding. The received data is sent to the specified peer. \\
 
 \begin{bytefield}[bitwidth=1.1em]{32}
     \bitheader{0,7,8,15,16,23,24,31} \\
@@ -149,136 +215,275 @@ The message includes the typical header with size and type. An additional bit \t
     \wordbox[blr]{1}{} 
 \end{bytefield}
 
-
 \subsection{Onion Tunnel Transport}
-The \texttt{ONION TUNNEL TRANSPORT} message is used to securely transmit data over an already established tunnel. As specified by the project specification~\cite{spec}, a fixed length is the best choice regarding
-anonymity. Otherwise, an attacker can use traffic analysis to gain intel on which data is real voice data and which is merely cover traffic.
+The \texttt{ONION TUNNEL TRANSPORT} message is used to securely transmit arbitrary data over an already established tunnel. 
+Therefore, it can possibly contain any other message type as data and is maintaining a fixed length in all cases in order to provide a defense against an attacker using
+traffic analysis to gain intel on anonymous communications.
 
-The best packet size for the Onion to Onion data packets depends on various parameters: quality, time frame per packet, payload size and bandwidth. A packet should transmit a relatively small time frame of voice data to be negligible when being lost. The packet, however, should still be big enough to avoid unnecessarily large overheads.
+Our calculation provided with the interim report regarding the size of data such a message has to be able to contain, still holds. For this, we considered average human speech in combination with bitrates of common VoiP codecs. This was to make sure a single lost packet does not contain a crucial amount of voice data which would hurt the quality of the phone call. However, with the new changes introduced to this message type, we do not rely on a padding scheme like PKCS7~\#7 any longer. Instead, the size of the inner real data is given explicitly by its length field and random padding data can be stripped, just like in TOR.
 
-For padding the payload, we aim to use PKCS\#7, which is a well known and easy to parse padding-scheme. With PKCS\#7, to pad a total number of $n$ bytes, one simply adds $n$ bytes with the value~$n$. This limits the amount of data that can be padded to 256 bytes. However, a payload of exactly 256 bytes would lead PKCS\#7 to add another 256 byte long block, which would result in two packets for our scenario. Therefore, the maximum payload length we aim to use is 255 bytes.
-
-The size of 255 bytes for voice data per packet has to be reasonable regarding the quality and length of the voice data transmitted. In order to find suitable values, we have to start with the question of how much time a single packet should contain. The average rate of speech for an English speaker has a magnitude of around \textbf{150 words per minute}~\cite{voicespeed}. This results in:
-\begin{align*}
-	\SI{150}{\frac{words}{min}} \cdot \SI{1/60}{\frac{min}{s}} = \SI{2.5}{\frac{words}{s}}
-\end{align*}
-
-Considering the roughly $\SI{2.5}{\frac{words}{s}}$, the timespan covered in one packet has to be short enough to avoid losing meaningful fractions of words in case of a packet loss. Vendors of VoIP applications and telephones implement packets to contain between 20 ms and 40 ms~\cite{voip} of audio. With our 255 bytes of payload data per packet we are able to transmit
-\begin{align*}
-	p_{size} = \SI{255}{byte} = \SI{2040}{bit}\quad\quad\text{\emph{(per packet)}}
-\end{align*}
-
-Assuming we receive a packetization rate of $\Delta t = \SI{30}{\milli\second}$ from the Call module, we can reach a bitrate $r$ of 
-\begin{align*}
-	r = \frac{p_{size}}{\Delta t} = \frac{\SI{2040}{bit}}{\SI{30e-3}{\second}} = \SI{68e3}{\frac{bit}{s}} = \SI{68}{kbps}
-\end{align*}
-This bitrate is sufficient to support all common VoIP codecs which use bitrates up to a maximum of 64 kbps~\cite{codecs}. 
-
-The last parameter to consider is the necessary bandwith. We have 255 bytes of voice payload and an additional header size of 20 bytes for our application protocol. This protocol is based on UDP which adds an additional 8 bytes for its header. The network layer protocol header can be either 20 bytes (IPv4) or 40 bytes (IPv6). Assuming IPv6 to be used we get a total packet size $s$ per 30 ms of speech:
-\begin{align*}
-	s = \SI{255}{byte} + \SI{20}{byte} + \SI{8}{byte} + \SI{40}{byte} = \SI{323}{byte}
-\end{align*}
-To ensure this data can be delivered in the necessary amount of time $\Delta t$, we need a network bandwidth $B$ of:
-\begin{align*}
-	R = \frac{s}{\Delta t} = \SI{323}{byte} \cdot \SI{1/30e-3}{\frac{1}{s}} = \SI{10767}{\frac{byte}{s}} \approx \SI{0.09}{MBit \per\second}
-\end{align*}
-
-A necesssary data rate of $\SI{0.09}{MBit \per\second}$ is easily within the limitations of current Internet connection speeds. This makes a fixed packet size of $\SI{255}{byte} + \SI{20}{byte} = $ \textbf{275\,byte} for the Onion to Onion protocol suitable. \\
+Every time an arbitrary other Onion P2P message type is to be encapsulated the new procedure for transport messages is:
+\begin{enumerate}
+    \item The inner packet has to have a maximum size of 508 byte (including its header, larger voice data is fragmented).
+    \item A fixed four byte magic string is added (with that a peer can quickly check if he is the receiver).
+    \item The resulting 512 byte block is encrypted with either \texttt{AUTH LAYER ENCRYPT} or \texttt{AUTH CIPHER ENCRYPT} and its E flag set to 0
+    \item The resulting cipher data is put into a \texttt{ONION TUNNEL TRANSPORT} message after the LID.
+    
+    \emph{Note: the cipher can be larger than 512 byte due to an overhead (c) the authentication module might produce due to IVs oder MACs. However, further en- and decryption is designed to keep this size constant. With a fixed plain input length of 512 byte to the authentication module's encryption mechanism, we are guaranteed to have a fixed message size.}
+    \item Receivers that decrypt the message once, determine if they are left with plain data by checking the "PtoP" string.
+    \item Random padding can be stripped by parsing the length field of the contained message type. \\
+\end{enumerate}
 
 \begin{bytefield}[bitwidth=1.1em]{32}
     \bitheader{0,7,8,15,16,23,24,31} \\
     \bitbox{16}{size = 536 + c} & \bitbox{16}{\texttt{ONION TUNNEL TRANSPORT} = 598} \\ 
-    \begin{rightwordgroup}{defines the \\ key and next \\ hop to forward \\ this to}
-        \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the initiator and the receiver}
-    \end{rightwordgroup} \\
-    \bitbox{32}{"PtoP"} \\
-    \begin{rightwordgroup}{encrypted \\ and integrity \\ protected \\ with session \\ key belonging \\ to LID$_1$. \\ Size = \SI{512}{byte}}
-        \wordbox[tlr]{2}{encrypted and padded data to be forwarded} \\
+    \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the initiator and the receiver} \\
+    \begin{rightwordgroup}{encrypted \\ and padded \\ with the \\ session key \\ belonging \\ to LID$_1$. \\ Encrypted size: \\ \SI{512}{byte} + c}
+        \bitbox{32}{"PtoP"} \\
+        \wordbox[tlr]{2}{data to be forwarded} \\
         \skippedwords \\
         \wordbox[blr]{1}{}
     \end{rightwordgroup} \\
 \end{bytefield}
 
+\subsection{Onion Tunnel Established}
+\label{sec:protocol:established}
+
+The \texttt{ONION TUNNEL ESTABLISHED} message type is used to notify a peer that it is the final hop in a tunnel. This is necessary as peers have to send a
+\texttt{ONION TUNNEL INCOMING} message to their UI/CM in this case. Without a separate message type, a peer is unable to know about its role as an endpoint, as an extension of the tunnel towards a new peer can happen at any time. An alternative to this message type would be to treat the first incoming voice data as a signal of being the final hop.
+However, a called peer might also want to start sending voice data before receiving any.
+Section~\ref{sec:function:build} displays how this message is used during the tunnel building phase.
+
+\begin{bytefield}[bitwidth=1.1em]{32}
+    \bitheader{0,7,8,15,16,23,24,31} \\
+    \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL ESTABLISHED} = 593} \\ 
+    \wordbox{4}{local tunnel identifier (LID$_{new}$) \\ between the sender and receiver} \\
+\end{bytefield}
+
+The \texttt{ONION TUNNEL ESTABLISHED} does also come in a second version including two local identifiers (additional, optional LID is marked in gray). This is used when we transparently switch over an ongoing call to a fresh tunnel. To do so, this message type indicates a replacement from the old to the new identifier to be mapped to an existing call. Section~\ref{sec:function:switch} displays how this message is used during tunnel switching. \\
+
+\begin{bytefield}[bitwidth=1.1em]{32}
+    \bitheader{0,7,8,15,16,23,24,31} \\
+    \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL ESTABLISHED} = 593} \\ 
+    \wordbox{4}{\textbf{new} local tunnel identifier (LID$_{new}$) \\ between the sender and receiver} \\
+    \wordbox{4}{\textbf{old} local tunnel identifier (LID$_{old}$) \\ between the sender and receiver} \\
+\end{bytefield}
+
+\subsection{Onion Tunnel Voice}
+This message type is used to transmit voice data over an established tunnel. It is always encrypted inside a \texttt{ONION TUNNEL TRANSPORT} message.
+A peer retrieving this message from encrypting a transport message type expects to be a tunnel endpoint regarding the given LID.
+The included voice data can then be forwarded to the UI/CM module with the tunnel ID associated to the included LID in the peer's state. \\
+
+\begin{bytefield}[bitwidth=1.1em]{32}
+    \bitheader{0,7,8,15,16,23,24,31} \\
+    \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL VOICE} = 594} \\ 
+    \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the sender and receiver} \\
+    \wordbox[tlr]{2}{raw voice data} \\
+    \skippedwords \\
+    \wordbox[blr]{1}{} 
+\end{bytefield}
+
 
 \subsection{Onion Tunnel Teardown}
 
-The teardown process of a tunnel can only be issued by its originator. This is necessary because a tunnel has to be teared down beginning from very the last hop and only the originator can send an encrypted teardown message through the whole tunnel. Unauthenticated tear downs would introduce a huge weakness to denial of service attacks on existing tunnels. 
+The teardown process of a tunnel can only be issued by its originator. This is necessary because a
+tunnel has to be teared down beginning from very the last hop and only the originator can send
+an encrypted teardown message through the whole tunnel. Unencrypted and therefore unauthenticated tear downs would
+introduce a huge weakness to denial of service attacks on existing tunnels. 
+To tear down a tunnel, this message is iteratively sent through the tunnel starting from the last hop.
 
-As peers might be malicious or randomly disconnect before terminating their tunnels, peers used as intermediate hops need to be able to remove old tunnel states on their own. To avoid running out of memory, a peer can remove its tunnel state safely after two rounds. The timespan of two rounds makes sure that even with the maximum possible offset between the round starting points on two peers, no tunnel is prematurely eliminated. 
-
-To ensure freshness and avoid replay attacks against open tunnels, the payload of this message is an integrity protected timestamp. Due to the fact that we can only use the interface to the Onion Authentication module for encryption and authenticity, both is applied to the timestamp even though authenticity (e.\,g. via an HMAC) would be enough.\\
+If the endpoint of a tunnel is instructed to tear down a tunnel by its UI/CM module, he uses the same message type.
+This then propagates through the tunnel until it reaches the hop that identifies itself as initiator. 
+The initiator is then able to destroy the tunnel as described (see sequence in Section~\ref{sec:function:teardown}). \\
 
 \begin{bytefield}[bitwidth=1.1em]{32}
     \bitheader{0,7,8,15,16,23,24,31} \\
     \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL TEARDOWN} = 599} \\ 
-    \begin{rightwordgroup}{defines the \\ key and next \\ hop to forward}
-        \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the sender and receiver}
-    \end{rightwordgroup} \\
-    \begin{rightwordgroup}{with session \\ key belonging \\ to LID$_1$}
-        \wordbox{1}{encrypted and integrity protected timestamp for freshness}
-    \end{rightwordgroup} \\
+    \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the sender and receiver} \\
 \end{bytefield}
 
+\section{Functioning}
+This section describes how the individual steps of tunnel handling (build, usage, teardown, transparent switching, cleanup) function in the final implementation. For each step, a protocol sequence with only one intermediate hop is given. This is only done due to the limited space on a portrait oriented page. Additional intermediate hops do not add any additional behavior, and only lead to more forwarding and layer encryption.
+%however, a full sequence diagram with two hops is given at the end of this chapter as Figure~\ref{fig:sequence}. 
+The identical headers with size and type are abbreviated by a shorthand for the respective message types. The also identical local identifiers of each message type are specified to make clear which LID is used. 
 
-\section{Protocol sequence}
-The final protocol sequence composed of all aforementioned message types is given below in Figure~\ref{fig:sequence}. As Onion routing hasn't been covered in the lecture so far, the basic idea of repeated encapsulation of encrypted data has been derived from the TOR paper by Dingledine et.~al.~\cite{torpaper}.
+\textbf{Note that data inside a \texttt{transport} message after the initial LID is always layer encrypted with the next required decryption key being the one of the session associated with the specified LID. After that decryption, subsequent encryption layers up to the designated receiver follow.}
 
-\begin{landscape}
+\subsection{Tunnel initiation}
+\label{sec:function:build}
+Tunnel building involves the iterative usage of \texttt{ONION TUNNEL INIT} and \texttt{ONION TUNNEL RELAY} messages which can be encapsulated in \texttt{ONION TUNNEL TRANSPORT} for equal size and encryption.
+
+Figure~\ref{fig:build} displays the sequence with two intermediate hops. Note that \texttt{ONION TUNNEL INIT} and \texttt{ONION TUNNEL ACCEPT} are transmitted in plain for each hop as there hasn't been a full handshake beforehand. Therefore, using padding to get a fixed message size is not helpful.
+
+Note that the relay message contains the new local identifier (LID\textsubscript{2}) as well. The intermediate hop does not only forward the inner message, but is also required to add the new LID to its state to be prepared to map responses with it, like the \texttt{accept} message, back to the initiator and LID\textsubscript{1}.
+
 \begin{figure}[ht]
-\resizebox{1.38\textwidth}{!}{
+\resizebox{\textwidth}{!}{
     \begin{sequencediagram}
-        \newinst{ot}{Initiator}
-        \newinst[10]{ih1}{$Hop_1$}
-        \newinst[9]{ih2}{$Hop_2$}
-        \newinst[7]{r}{Receiver}
+        \newinst{ot}{Initiator : i}
+        \newinst[10]{ih}{Hop : h}
+        \newinst[10]{r}{Receiver : r}
+        
+        \mess{ot}{init[$LID_1$, HS1 data]}{ih}
+        \mess{ih}{accept[$LID_1$, HS2 data]}{ot}
 
-        \begin{sdblock}{TunnelBuild}{Building a tunnel from the initiator to the rendevouz point}
-            \mess{ot}{init[$LID_1$, payload]}{ih1}
-            \mess{ih1}{accept[$LID_1$, payload]}{ot}
+        \mess{ot}{transport[$LID_1$, relay[$LID_1$, $port_r$, $address_r$, $LID_2$, init[$LID_2$, HS1 data]]]}{ih}
+        \mess{ih}{init[$LID_2$, HS1 data]}{r}
+        \mess{r}{accept[$LID_2$, HS2 data]}{ih}
+        \mess{ih}{transport[$LID_1$, accept[$LID_2$, HS2 data]]}{ot}
 
-            \mess{ot}{relay[$LID_1$, $E_{LID_1}${(}$LID_2$, $Hop_2$, init[$LID_2$, payload]{)}]}{ih1}
-            \mess{ih1}{init[$LID_2$, payload]}{ih2}
-            \mess{ih2}{accept[$LID_2$, payload]}{ih1}
-            \mess{ih1}{data[$LID_1$, $E_{LID_1}${(}accept[$LID_2$, payload]{)}]}{ot}
-
-            \mess{ot}{data[$LID_1$, $E_{LID_1}${(}relay[$LID_2$, $E_{LID_2}${(}$LID_3$, R, init[$LID_3$, payload]{)}]{)}]}{ih1}
-            \mess{ih1}{relay[$LID_2$, $E_{LID_2}${(}$LID_3$, R, init[$LID_3$, payload]{)}]}{ih2}
-            \mess{ih2}{init[$LID_3$, payload]}{r}
-            \mess{r}{accept[$LID_3$, payload]}{ih2}
-            \mess{ih2}{data[$LID_2$, $E_{LID_2}${(}accept[$LID_3$, payload]{)}]}{ih1}
-            \mess{ih1}{data[$LID_1$, $E_{LID_1}${(}data[$LID_2$, $E_{LID_2}${(}accept[$LID_3$, payload]{)}]{)}]}{ot}
-        \end{sdblock}
-
-        \begin{sdblock}{TunnelData}{Sending data from the initiator to the rendevouz point}
-            \mess{ot}{data[$LID_1$, $E_{LID_1}${(}data[$LID_2$, $E_{LID_2}${(}data[$LID_3$, $E_{LID_3}${(}"Hello"{)}]{)}]{)}]}{ih1}
-            \mess{ih1}{data[$LID_2$, $E_{LID_2}${(}data[$LID_3$, $E_{LID_3}${(}"Hello"{)}]{)}]}{ih2}
-            \mess{ih2}{data[$LID_3$, $E_{LID_3}${(}"Hello"{)}]}{r}
-            \mess{r}{data[$LID_3$, $E_{LID_3}${(}"World"{)}]}{ih2}
-            \mess{ih2}{data[$LID_2$, $E_{LID_2}${(}data[$LID_3$, $E_{LID_3}${(}"World"{)}]{)}]}{ih1}
-            \mess{ih1}{data[$LID_1$, $E_{LID_1}${(}data[$LID_2$, $E_{LID_2}${(}data[$LID_3$, $E_{LID_3}${(}"World"{)}]{)}]{)}]}{ot}
-        \end{sdblock}
-
-        \begin{sdblock}{TunnelTeardown}{Controlled tunnel teardown}
-            \mess{ot}{data[$LID_1$, $E_{LID_1}${(}data[$LID_2$, $E_{LID_2}${(}teardown[$LID_3$, $E_{LID_3}${(}$ts_{Init}${)}]{)}]{)}]}{ih1}
-            \mess{ih1}{data[$LID_2$, $E_{LID_2}${(}teardown[$LID_3$, $E_{LID_3}${(}$ts_{Init}${)}]{)}]}{ih2}
-            \mess{ih2}{teardown[$LID_3$, $E_{LID_3}${(}$ts_{Init}${)}]}{r}
-            
-
-            \mess{ot}{data[$LID_1$, $E_{LID_1}${(}teardown[$LID_2$, $E_{LID_2}${(}$ts_{Init}${)}]{)}]}{ih1}
-            \mess{ih1}{teardown[$LID_2$, $E_{LID_2}${(}$ts_{Init}${)}]}{ih2}
-
-            \mess{ot}{teardown[$LID_1$, $E_{LID_1}${(}$ts_{Init}${)}]}{ih1}
-
-            %\mess{r}{teardown[$LID_3$, $E_{LID_3}${(}$ts_{R}${)}]}{ih2}
-            %\mess{ih2}{teardown[$LID_2$, $E_{LID_2}${(}$ts_{Hop_2}${)}]}{ih1}
-            %\mess{ih1}{teardown[$LID_1$, $E_{LID_1}${(}$ts_{Hop_1}${)}]}{ot}
-        \end{sdblock}
-
+        \mess{ot}{transport[$LID_1$, established[$LID_2$]]}{ih}
+        \mess{ih}{transport[$LID_2$, established[$LID_2$]]}{r}
     \end{sequencediagram}}
-    \caption{Protocol sequence of the complete Onion peer-to-peer protocol.}
-    \label{fig:sequence}
+    \vspace{5mm}
+    \caption{Protocol sequence for building a new tunnel.}
+    \label{fig:build}
 \end{figure}
-\end{landscape}
+
+After a session is established with the designated endpoint of the tunnel, an additional \texttt{ONION TUNNEL ESTABLISHED} message is sent. This notifies \texttt{r} to be the endpoint and triggers it to select a tunnel ID and to associate a tunnel object with the tunnel segment that has been created during the handshake. This enables the receiver to report the incoming tunnel to its superordinate module (UI/CM) and finish the tunnel establishment.
+
+\subsection{Sending data}
+\label{sec:function:data}
+
+Sending voice data over an established tunnel can happen after the \texttt{ONION TUNNEL ESTABLISHED} message as seen in the previous Section~\ref{sec:function:build} has been sent.
+The process of sending voice data does not differ from sending any other data over hops to which a session has been established. If the initiator of the tunnel sends the message, the data inside the transport message is encrypted once for every hop that is part of the tunnel. This starts with the last hop and finished with encrypting the data using the key established with the first hop. That way, all intermediate hops can remove one layer of encryption using their key for this tunnel.
+Although Figure~\ref{fig:data} only shows the LID which specifies the next encryption session key to be use, the initial \texttt{transport} message sent by the initiator is already encrypted twice.
+
+For data that is sent by the receiver or rendezvous point, it is only encrypted once with the key known to this peer. Every peer in the tunnel than adds his layer of encryption until the whole Onion encrypted data reaches the initiator who then has the knowledge of all keys to strip every layer again.
+
+Figure~\ref{fig:data} displays this message flow which is possible just after the previous tunnel build sequence shown in Figure~\ref{fig:build} has been finished.
+
+\begin{figure}[ht]
+\resizebox{\textwidth}{!}{
+    \begin{sequencediagram}
+        \newinst{ot}{Initiator : i}
+        \newinst[10]{ih}{Hop : h}
+        \newinst[10]{r}{Receiver : r}
+        
+        \mess{ot}{transport[$LID_1$, voice[$LID_2$, raw voice data]]}{ih}
+        \mess{ih}{transport[$LID_1$, voice[$LID_2$, raw voice data]]}{r}
+        \mess{r}{transport[$LID_2$, voice[$LID_2$, raw voice data]]}{ih}
+        \mess{ih}{transport[$LID_1$, voice[$LID_2$, raw voice data]]}{ot}
+    \end{sequencediagram}}
+    \caption{Protocol sequence for sending data over an established tunnel.}
+    \label{fig:data}
+\end{figure}
+
+\subsection{Teardown}
+\label{sec:function:teardown}
+The destruction of a tunnel is done iteratively and always started by the initiator. This is required as only the initiator knows the full list of peers in the tunnel and is able to start closing sessions from the very end. Starting the tear down with the last peer in a tunnel is necessary in order to be able to layer encrypt the teardown messages towards the last remaining peer. 
+
+As specified in the applications specification document, the rendevouz point at the end of a tunnel can also receive a \texttt{ONION TUNNEL DESTROY} message from its superordinate UI/CM module. To allow for the tear down process of a tunnel starting from this point, an \texttt{ONION TUNNEL TEARDOWN} message is propagated to the initiator who then starts the described procedure from his side.
+
+Both versions of how a tunnel can be destroyed are shown in Figure~\ref{fig:teardown}.
+
+\begin{figure}[ht]
+\resizebox{\textwidth}{!}{
+    \begin{sequencediagram}
+        \newinst{ot}{Initiator : i}
+        \newinst[10]{ih}{Hop : h}
+        \newinst[10]{r}{Receiver : r}
+        
+        \begin{sdblock}{Version 1}{Teardown started by the initiator of the tunnel.}
+            \mess{ot}{transport[$LID_1$, teardown[$LID_2$]]}{ih}
+            \mess{ih}{transport[$LID_2$, teardown[$LID_2$]]}{r}
+            \mess{ot}{transport[$LID_1$, teardown[$LID_1$]]}{ih}
+        \end{sdblock}
+
+        \begin{sdblock}{Version 2}{Teardown started by the endpoint of the tunnel.}
+            \mess{r}{transport[$LID_2$, teardown[$LID_2$]]}{ih}
+            \mess{ih}{transport[$LID_1$, teardown[$LID_2$]]}{ot}
+
+            \mess{ot}{transport[$LID_1$, teardown[$LID_2$]]}{ih}
+            \mess{ih}{transport[$LID_2$, teardown[$LID_2$]]}{r}
+            \mess{ot}{transport[$LID_1$, teardown[$LID_1$]]}{ih}
+        \end{sdblock}
+    \end{sequencediagram}}
+    \caption{Protocol sequence for destroying a previously established tunnel.}
+    \label{fig:teardown}
+\end{figure}
+
+\subsection{Transparent switching of tunnels}
+\label{sec:function:switch}
+The specification of the Voidphone application states that:
+\begin{displayquote}
+Tunnels created in one period should be torn down and rebuilt for the next period. [...]
+Onion should ensure that this is done transparently to the modules using these tunnels.
+\end{displayquote}
+
+Our implementation achieves this by recreating tunnels a peer started as initiator to the existing destination over new hops on every new round. With this, some time of the round passes until the rebuilt tunnel is finished. This slight offset will also happen in future rounds so that the effective time a tunnel is used equals the timespan of a round.
+
+New tunnels that are recreations of existing once, are finalized via the \texttt{ONION TUNNEL ESTABLISHED} message containing two local identifiers (see Section~\ref{sec:protocol:established}). This allows the receiver to map future data with a new identifier to an existing tunnel ID for forwarding to UI/CM.
+
+The process rebuilding a tunnel (shown in Figure~\ref{fig:rebuild}) is therefore basically equivalent to the tunnel build sequence shown in Section~\ref{sec:function:build} with the only difference being the established message.
+
+\begin{figure}[ht]
+\resizebox{\textwidth}{!}{
+    \begin{sequencediagram}
+        \newinst{ot}{Initiator : i}
+        \newinst[10]{ih}{Hop : h}
+        \newinst[10]{r}{Receiver : r}
+        
+        \mess{ot}{init[$LID_3$, HS1 data]}{ih}
+        \mess{ih}{accept[$LID_3$, HS2 data]}{ot}
+
+        \mess{ot}{transport[$LID_3$, relay[$LID_3$, $port_r$, $address_r$, $LID_4$, init[$LID_4$, HS1 data]]]}{ih}
+        \mess{ih}{init[$LID_4$, HS1 data]}{r}
+        \mess{r}{accept[$LID_4$, HS2 data]}{ih}
+        \mess{ih}{transport[$LID_3$, accept[$LID_4$, HS2 data]]}{ot}
+
+        \mess{ot}{transport[$LID_3$, established[$LID_4$, $LID_2$]]}{ih}
+        \mess{ih}{transport[$LID_4$, established[$LID_4$, $LID_2$]]}{r}
+    \end{sequencediagram}}
+    \caption{Protocol sequence for rebuilding a new tunnel, precisely the one build in Figure~\ref{fig:build}.}
+    \label{fig:rebuild}
+\end{figure}
+
+However, to achieve complete transparent switching, a problem remains regarding data that is being sent by the rendevouz point after the initiator has already switched its state and before the rendevouz point itself received the established message with the LID remapping. Figure~\ref{fig:problem} displays this issue in which, matching the sequence of Figure~\ref{fig:rebuild}, $LID_2$ is replaced with $LID_4$ for the receiver.
+
+\begin{figure}[ht]
+\resizebox{\textwidth}{!}{\begin{tikzpicture}[x=1mm,y=1mm]
+    \node[client, label={below:Initiator}] (initiator) {};
+    \node[draw=none,fill=none, right of=initiator, node distance=16em] (mid) {\footnotesize{... intermediate hops ...}};
+    \node[client, label={below:Receiver}, right of=mid, node distance=16em] (receiver) {};
+
+    \draw[line width=1pt] (initiator) -- (mid);
+    \draw[line width=1pt] (mid) -- (receiver);
+
+    \node[red, below of=initiator, node distance=4em] (label1) {\footnotesize{mapping \\ $LID_4 \leftrightarrow$ Tunnel $ID_1$}};
+    \node[red, below of=receiver, node distance=4em] (label2) {\footnotesize{mapping \\ $LID_2 \leftrightarrow$ Tunnel $ID_1$}};
+
+    \node[messageclosed,fill=red!40,draw=red, above of=mid, node distance=3.3em, label={above:\color{red}{\scriptsize{$LID_2$}}}] (m1) {\color{red}{\scriptsize{voice data}}};
+    \node[messageclosed,fill=red!40,draw=red, left of=m1, node distance=4em, label={above:\color{red}{\scriptsize{$LID_2$}}}] (m2) {\color{red}{\scriptsize{voice data}}};
+    \node[messageclosed,fill=red!40,draw=red, left of=m2, node distance=4em, label={above:\color{red}{\scriptsize{$LID_2$}}}] (m3) {\color{red}{\scriptsize{voice data}}};
+    
+    \node[messageclosed,fill=blue!40,draw=blue, below right of=mid, node distance=7em, label={above:\color{red}{\scriptsize{$LID_4$}}}] (m4) {\color{blue}{\scriptsize{established $LID_4 \leftrightarrow LID_2$}}};
+
+    \node[draw=none,fill=none, left of=m3, node distance=5em] (arrow1) {};
+    \node[draw=none,fill=none, right of=m4, node distance=5em] (arrow2) {};
+
+    \draw[->,red,line width=1pt] (m3) -- (arrow1);
+    \draw[->,blue,line width=1pt] (m4) -- (arrow2);
+
+    \node[draw=none,fill=none, below of=m4, node distance=1.3em] (vspace) {};
+
+    \end{tikzpicture}}
+    \caption{Issue with non-attributable old messages sent during rebuild of a tunnel.}
+    \label{fig:problem}
+\end{figure}
+
+To resolve this issue, the initiator holds a collection named \texttt{toBeDestroyed} that keeps the state of an old and now rebuild tunnel \textbf{until the first message with a new identifier arrives on his P2P interface}. This way, the initiator can be sure the receiver has received note of the refresh and all packets with old LIDs that come even laterare out of order anyway and can be dropped. The initiator then cleans up this old state on the first witness of the new identifiers and also tells the intermediate hops to remove their state concerned with the old tunnel.
+
+
+\subsection{Cleanup of leftover states}
+\label{sec:function:cleanup}
+Additionally to the cleanup and replacement of old identifiers in case of a switched tunnel, peers have be able to entirely remove states as well. Peers are required to be able to clean up data regarding the state of a tunnel or a mapping they have in their role as an intermediate hop. This is especially important as tunnels can be broken by peers leaving the network at any point in time. To do so, every peer keeps track of the last time data has been seen associated to a certain LID. If this time exceeds a whole round, the state is being removed. The time check is done on every round start by the peer.
+
+\section{Limitations regarding security}
+
+\section{How to run + Config}
+
+\section{Time management}
 
 \bibliography{ref}
 \bibliographystyle{abbrv}
