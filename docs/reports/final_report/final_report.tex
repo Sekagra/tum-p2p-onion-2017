@@ -90,7 +90,7 @@
 
 \section{Overview over the architecture}
 This section aims to give an overview over the basic architecture and components of the final implementation of the Onion module.
-The interim report gave an abstract overview over the environment of the Onion Module, making clear that its central role in the Voidphone application requires the module to have many interfaces. Figure~\ref{fig:architecture} shows a more detailed representation of the final design. The figure can be seen as the inner workings of the \emph{Onion Module} component depicted in the component diagram of the interim report (see Figure~1 of the interim report). 
+The interim report gave an abstract overview over the environment of the Onion Module, making clear that its central role in the VoidPhone application requires the module to have many interfaces. Figure~\ref{fig:architecture} shows a more detailed representation of the final design. The figure can be seen as the inner workings of the \emph{Onion Module} component depicted in the component diagram of the interim report (see Figure~1 of the interim report). 
 
 Each interface the Onion module has towards another module is managed by a respective interface class. Common base classes like for example an abstract \texttt{TcpClientInterface} for Authentication and RPS are used to encapsulate shared functionality among these interface classes. The common basis for all elements with networking code is the \textbf{Netty}\footnote{\url{http://netty.io/}} framework, an asynchronous event-driven network application framework based on Java's NIO. 
 
@@ -133,19 +133,19 @@ Each of the interfaces references a parser specific for the data that is expecte
 
 
 \begin{description}
-    \item [The Orchestrator] acts as a starting point for the module and manages a total of three interfaces (\texttt{RPS Interface}, \texttt{Onion API Interface}, \texttt{Onion P2P Interface}). It's job is to issue the start of rounds and to manage data flow between interfaces. For this, the \texttt{Orchestrator} has references and callbacks towards interfaces. In case of an event on one interface that affects another one, an approriate transfer is done. An example would be that the CM/UI module wants to build a new tunnel which requires the sampling of hops via the \texttt{RPS Interface} as well as the tunnel build itself by the \texttt{Onion P2P interface}. The \texttt{Orchestrator} also references the \texttt{Configuration Provider} which reads the configuration file and parses it to provide the given data to all modules.
+    \item [The Orchestrator] acts as a starting point for the module and manages a total of three interfaces (\texttt{RPS Interface}, \texttt{Onion API Interface}, \texttt{Onion P2P Interface}). It's job is to issue the start of rounds and to manage data flow between interfaces. For this, the \texttt{Orchestrator} has references and callbacks towards interfaces. In case of an event on one interface that affects another one, an approriate transfer is done. An example would be that the UI/CM module wants to build a new tunnel which requires the sampling of hops via the \texttt{RPS Interface} as well as the tunnel build itself by the \texttt{Onion P2P interface}. The \texttt{Orchestrator} also references the \texttt{Configuration Provider} which reads the configuration file and parses it to provide the given data to all modules.
 
-    \item [The Onion API Interface] acts as a TCP server for a connecting UI/CM module. It is able to handle all messages specified as Onion API messages in the specificationn~\cite{spec}.
+    \item [The Onion API Interface] acts as a TCP server for a connecting UI/CM module. It is able to handle all messages specified as Onion API messages in the specification~\cite{spec}.
     A callback connects the interface to the \texttt{Orchestrator} and notifies it of incoming requests.
 
     \item [The RPS Interface] is the simplest interface, acting as a TCP client towards the RPS module. It only provides one method to query a random peer (using the \texttt{RPS QUERY} message type) which encapsulates the call to the other module.
 
-    \item [The Onion P2P Interface] is in charge of managing the peer-to-peer connections (tunnels) to other modules. It acts as a combined UDP server and client. Its parser handles our custom P2P protocol (see Section~\ref{sec:protocol}). The \texttt{Onion Authentication Interface}, a client to the Authentication module, is referenced directly. This accounts for the fact that both modules are strongly connected, even being combined into one in the past. The P2P interfaces is the only module who uses the \texttt{Onion Authentication Interface} and needs to call its functionality frequently during tunnel operations which do not trigger any callback to the \texttt{Orchestrator}. This way, the \texttt{Orchestrator} can simply issue a tunnel to be build, select the random peers and is not required to handle roundtrips to the authentication module for every encryption happening as a result.
+    \item [The Onion P2P Interface] is in charge of managing the peer-to-peer connections (tunnels) to other modules. It acts as a combined UDP server and client. Its parser handles our custom P2P protocol (see Section~\ref{sec:protocol}). The \texttt{Onion Authentication Interface}, a client to the Authentication module, is referenced directly. This accounts for the fact that both modules are strongly connected, even being combined into one in the past. The P2P interfaces is the only module that uses the \texttt{Onion Authentication Interface} and needs to call its functionality frequently during tunnel operations which do not trigger any callback to the \texttt{Orchestrator}. This way, the \texttt{Orchestrator} can simply issue a tunnel to be build, select the random peers and is not required to handle roundtrips to the authentication module for every encryption happening as a result.
 
     \item [Data structures and identifiers:] The application has a set of central data structures used to store its state. The major ones are collections of tunnels started by the running peer as initiator (\texttt{startedTunnels}), tunnels that this peer acts as an endpoint to (\texttt{incomingTunnels}) and states for this peer's role as an intermediate hop (\texttt{intermediateSegments}). The collections are created by the \texttt{Orchestrator} and also accessible by the \texttt{Onion P2P Interface}. 
-    From the perspective of the application, a tunnel is an object with a tunnel identifier and a list of tunnel segments. The segments have precise information about adjecent hops (address and port). A segment created for each hop of a tunnel, describing the state between the tunnel initiator and this hop. Therefore, a segment does also now about the session it belongs to and is identified by a \emph{local identifier}. In a peers role as an intermediate hop, each tunnel segment gets a matching counterpart segment assigned. With this, a peer is able to match forwarding of data with a certain LID in both ways through the tunnel. Each time, he has to write the corresponding LID expected by the next peer inside the message header. It is noteworthy that for a peer's role as intermediate hop, we only store tunnel segments (not whole tunnels) as an additional grouping by tunnel ID, has no relevance for this peer. Tunnel IDs, and therefore whole tunnel instances, are only stored for tunnels a peer started and the ones he received as an endpoint, as these are scenarios in which the peer has to report to its respective UI/CM module stating a tunnel ID. 
+    From the perspective of the application, a tunnel is an object with a tunnel identifier and a list of tunnel segments. The segments have precise information about adjecent hops (address and port). A segment created for each hop of a tunnel, describing the state between the tunnel initiator and this hop. Therefore, a segment does also know about the session it belongs to and is identified by a \textbf{local identifiers (LIDs)}. In a peers role as an intermediate hop, each tunnel segment gets a matching counterpart segment assigned. With this, a peer is able to match forwarding of data with a certain LID in both ways through the tunnel. Each time, he has to write the corresponding LID expected by the next peer inside the message header. It is noteworthy that for a peer's role as intermediate hop, we only store tunnel segments (not whole tunnels) as an additional grouping by tunnel ID, has no relevance for this peer. Tunnel IDs, and therefore whole tunnel instances, are only stored for tunnels a peer started and the ones he received as an endpoint, as these are scenarios in which the peer has to report to its respective UI/CM module stating a tunnel ID. 
 
-    The \textbf{local identifiers (LIDs)} have been introduced in the interim report and, as we noticed during the lectures on TOR, correspond to the circuit IDs in TOR. They are valid between the initiator and a specific hop of a tunnel. The LID allows an intermediate peer to match an incoming packet to a session and a tunnel-specific next hop for forwarding. Figure~\ref{fig:lids} taken from our interim report visualize the concept and the validity of the identifiers in an Onion tunnel with two intermediate hops.
+    The LIDs have been introduced in the interim report and, as we noticed during the lectures on TOR, correspond to the circuit IDs in TOR. They are valid between the initiator and a specific hop of a tunnel. The LID allows an intermediate peer to match an incoming packet to a session and a tunnel-specific next hop for forwarding. Figure~\ref{fig:lids} taken from our interim report visualizes the concept and the validity of the identifiers in an Onion tunnel with two intermediate hops.
 
     \begin{figure}[ht]
     \centering
@@ -165,9 +165,9 @@ This section describes the final message types for the Onion P2P protocol and th
 \subsection{Onion Tunnel Init}
 
 This messages indicates the beginning of a new tunnel segment and is created after the \texttt{Onion API Interfaces} 
-receives the ONION TUNNEL BUILD message from its client CM/UI module or choses to create a tunnel
+receives the ONION TUNNEL BUILD message from its client UI/CM module or choses to create a tunnel
 for cover traffic on its own. Messages of this type are sent iteratively by the tunnel initiator to
-the peers he choses to be part of the tunnel. Eachg encrypted depending on how far the tunnel is already setup. 
+the peers he choses to be part of the tunnel. Each encrypted depending on how far the tunnel is already setup. 
 It is used to transmit the first handshake data given by the Onion Authentication module. \\
 
 \begin{bytefield}[bitwidth=1.1em]{32}
@@ -225,7 +225,7 @@ The \texttt{ONION TUNNEL TRANSPORT} message is used to securely transmit arbitra
 Therefore, it can possibly contain any other message type as data and is maintaining a fixed length in all cases in order to provide a defense against an attacker using
 traffic analysis to gain intel on anonymous communications.
 
-Our calculation provided with the interim report regarding the size of data such a message has to be able to contain, still holds. For this, we considered average human speech in combination with bitrates of common VoiP codecs. This was to make sure a single lost packet does not contain a crucial amount of voice data which would hurt the quality of the phone call. However, with the new changes introduced to this message type, we do not rely on a padding scheme like PKCS7~\#7 any longer. Instead, the size of the inner real data is given explicitly by its length field and random padding data can be stripped, just like in TOR.
+Our calculation provided with the interim report regarding the size of data such a message has to be able to contain, still holds. For this, we considered average human speech in combination with bitrates of common VoiP codecs. This was to make sure a single lost packet does not contain a crucial amount of voice data which would hurt the quality of the phone call. However, with the new changes introduced to this message type, we do not rely on a padding scheme like PKCS~\#7 any longer. Instead, the size of the inner real data is given explicitly by its length field and random padding data can be stripped, just like in TOR.
 
 Every time an arbitrary other Onion P2P message type is to be encapsulated the new procedure for transport messages is:
 \begin{enumerate}
@@ -241,7 +241,7 @@ Every time an arbitrary other Onion P2P message type is to be encapsulated the n
 
 \begin{bytefield}[bitwidth=1.1em]{32}
     \bitheader{0,7,8,15,16,23,24,31} \\
-    \bitbox{16}{size = 536 + c} & \bitbox{16}{\texttt{ONION TUNNEL TRANSPORT} = 598} \\ 
+    \bitbox{16}{size = 532 + c} & \bitbox{16}{\texttt{ONION TUNNEL TRANSPORT} = 598} \\ 
     \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the initiator and the receiver} \\
     \begin{rightwordgroup}{encrypted \\ and padded \\ with the \\ session key \\ belonging \\ to LID$_1$. \\ Encrypted size: \\ \SI{512}{byte} + c}
         \bitbox{32}{"PtoP"} \\
@@ -259,6 +259,7 @@ The \texttt{ONION TUNNEL ESTABLISHED} message type is used to notify a peer that
 However, a called peer might also want to start sending voice data before receiving any.
 Section~\ref{sec:function:build} displays how this message is used during the tunnel building phase.
 
+\vspace{1em} % No clue why we need this
 \begin{bytefield}[bitwidth=1.1em]{32}
     \bitheader{0,7,8,15,16,23,24,31} \\
     \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL ESTABLISHED} = 593} \\ 
@@ -267,11 +268,12 @@ Section~\ref{sec:function:build} displays how this message is used during the tu
 
 The \texttt{ONION TUNNEL ESTABLISHED} does also come in a second version including two local identifiers (additional, optional LID is marked in gray). This is used when we transparently switch over an ongoing call to a fresh tunnel. To do so, this message type indicates a replacement from the old to the new identifier to be mapped to an existing call. Section~\ref{sec:function:switch} displays how this message is used during tunnel switching. \\
 
+\newcommand{\colorwordbox}[3]{\rlap{\wordbox{#2}{\color{#1}\rule{\width}{\height}}}\wordbox{#2}{#3}}
 \begin{bytefield}[bitwidth=1.1em]{32}
     \bitheader{0,7,8,15,16,23,24,31} \\
     \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL ESTABLISHED} = 593} \\ 
     \wordbox{4}{\textbf{new} local tunnel identifier (LID$_{new}$) \\ between the sender and receiver} \\
-    \wordbox{4}{\textbf{old} local tunnel identifier (LID$_{old}$) \\ between the sender and receiver} \\
+    \colorwordbox{gray!60}{4}{\textbf{old} local tunnel identifier (LID$_{old}$) \\ between the sender and receiver} \\
 \end{bytefield}
 
 \subsection{Onion Tunnel Voice}
@@ -293,7 +295,7 @@ The included voice data can then be forwarded to the UI/CM module with the tunne
 
 The teardown process of a tunnel can only be issued by its originator. This is necessary because a
 tunnel has to be teared down beginning from very the last hop and only the originator can send
-an encrypted teardown message through the whole tunnel. Unencrypted and therefore unauthenticated tear downs would
+an encrypted teardown message to a specific peer in the tunnel. Unencrypted and therefore unauthenticated tear downs would
 introduce a huge weakness to denial of service attacks on existing tunnels. 
 To tear down a tunnel, this message is iteratively sent through the tunnel starting from the last hop.
 
@@ -318,7 +320,7 @@ The identical headers with size and type are abbreviated by a shorthand for the 
 \label{sec:function:build}
 Tunnel building involves the iterative usage of \texttt{ONION TUNNEL INIT} and \texttt{ONION TUNNEL RELAY} messages which can be encapsulated in \texttt{ONION TUNNEL TRANSPORT} for equal size and encryption.
 
-Figure~\ref{fig:build} displays the sequence with two intermediate hops. Note that \texttt{ONION TUNNEL INIT} and \texttt{ONION TUNNEL ACCEPT} are transmitted in plain for each hop as there hasn't been a full handshake beforehand. Therefore, using padding to get a fixed message size is not helpful.
+Figure~\ref{fig:build} displays the sequence with one intermediate hop. Note that \texttt{ONION TUNNEL INIT} and \texttt{ONION TUNNEL ACCEPT} are transmitted in plain for each hop as there hasn't been a full handshake beforehand. Therefore, using padding to get a fixed message size is not helpful.
 
 Note that the relay message contains the new local identifier (LID\textsubscript{2}) as well. The intermediate hop does not only forward the inner message, but is also required to add the new LID to its state to be prepared to map responses with it, like the \texttt{accept} message, back to the initiator and LID\textsubscript{1}.
 
@@ -410,7 +412,7 @@ Both versions of how a tunnel can be destroyed are shown in Figure~\ref{fig:tear
 
 \subsection{Transparent switching of tunnels}
 \label{sec:function:switch}
-The specification of the Voidphone application states that:
+The specification of the VoidPhone application states that:
 \begin{displayquote}
 Tunnels created in one period should be torn down and rebuilt for the next period. [...]
 Onion should ensure that this is done transparently to the modules using these tunnels.
@@ -420,7 +422,7 @@ Our implementation achieves this by recreating tunnels a peer started as initiat
 
 New tunnels that are recreations of existing once, are finalized via the \texttt{ONION TUNNEL ESTABLISHED} message containing two local identifiers (see Section~\ref{sec:protocol:established}). This allows the receiver to map future data with a new identifier to an existing tunnel ID for forwarding to UI/CM.
 
-The process rebuilding a tunnel (shown in Figure~\ref{fig:rebuild}) is therefore basically equivalent to the tunnel build sequence shown in Section~\ref{sec:function:build} with the only difference being the established message.
+The process of rebuilding a tunnel (shown in Figure~\ref{fig:rebuild}) is therefore basically equivalent to the tunnel build sequence shown in Section~\ref{sec:function:build} with the only difference being the established message.
 
 \begin{figure}[ht]
 \resizebox{\textwidth}{!}{
@@ -477,7 +479,7 @@ However, to achieve complete transparent switching, a problem remains regarding 
     \label{fig:problem}
 \end{figure}
 
-To resolve this issue, the initiator holds a collection named \texttt{toBeDestroyed} that keeps the state of an old and now rebuild tunnel \textbf{until the first message with a new identifier arrives on his P2P interface}. This way, the initiator can be sure the receiver has received note of the refresh and all packets with old LIDs that come even laterare out of order anyway and can be dropped. The initiator then cleans up this old state on the first witness of the new identifiers and also tells the intermediate hops to remove their state concerned with the old tunnel.
+To resolve this issue, the initiator holds a collection named \texttt{toBeDestroyed} that keeps the state of an old and now rebuild tunnel \textbf{until the first message with a new identifier arrives on his P2P interface}. This way, the initiator can be sure the receiver has received note of the refresh and all packets with old LIDs that come even later are out of order anyway and can be dropped. The initiator then cleans up this old state on the first witness of the new identifiers and also tells the intermediate hops to remove their state concerned with the old tunnel.
 
 
 \subsection{Cleanup of leftover states}
@@ -485,7 +487,7 @@ To resolve this issue, the initiator holds a collection named \texttt{toBeDestro
 Additionally to the cleanup and replacement of old identifiers in case of a switched tunnel, peers have be able to entirely remove states as well. Peers are required to be able to clean up data regarding the state of a tunnel or a mapping they have in their role as an intermediate hop. This is especially important as tunnels can be broken by peers leaving the network at any point in time. To do so, every peer keeps track of the last time data has been seen associated to a certain LID. If this time exceeds a whole round, the state is being removed. The time check is done on every round start by the peer.
 
 \section{Security Properties}
-The onion module's purpose is to provide security to the users of the VoidPhone application.
+The Onion module's purpose is to provide security to the users of the VoidPhone application.
 We analyze the protection of sensible user data regarding confidentiality, authenticity, integrity and privacy in this section.
 
 \paragraph{Privacy}
@@ -493,10 +495,11 @@ The main purpose of onion routing is to allow anonymous communication in the sys
 Every peer in a tunnel, except the initiator, only knows the addresses of its direct predecessor and successor.
 As a result, no peer, besides the initiator, knows both, sender and receiver address, if we are using at least two intermediate hops in a tunnel.
 In addition, we do not transfer any information that allows the identification of the tunnel initiator.
-Thus, the onion module provides sender anonymity.
+Thus, the Onion module provides sender anonymity.
 The usage of a rendevouz point allows receiver anonymity, too.
 
 We utilize layer encryption and have an identifier (LID) that is different for every tunnel segment.
+In addition, a \texttt{ONION TUNNEL TRANSPORT} message only contains the LID corresponding to the next hop.
 Therefore, a passive adversary is not able to directly track a tunnel through the system.
 
 However, it is possible to track a tunnel during tunnel establishment using \texttt{ONION INIT} and \texttt{ONION ACCEPT} messages or by a timing attack.
@@ -504,25 +507,25 @@ Such attacks are prevented if a lot of peers are sending data or establishing tu
 I.\,e., we have to rely on a large anonymity set, to prevent timing- and pattern-based attacks.
 
 By using the same round interval on every peer and synchronizing round transitions, we could increase the anonymity set during tunnel establishment.
-Nevertheless, this was not possible in this version of the onion module, as the round interval has to be configurable regarding the supervisors.
+Nevertheless, this was not possible in this version of the Onion module, as the round interval has to be configurable regarding the supervisors.
 
-The onion module has at least one active tunnel at a time.
+The Onion module has at least one active tunnel at a time.
 This is achieved by building a cover tunnel if no user tunnel is established.
-In addition, the CM module is able to instruct the onion module to sent random cover data through a tunnel which allows link padding.
-As we also refresh cover tunnel at round transitions, an attacker is not able to differentiate if a peer is currently communicating or not.
+In addition, the CM module is able to instruct the Onion module to sent random cover data through a tunnel which allows link padding.
+As we also refresh cover tunnel at round transitions and have fixed size packets, an attacker is not able to differentiate if a peer is currently communicating or not.
 
 
 \paragraph{Authenticity}
 The VoidPhone application uses pre-shared public keys for the identification of peers.
-In addition, the onion module transfers two handshake messages during tunnel establishment.
+In addition, the Onion module transfers two handshake messages during tunnel establishment.
 The onion authentication module can use those handshake messages and the pre-shared keys to provide authentication of the communication partners.
 
 \paragraph{Confidentiality}
 During tunnel establishment, the onion authentication module is given the possibility to exchange handshake messages.
 As those messages are exchanged between the initiator and all hops in the tunnel, a secure ephemeral key can be established for every tunnel segment, e.\,g. by the use of the Diffie-Hellmann key excahnge algorithm.
-As the onion module layer encrypts all data sent through a tunnel using those keys, no user information is sent in plain text.
+As the Onion module layer encrypts all data sent through a tunnel using those keys, no user information is sent in plain text.
 
-The onion module builds a new tunnel for every user communication in every round.
+The Onion module builds a new tunnel for every user communication in every round.
 As a result, the onion authentication module has the possibility to update its keys in a fixed interval.
 
 \paragraph{Integrity}
@@ -530,20 +533,20 @@ The onion authentication module is allowed to add additional information to a me
 This information can be used to provide integrity protection.
 
 \section{Installation and Execution}
-In this section we describe how to install and run the onion module.
+In this section we describe how to install and run the Onion module.
 The required sources are available on our git repository\footnote{\url{https://gitlab.lrz.de/ga78sil/p2p-2017-group17-onion}}.
 
 \subsection{Execution}
-We used \texttt{Java} as programming language for our onion module.
+We used \texttt{Java} as programming language for our Onion module.
 \texttt{Java 8} is required for execution.
 It is possible to either run the pre-built version contained in the \texttt{release/} directory or build from source as explained in Section \ref{sec:compilation}.
 
 
-Listing \ref{lst:execution} shows the command to run the onion module.
-The \texttt{config} command line argument specifies the configuration file that shall be used by the onion module.
+Listing \ref{lst:execution} shows the command to run the Onion module.
+The \texttt{config} command line argument specifies the configuration file that shall be used by the Onion module.
 We present the required configuration parameters in Section \ref{sec:configuration}.
 
-\begin{lstlisting}[language=bash, caption=Command to execute the onion module, label=lst:execution]
+\begin{lstlisting}[language=bash, caption=Command to execute the Onion module, label=lst:execution]
 release/$ java -jar Onion_1.0.jar --config path
 \end{lstlisting}
 
@@ -561,19 +564,19 @@ Following command line parameters are currently supported:
 
 \subsection{Configuration} \label{sec:configuration}
 The VoidPhone application uses a configuration file in the Windows INI format.
-Table \ref{tab:configuration_params} lists all parameters required by the onion module and their corresponding section.
+Table \ref{tab:configuration_params} lists all parameters required by the Onion module and their corresponding section.
 A sample configuration file is contained in the \texttt{config/} directory in the repository.
 
 \begin{table}[H]
     \centering
-    \caption{Configuration parameters required by the onion module}
+    \caption{Configuration parameters required by the Onion module}
     \label{tab:configuration_params}
     \begin{tabular}{l|l|l|p{5cm}}
         Section & Parameter             & Value                             & Description   \\ \Xhline{3\arrayrulewidth}
-        onion   & listen\_address       & <public\_ip>:<port>               & P2P address of this peer's onion module \\ \cline{2-4}
-                & api\_address          & <pubic/private\_ip>:<port>        & Address used for API connections to the onion module \\ \cline{2-4}
+        onion   & listen\_address       & <public\_ip>:<port>               & P2P address of this peer's Onion module \\ \cline{2-4}
+                & api\_address          & <pubic/private\_ip>:<port>        & Address used for API connections to the Onion module \\ \cline{2-4}
                 & hostkey               & <path\_to\_pem\_key>              & Path to the key used by this peer \\ \cline{2-4}
-                & round\_interval       & <interval\_in\_seconds>           & Round interval the onion module shall use \\ \cline{2-4}
+                & round\_interval       & <interval\_in\_seconds>           & Round interval the Onion module shall use \\ \cline{2-4}
                 & intermediate\_hops    & <number\_of\_intermediate\_hops>  & Number of hops in the tunnel between this peer and the receiver \\ \Xhline{1.5\arrayrulewidth}
         rps     & api\_address          & <pubic/private\_ip>:<port>        & Address and port the RPS module uses for API connections \\ \Xhline{1.5\arrayrulewidth}
         auth    & api\_address          & <pubic/private\_ip>:<port>        & Address and port the ONION AUTH module uses for API connections
@@ -603,12 +606,12 @@ src/$ mvn clean package -DskipTests
 
 
 \subsection{Dependencies}
-Table \ref{tab:dependencies} lists all dependencies of our implementation of the onion module.
+Table \ref{tab:dependencies} lists all dependencies of our implementation of the Onion module.
 As we are using Maven, all dependencies are downloaded during the build.
 
 \begin{table}[H]
     \centering
-    \caption{Dependencies of the onion module}
+    \caption{Dependencies of the Onion module}
     \label{tab:dependencies}
     \begin{tabular}{l|l|l}
         Library         & Version                   & License \\ \Xhline{3\arrayrulewidth}
