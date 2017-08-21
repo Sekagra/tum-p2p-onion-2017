@@ -1,0 +1,33 @@
+\ProvidesPackage{pgfgantt-custom}[2017/08/21 My local customizations to the pgfgantt package]
+\RequirePackage{pgfgantt} % load the package we're modifying
+
+% some new keys for the style of our "anyday" marker lines
+\@gtt@keydef{anyday}{none}
+\@gtt@keydef{anyday offset}{1}
+\@gtt@stylekeydef{anyday rule}{color=blue, line width=2pt}
+\@gtt@keydef{anyday label font}{\normalfont}
+\@gtt@stylekeydef{anyday label node}{%
+  anchor=north, font=\ganttvalueof{anyday label font}%
+}
+
+\newcount\gtt@anyday@slot
+
+\newcommand\drawverticalline[3]{%
+  \gtt@tsstojulian{#1}{\gtt@anyday@slot}%
+  \gtt@juliantotimeslot{\gtt@anyday@slot}{\gtt@anyday@slot}%
+  \pgfmathsetmacro\y@upper{%
+    \gtt@lasttitleline * \ganttvalueof{y unit title}%
+  }%
+  \pgfmathsetmacro\y@lower{%
+    \gtt@lasttitleline * \ganttvalueof{y unit title}%
+      + (\gtt@currentline - \gtt@lasttitleline - 1)%
+      * \ganttvalueof{y unit chart}%
+  }%
+  \pgfmathsetmacro\x@mid{%
+    (\gtt@anyday@slot - 1 + \ganttvalueof{anyday offset})%
+      * \ganttvalueof{x unit}%
+  }%
+  \draw [/pgfgantt/anyday rule]
+    (\x@mid pt, \y@upper pt) -- (\x@mid pt, \y@lower pt)
+    node [/pgfgantt/anyday label node, yshift=#2] {#3};%
+}

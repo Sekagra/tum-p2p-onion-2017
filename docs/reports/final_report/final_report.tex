@@ -5,11 +5,11 @@
 \usepackage[english]{babel} % English language/hyphenation
 \usepackage{amsmath,amsfonts,amsthm} % Math packages
 \usepackage[utf8]{inputenc}
-\usepackage{float}
 \usepackage{lipsum} % Package to generate dummy text throughout this template
 \usepackage{graphicx} 
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{listings}
 \usepackage[sc]{mathpazo} % Use the Palatino font
 \linespread{1.05} % Line spacing - Palatino needs more space between lines
 \usepackage{microtype} % Slightly tweak font spacing for aesthetics
@@ -39,6 +39,9 @@
 \usepackage[export]{adjustbox}
 \usepackage{moeptikz}
 \usepackage[separate-uncertainty=true,quotient-mode=fraction]{siunitx}
+\usepackage{makecell}
+\usepackage[T1]{fontenc}
+\usepackage{pgfgantt-custom}
 \sisetup{exponent-product = \cdot, output-product = \cdot}
 
 \usetikzlibrary{calc}
@@ -77,6 +80,8 @@
 %\normalsize \href{mailto:marco.torres.810@gmail.com}{marco.torres.810@gmail.com}\\[2mm] % Your email address
 }
 \date{}
+
+\input{listings_def.lst}
 
 %----------------------------------------------------------------------------------------
 \begin{document}
@@ -208,7 +213,7 @@ create a mapping for further forwarding. The received data is sent to the specif
     \bitbox{16}{size} & \bitbox{16}{\texttt{ONION TUNNEL RELAY} = 597} \\
     \wordbox{4}{local tunnel identifier (LID$_1$) \\ between the initiator and the receiver} \\ 
 	\bitbox{16}{port} & \bitbox{1}{V} & \bitbox{15}{reserved} \\
-    \wordbox{1}{address (e.\,g. IP address) of the host to forward to} \\ 
+    \wordbox{1}{address (i.\,e. IP address) of the host to forward to} \\
     \wordbox{4}{local tunnel identifier (LID$_2$) \\ between the initiator and the new hop} \\ 
     \wordbox[tlr]{2}{data for the new hop (e.\,g. a \texttt{ONION TUNNEL INIT} message)} \\
     \skippedwords \\
@@ -479,11 +484,233 @@ To resolve this issue, the initiator holds a collection named \texttt{toBeDestro
 \label{sec:function:cleanup}
 Additionally to the cleanup and replacement of old identifiers in case of a switched tunnel, peers have be able to entirely remove states as well. Peers are required to be able to clean up data regarding the state of a tunnel or a mapping they have in their role as an intermediate hop. This is especially important as tunnels can be broken by peers leaving the network at any point in time. To do so, every peer keeps track of the last time data has been seen associated to a certain LID. If this time exceeds a whole round, the state is being removed. The time check is done on every round start by the peer.
 
-\section{Limitations regarding security}
+\section{Security Properties}
+The onion module's purpose is to provide security to the users of the VoidPhone application.
+We analyze the protection of sensible user data regarding confidentiality, authenticity, integrity and privacy in this section.
 
-\section{How to run + Config}
+\paragraph{Privacy}
+The main purpose of onion routing is to allow anonymous communication in the system.
+Every peer in a tunnel, except the initiator, only knows the addresses of its direct predecessor and successor.
+If we are using at least two intermediate hops, to peer in the tunnel is able to know the address of the sender and receiver of data.
+In addition, we do not transfer any information that allows the identification of the tunnel initiator.
+As a result, the onion module provides sender anonymity.
+The usage of a rendevouz point allows receiver anonymity, too.
 
-\section{Time management}
+We utilize layer encryption and have an identifier (LID) that is different for every tunnel segment.
+Therefore, a passive adversary is not able to directly track a tunnel through the system.
+
+If only one tunnel is established over a specified peer at a time, it is possible to track a tunnel using the \texttt{ONION INIT} and \texttt{ONION ACCEPT} messages.
+However, this attack is no longer possible if multiple tunnels are established over the same hop at the same time.
+Therefore, we have to rely on a large anonymity set, to prevent such timing- and pattern-based attacks.
+
+By using the same round interval on every peer and synchronizing round transitions, we could increase the anonymity set during tunnel establishment.
+Nevertheless, this was not possible in this version of the onion module, as the round interval has to be configurable regarding the supervisors.
+
+The onion module has at least one active tunnel at a time.
+This is achieved by building a cover tunnel if no user tunnel is established.
+In addition, the CM module is able to instruct the onion module to sent random cover data through a tunnel which allows link padding.
+As we also refresh cover tunnel at round transition, an attack is not able to differentiate of a peer is currently communicating or not.
+
+
+\paragraph{Authenticity}
+The VoidPhone application uses pre-shared public keys for the identification of peers.
+In addition, the onion module transfers to handshake messages during tunnel establishment.
+The onion authentication module can use those handshake messages and the pre-shared keys to provide mutual authentication of the communication partners.
+
+\paragraph{Confidentiality}
+During tunnel establishment, the onion authentication module is given the possibility to exchange handshake messages.
+As those messages are exchanged between the initiator and all hops in the tunnel, a secure ephemeral key can be established for every tunnel segment, e.\,g. by the use of the Diffie-Hellmann key excahnge algorithm.
+As the onion module layer encrypts all data sent through a tunnel using those keys, no user information is sent in plain text.
+
+The onion module builds a new tunnel for every user communication in every round.
+As a result, the onion authentication module has the possibility to update its keys in a fixed interval.
+
+\paragraph{Integrity}
+The onion authentication module is allowed to add additional information to a message sent through a tunnel.
+This information can be used to provide integrity protection.
+
+\section{Installation and Execution}
+In this section we describe how to install and run the onion module.
+The required sources are available on our git repository\footnote{\url{https://gitlab.lrz.de/ga78sil/p2p-2017-group17-onion}}.
+
+\subsection{Execution}
+We used \texttt{Java} as programming language for our onion module.
+\texttt{Java 8} is required for execution.
+It is possible to either run the pre-built version contained in the \texttt{release/} directory or build from source as explained in Section \ref{sec:compilation}.
+
+
+Listing \ref{lst:execution} shows the command to run the onion module.
+The \texttt{config} command line argument specifies the configuration file that shall be used by the onion module.
+We present the required configuration parameters in Section \ref{sec:configuration}.
+
+\begin{lstlisting}[language=bash, caption=Command to execute the onion module, label=lst:execution]
+release/$ java -jar Onion_1.0.jar --config path
+\end{lstlisting}
+
+\noindent
+Following command line parameters are currently supported:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l l p{5cm}}
+        help        & ---   & Print the help text \\
+        config      & path  & Path to the configuration file \\
+        loglevel    & level & Used log level (Optional) \\
+    \end{tabular}
+\end{table}
+
+\subsection{Configuration} \label{sec:configuration}
+The VoidPhone application uses a configuration file in the Windows INI format.
+Table \ref{tab:configuration_params} lists all parameters required by the onion module and their corresponding section.
+A sample configuration file is contained in the \texttt{config/} directory in the repository.
+
+\begin{table}[H]
+    \centering
+    \caption{Configuration parameters required by the onion module}
+    \label{tab:configuration_params}
+    \begin{tabular}{l|l|l|p{5cm}}
+        Section & Parameter             & Value                             & Description   \\ \Xhline{3\arrayrulewidth}
+        onion   & listen\_address       & <public\_ip>:<port>               & P2P address of this peer \\ \cline{2-4}
+                & api\_address          & <pubic/private\_ip>:<port>        & Address used for API connections to the onion module \\ \cline{2-4}
+                & hostkey               & <path\_to\_pem\_key>              & Path to the key used by this peer \\ \cline{2-4}
+                & round\_interval       & <interval\_in\_seconds>           & Round interval the Onion module shall use \\ \cline{2-4}
+                & intermediate\_hops    & <number\_of\_intermediate\_hops>  & Number of hops in the tunnel between this peer and the receiver \\ \Xhline{1.5\arrayrulewidth}
+        rps     & api\_address          & <pubic/private\_ip>:<port>        & Address and port the RPS module uses for API connections \\ \Xhline{1.5\arrayrulewidth}
+        auth    & api\_address          & <pubic/private\_ip>:<port>        & Address and port the ONION AUTH module uses for API connections
+    \end{tabular}
+\end{table}
+
+
+\subsection{Compilation} \label{sec:compilation}
+Maven\footnote{\url{https://maven.apache.org/}} is required for building from source, as it is used for dependency and build management.
+We tested the build using Maven-3.3.9 (Apache License 2.0).
+
+The Java source code of the project is contained in the \texttt{src/} directory in the repository.
+Execute the commands shown in Listing \ref{lst:source_build} in the \texttt{src/} directory, to build the project from source.
+After a successful build, Maven creates \texttt{Onion\_1.0.jar} in the \texttt{src/target/ directory}.
+This jar file contains all necessary dependencies.
+
+\begin{lstlisting}[language=bash, caption=Build the project from source, label=lst:source_build]
+src/$ mvn clean package
+\end{lstlisting}
+
+All unit tests and a large integration test that builds a tunnel, sends data and destroys it afterwards using mock-ups, are executed during Maven build.
+To skip all tests use the command in Listing \ref{lst:source_build_without_tests}
+
+\begin{lstlisting}[language=bash, caption=Build the project from source without tests, label=lst:source_build_without_tests]
+src/\$ mvn clean package -DskipTests
+\end{lstlisting}
+
+
+\subsection{Dependencies}
+Table \ref{tab:dependencies} lists all dependencies of our implementation of the onion module.
+As we are using Maven, all dependencies are downloaded during the build.
+
+\begin{table}[H]
+    \centering
+    \caption{Dependencies of the onion module}
+    \label{tab:dependencies}
+    \begin{tabular}{l|l|l}
+        Library         & Version                   & License \\ \Xhline{3\arrayrulewidth}
+        jUnit           & RELEASE (currently 4.12)  & Eclipse Public License 1.0 \\
+        Bouncy Castle   & 1.57                      & MIT X11 License \\
+        Netty           & 4.1.12.Final              & Apache License 2.0 \\
+        Google Guice    & 4.1.0                     & Apache License 2.0 \\
+        log4j           & 2.8.2                     & Apache License 2.0 \\
+        ini4j           & 0.5.1                     & Apache License 2.0
+    \end{tabular}
+\end{table}
+
+All dependencies are already integrated in the \texttt{jar} of the pre-built version.
+Therefore, they do not have to be downloaded separately.
+
+\section{Time Management}
+Figure \ref{fig:timing} summarizes the work distribution during the project.
+We tried to clearly separate the effort the team members spent to the project.
+In contrast to Figure \ref{fig:timing}, this was not always possible as we helped each other in implementing different parts and also fixed bugs in the other team member's code.
+Nevertheless, we have the opinion that both team spent an equal amount of time and the work was distributed fairly.
+
+In the following we clarify some steps of Figure \ref{fig:timing}.
+\paragraph{Christoph}
+    \begin{itemize}
+        \item Netty Server and Client: We decided to utilize Netty pipelines to handle network traffic. As we have to handle connections to other local modules and other onion instances, Christoph developed a wrapper to simplify message sending and receiving.
+        \item Callbacks: We use a lot of callbacks to handle asynchronous communication between the modules. Therefore, we use Netty pipelines for receiving and message parsing. The orchestrator uses callbacks to react on those asynchronous events and connects the different components shown in Figure{fig:architecture}.
+        \item Internal Message Handling: Christopher implemented a large part of the internal onion logic, e.\,g. tunnel set-up.
+    \end{itemize}
+\paragraph{Marko}
+    \begin{itemize}
+        \item Message Parsing: Marko developed parsers for the interfaces to other modules. Each parser offers build methods for outgoing messages and a central parse method for incoming packets. 
+        \item Onion Message Parsing: Marko added a parser for the messages exchanged between two onion instances. In addition, some changes at the Netty pipelines and internal logic were necessary as the used UDP handlers blocked message reception.
+        \item Unit: Unit tests ensure correct message serialization and parsing of messages exchanged between two onion instances.
+        \item Integ: Marko developed mockups for all interfaces except the onion-to-onion interface to have an integration test for the internal onion logic.
+    \end{itemize}
+\paragraph{Together}
+We use this point to summarize all outcomes that we developed together.
+    \begin{itemize}
+        \item Inital/Interim/Final: All reports for this project were written by both team members.
+        \item Correct Onion Protocol: The first version of the onion protocol, which was developed for the interim report, had some issues, e.\,g. with the implementation of equal size packets. Therefore, we had to set-up a new onion protocol (see Section \ref{sec:protocol}).
+        \item Internal Logic: We completed the internal message handling and introduction of the round concept together.
+        \item Testing: We used the integration test implemented by Marko and a test set-up using real hardware and the mockups developed by the project's supervisors to test the internal logic.
+    \end{itemize}
+
+
+\newcounter{myWeekNum}
+\stepcounter{myWeekNum}
+%
+\newcommand{\myWeek}{\themyWeekNum
+	\stepcounter{myWeekNum}
+	\ifnum\themyWeekNum=53
+	\setcounter{myWeekNum}{1}
+	\else\fi
+}
+\setcounter{myWeekNum}{20}
+\ganttset{%
+	calendar week text={\myWeek{}}%
+}
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+		\begin{ganttchart}[
+			%rest
+			x unit=0.15cm,
+			y unit title=.8cm,
+			y unit chart=.8cm,
+            inline,
+            group/.style={draw=none,fill=none},
+			vgrid={*{6}{draw=none},dotted},
+			time slot format=isodate,
+			time slot format/start date=2017-05-16]{2017-05-16}{2017-08-22}
+			\ganttset{bar height=.6}
+			\gantttitlecalendar{month=name, week} \\
+            \ganttgroup[inline=false]{Christoph}{2017-05-16}{2017-05-16}
+                \ganttbar[]{\footnotesize Netty Server and Client}{2017-05-25}{2017-06-16}
+                \ganttbar[]{\footnotesize Async Handler}{2017-06-23}{2017-07-05}
+                \ganttbar[]{\footnotesize Internal Msg Handling}{2017-07-06}{2017-07-26}
+                \\
+
+            \ganttgroup[inline=false]{Marko}{2017-05-16}{2017-05-16}
+                \ganttbar[]{\footnotesize Message Parsing}{2017-05-25}{2017-06-16}
+                \ganttbar[]{\footnotesize Onion Message Parsing}{2017-06-25}{2017-07-16}
+                \ganttbar[]{\footnotesize Unit}{2017-07-17}{2017-07-24}
+                \ganttbar[]{\footnotesize Integ}{2017-08-03}{2017-08-08}
+                \\
+            \ganttgroup[inline=false]{Together}{2017-05-16}{2017-05-16}
+                \ganttbar[]{\footnotesize Initial}{2017-05-17}{2017-05-23}
+                \ganttbar[]{\footnotesize Interim}{2017-06-14}{2017-06-20}
+                \ganttbar[]{\footnotesize Correct Onion Protocol}{2017-06-21}{2017-07-12}
+                \ganttbar[]{\footnotesize Internal Logic}{2017-07-25}{2017-08-08}
+                \ganttbar[]{\footnotesize Testing}{2017-08-09}{2017-08-15}
+                \ganttbar[]{\footnotesize Final}{2017-08-16}{2017-08-22} \\
+            \drawverticalline{2017-05-23}{.2em}{\footnotesize Initial Report}
+            \drawverticalline{2017-06-20}{.2em}{\footnotesize Interim Report}
+            \drawverticalline{2017-08-15}{-.7em}{\footnotesize Coding Freeze}
+            \drawverticalline{2017-08-22}{.2em}{\footnotesize Final Report}
+		\end{ganttchart}
+    }
+
+    \caption{Work distribution during development}
+    \label{fig:timing}
+\end{figure}
 
 \bibliography{ref}
 \bibliographystyle{abbrv}
