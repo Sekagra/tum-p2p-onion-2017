@@ -97,13 +97,13 @@ Each interface the Onion module has towards another module is managed by a respe
 Each of the interfaces references a parser specific for the data that is expected on this interface. The parser is given the raw bytes which is received by the interface and returns a serialized message instance or a parsing error. The parsers are also used by the refercing modules to build the message types they are sending. All references between components are setup via \emph{Depedency Injection} using Google's \textbf{Guice} framework.
 
 \usetikzlibrary{positioning,shapes.misc}
-\tikzstyle{orchestrator} = [rectangle, draw=black, text=white, fill=darkestBrew, rounded corners=15pt, text width=7.5em, minimum height=7.5em, minimum width=7mm]
+\tikzstyle{orchestrator} = [rectangle, draw=black, text=white, fill=darkestBrew, rounded corners=15pt, text width=7.6em, minimum height=7.6em, minimum width=7.6em]
 \tikzstyle{interface} = [rectangle, draw=black, text=black, fill=mediumBrew, rounded corners=5pt, text centered, text width=6.5em, minimum height=4em, minimum width=6mm]
 \tikzstyle{config} = [rectangle, draw=black, dashed, text=black, fill=lightBrew, rounded corners=5pt, text centered, text width=6.5em, minimum height=4em, minimum width=6mm]
 \tikzstyle{parser} = [rectangle, draw=black, dashed, text=black, fill=lightestBrew, rounded corners=3pt, text centered, text width=6.5em, minimum height=2.5em, minimum width=6.5mm]
 \begin{figure}[ht]
 \resizebox{\textwidth}{!}{\begin{tikzpicture}[x=1mm,y=1mm, >=latex, ->]
-    \node[orchestrator] (orchestrator) {\hspace{1.5mm}\large{Orchestrator} \\ \vspace{2mm} \hspace{0.6mm}\scriptsize{$\bullet$ handles rounds} \raisebox{-0.7ex}{\Large{\clock}} \\ \hspace{0.6mm}\scriptsize{$\bullet$ holds state}};
+    \node[orchestrator] (orchestrator) {\hspace{1.5mm}\large{Orchestrator} \\ \vspace{2mm} \hspace{0.3mm}\scriptsize{$\bullet$ handles rounds}\,\raisebox{-0.85ex}{\Large{\clock}} \\ \hspace{0.3mm}\scriptsize{$\bullet$ holds state}};
 
     % Interface elements
     \node[interface, left of=orchestrator, node distance=14em] (onionInterface) {Onion P2P \\ Interface};
