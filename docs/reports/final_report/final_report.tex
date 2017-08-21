@@ -491,17 +491,17 @@ We analyze the protection of sensible user data regarding confidentiality, authe
 \paragraph{Privacy}
 The main purpose of onion routing is to allow anonymous communication in the system.
 Every peer in a tunnel, except the initiator, only knows the addresses of its direct predecessor and successor.
-If we are using at least two intermediate hops, to peer in the tunnel is able to know the address of the sender and receiver of data.
+As a result, no peer, besides the initiator, knows both, sender and receiver address, if we are using at least two intermediate hops in a tunnel.
 In addition, we do not transfer any information that allows the identification of the tunnel initiator.
-As a result, the onion module provides sender anonymity.
+Thus, the onion module provides sender anonymity.
 The usage of a rendevouz point allows receiver anonymity, too.
 
 We utilize layer encryption and have an identifier (LID) that is different for every tunnel segment.
 Therefore, a passive adversary is not able to directly track a tunnel through the system.
 
-If only one tunnel is established over a specified peer at a time, it is possible to track a tunnel using the \texttt{ONION INIT} and \texttt{ONION ACCEPT} messages.
-However, this attack is no longer possible if multiple tunnels are established over the same hop at the same time.
-Therefore, we have to rely on a large anonymity set, to prevent such timing- and pattern-based attacks.
+However, it is possible to track a tunnel during tunnel establishment using \texttt{ONION INIT} and \texttt{ONION ACCEPT} messages or by a timing attack.
+Such attacks are prevented if a lot of peers are sending data or establishing tunnels over the same re-router at the same time.
+I.\,e., we have to rely on a large anonymity set, to prevent timing- and pattern-based attacks.
 
 By using the same round interval on every peer and synchronizing round transitions, we could increase the anonymity set during tunnel establishment.
 Nevertheless, this was not possible in this version of the onion module, as the round interval has to be configurable regarding the supervisors.
@@ -509,13 +509,13 @@ Nevertheless, this was not possible in this version of the onion module, as the 
 The onion module has at least one active tunnel at a time.
 This is achieved by building a cover tunnel if no user tunnel is established.
 In addition, the CM module is able to instruct the onion module to sent random cover data through a tunnel which allows link padding.
-As we also refresh cover tunnel at round transition, an attack is not able to differentiate of a peer is currently communicating or not.
+As we also refresh cover tunnel at round transitions, an attacker is not able to differentiate if a peer is currently communicating or not.
 
 
 \paragraph{Authenticity}
 The VoidPhone application uses pre-shared public keys for the identification of peers.
-In addition, the onion module transfers to handshake messages during tunnel establishment.
-The onion authentication module can use those handshake messages and the pre-shared keys to provide mutual authentication of the communication partners.
+In addition, the onion module transfers two handshake messages during tunnel establishment.
+The onion authentication module can use those handshake messages and the pre-shared keys to provide authentication of the communication partners.
 
 \paragraph{Confidentiality}
 During tunnel establishment, the onion authentication module is given the possibility to exchange handshake messages.
@@ -570,10 +570,10 @@ A sample configuration file is contained in the \texttt{config/} directory in th
     \label{tab:configuration_params}
     \begin{tabular}{l|l|l|p{5cm}}
         Section & Parameter             & Value                             & Description   \\ \Xhline{3\arrayrulewidth}
-        onion   & listen\_address       & <public\_ip>:<port>               & P2P address of this peer \\ \cline{2-4}
+        onion   & listen\_address       & <public\_ip>:<port>               & P2P address of this peer's onion module \\ \cline{2-4}
                 & api\_address          & <pubic/private\_ip>:<port>        & Address used for API connections to the onion module \\ \cline{2-4}
                 & hostkey               & <path\_to\_pem\_key>              & Path to the key used by this peer \\ \cline{2-4}
-                & round\_interval       & <interval\_in\_seconds>           & Round interval the Onion module shall use \\ \cline{2-4}
+                & round\_interval       & <interval\_in\_seconds>           & Round interval the onion module shall use \\ \cline{2-4}
                 & intermediate\_hops    & <number\_of\_intermediate\_hops>  & Number of hops in the tunnel between this peer and the receiver \\ \Xhline{1.5\arrayrulewidth}
         rps     & api\_address          & <pubic/private\_ip>:<port>        & Address and port the RPS module uses for API connections \\ \Xhline{1.5\arrayrulewidth}
         auth    & api\_address          & <pubic/private\_ip>:<port>        & Address and port the ONION AUTH module uses for API connections
@@ -586,7 +586,7 @@ Maven\footnote{\url{https://maven.apache.org/}} is required for building from so
 We tested the build using Maven-3.3.9 (Apache License 2.0).
 
 The Java source code of the project is contained in the \texttt{src/} directory in the repository.
-Execute the commands shown in Listing \ref{lst:source_build} in the \texttt{src/} directory, to build the project from source.
+Execute the command shown in Listing \ref{lst:source_build} in the \texttt{src/} directory, to build the project from source.
 After a successful build, Maven creates \texttt{Onion\_1.0.jar} in the \texttt{src/target/ directory}.
 This jar file contains all necessary dependencies.
 
@@ -594,11 +594,11 @@ This jar file contains all necessary dependencies.
 src/$ mvn clean package
 \end{lstlisting}
 
-All unit tests and a large integration test that builds a tunnel, sends data and destroys it afterwards using mock-ups, are executed during Maven build.
-To skip all tests use the command in Listing \ref{lst:source_build_without_tests}
+All unit tests and a large integration test that builds a tunnel, sends data and destroys it afterwards using mockups, are executed during build.
+To skip all tests use the command in Listing~\ref{lst:source_build_without_tests}.
 
 \begin{lstlisting}[language=bash, caption=Build the project from source without tests, label=lst:source_build_without_tests]
-src/\$ mvn clean package -DskipTests
+src/$ mvn clean package -DskipTests
 \end{lstlisting}
 
 
@@ -628,13 +628,14 @@ Therefore, they do not have to be downloaded separately.
 Figure \ref{fig:timing} summarizes the work distribution during the project.
 We tried to clearly separate the effort the team members spent to the project.
 In contrast to Figure \ref{fig:timing}, this was not always possible as we helped each other in implementing different parts and also fixed bugs in the other team member's code.
-Nevertheless, we have the opinion that both team spent an equal amount of time and the work was distributed fairly.
+Nevertheless, we have the opinion that both team members spent an equal amount of time and the work was distributed fairly.
 
+\noindent
 In the following we clarify some steps of Figure \ref{fig:timing}.
 \paragraph{Christoph}
     \begin{itemize}
         \item Netty Server and Client: We decided to utilize Netty pipelines to handle network traffic. As we have to handle connections to other local modules and other onion instances, Christoph developed a wrapper to simplify message sending and receiving.
-        \item Callbacks: We use a lot of callbacks to handle asynchronous communication between the modules. Therefore, we use Netty pipelines for receiving and message parsing. The orchestrator uses callbacks to react on those asynchronous events and connects the different components shown in Figure{fig:architecture}.
+        \item Callbacks: We use a lot of callbacks to handle asynchronous communication between the modules. Therefore, we use Netty pipelines for receiving and message parsing. The orchestrator uses callbacks to react on those asynchronous messages and connects the different components shown in Figure~\ref{fig:architecture}.
         \item Internal Message Handling: Christopher implemented a large part of the internal onion logic, e.\,g. tunnel set-up.
     \end{itemize}
 \paragraph{Marko}
@@ -642,7 +643,7 @@ In the following we clarify some steps of Figure \ref{fig:timing}.
         \item Message Parsing: Marko developed parsers for the interfaces to other modules. Each parser offers build methods for outgoing messages and a central parse method for incoming packets. 
         \item Onion Message Parsing: Marko added a parser for the messages exchanged between two onion instances. In addition, some changes at the Netty pipelines and internal logic were necessary as the used UDP handlers blocked message reception.
         \item Unit: Unit tests ensure correct message serialization and parsing of messages exchanged between two onion instances.
-        \item Integ: Marko developed mockups for all interfaces except the onion-to-onion interface to have an integration test for the internal onion logic.
+        \item Integ: Marko developed mockups for all interfaces except the onion-to-onion interface to have an integration test for the internal logic.
     \end{itemize}
 \paragraph{Together}
 We use this point to summarize all outcomes that we developed together.
