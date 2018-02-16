@@ -1,16 +1,11 @@
 Onion Module (Java)
 ===================
-[![build status](https://gitlab.lrz.de/ga78sil/p2p-2017-group17-onion/badges/master/build.svg)](https://gitlab.lrz.de/ga78sil/p2p-2017-group17-onion/commits/master)
 
 This repository provides a Java-based onion routing implementation compatible to the specification of the [VoidPhone application](https://gitlab.lrz.de/voidphone).
 To increase anonymity, a TCP-based Onion API offers tunnel building, data transport and sending of cover data.
 In addition, we increase security by refreshing every built tunnel after a fixed time interval.
 
 This module requires a running Onion Auth and RPS module for encryption and random peer selection.
-
-Contributors: Group17
-* Marko Dorfhuber
-* Christoph Rudolf
 
 ## Execute the Onion Module ##
 
